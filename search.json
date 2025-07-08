@@ -1,0 +1,739 @@
+[
+  
+    {
+      "title"    : "BlitzCTF - ROP Phobia",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2025/blitz2025-ropphobia/",
+      "date"     : "2025-06-07 01:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "BlitzCTF - Shellphobia",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2025/blitz2025-shellphobia/",
+      "date"     : "2025-06-06 21:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "World Wide CTF 2024 - Free My Man Pascal",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2024/wwctf2024-freemymanpascal-copy/",
+      "date"     : "2024-11-24 15:00:00 +0100"
+    } ,
+  
+    {
+      "title"    : "World Wide CTF 2024 - CTF Registration",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2024/wwctf2024-ctfreg/",
+      "date"     : "2024-11-24 15:00:00 +0100"
+    } ,
+  
+    {
+      "title"    : "SECCON CTF 13 Quals - TOY/2",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2024/seccon13quals-toy2/",
+      "date"     : "2024-11-24 15:00:00 +0100"
+    } ,
+  
+    {
+      "title"    : "SECCON CTF 13 Quals - BabyQEMU",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2024/seccon13quals-babyqemu/",
+      "date"     : "2024-11-24 15:00:00 +0100"
+    } ,
+  
+    {
+      "title"    : "PatriotCTF 2024 - DirtyFetch",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2024/patriot24-dirty_fetch/",
+      "date"     : "2024-09-21 16:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "UNbreakable International 2024 - strground",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2024/unbreakable-strground-copy-2/",
+      "date"     : "2024-03-24 15:00:00 +0100"
+    } ,
+  
+    {
+      "title"    : "Equinor CTF 2023 - Travel Tracker",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2023/equinor23-traveltracker/",
+      "date"     : "2023-11-11 15:00:00 +0100"
+    } ,
+  
+    {
+      "title"    : "SunshineCTF 2023 - Robot Assembly Line",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2023/sunshine23-ral/",
+      "date"     : "2023-10-08 16:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "BRICS+ CTF - game",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2023/brics-game/",
+      "date"     : "2023-09-24 16:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "SECCON CTF 2023 Quals - DataStore1",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2023/secconquals23-datastore1/",
+      "date"     : "2023-09-17 17:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "SECCON CTF 2023 Quals - selfcet",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2023/secconquals23-selfcet/",
+      "date"     : "2023-09-17 16:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "HITCON CTF 2023 Quals - Full Chain - Wall Rose",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2023/hitcon23-rose/",
+      "date"     : "2023-09-10 16:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "Line CTF 2023 - hackatris",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2023/linectf-hackatris/",
+      "date"     : "2023-03-26 16:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "LakeCTF Qualifications 2022 - nile",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2022/lakectf-nile/",
+      "date"     : "2022-09-25 12:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "RomHack 2022 CTF - blood furnace",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2022/romctf-bloodfurnace/",
+      "date"     : "2022-09-24 12:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "Google Capture The Flag 2022 - fixedaslr",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2022/googlectf22-fixedaslr/",
+      "date"     : "2022-07-03 13:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "Google Capture The Flag 2022 - weather",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2022/googlectf22-weather/",
+      "date"     : "2022-07-03 12:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "Securinets CTF Quals 2022 - xblob",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2022/securinet22-xblob-copy/",
+      "date"     : "2022-04-10 12:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "LINE CTF 2022 - call-of-fake",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2022/linectf-calloffake/",
+      "date"     : "2022-03-27 12:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "zer0pts CTF 2022 - accountant",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2022/zer0pts-accountant/",
+      "date"     : "2022-03-20 13:00:00 +0100"
+    } ,
+  
+    {
+      "title"    : "zer0pts CTF 2022 - kvstore",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2022/zer0pts-kvstore/",
+      "date"     : "2022-03-20 12:00:00 +0100"
+    } ,
+  
+    {
+      "title"    : "zer0pts CTF 2022 - MemSafeD",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2022/zer0pts-memsafed/",
+      "date"     : "2022-03-20 11:00:00 +0100"
+    } ,
+  
+    {
+      "title"    : "VULNCON CTF 2021 - IPS",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2021/vulncon-ips/",
+      "date"     : "2021-12-08 12:00:00 +0100"
+    } ,
+  
+    {
+      "title"    : "hitcon CTF 2021 - metatalk",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2021/hitcon21-metatalk/",
+      "date"     : "2021-12-06 12:00:00 +0100"
+    } ,
+  
+    {
+      "title"    : "Dragon CTF 2021 - nim",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2021/dragoncf21-nim/",
+      "date"     : "2021-11-28 13:00:00 +0100"
+    } ,
+  
+    {
+      "title"    : "Dragon CTF 2021 - noflippidy",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2021/dragoncf21-noflippidy/",
+      "date"     : "2021-11-28 12:00:00 +0100"
+    } ,
+  
+    {
+      "title"    : "Dragon CTF 2021 - Dragonbox",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2021/dragoncf21-dragonbox/",
+      "date"     : "2021-11-28 12:00:00 +0100"
+    } ,
+  
+    {
+      "title"    : "N1CTF 2021 - baby_guess",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2021/n1ctf21-babyguess/",
+      "date"     : "2021-11-21 13:00:00 +0100"
+    } ,
+  
+    {
+      "title"    : "N1CTF 2021 - house_of_tataru",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2021/n1ctf21-tataru/",
+      "date"     : "2021-11-21 12:00:00 +0100"
+    } ,
+  
+    {
+      "title"    : "asis ctf 2021 - minimemo",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2021/asis21-minimemo/",
+      "date"     : "2021-10-23 14:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "asis ctf 2021 - StrVec",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2021/asis21-strvec/",
+      "date"     : "2021-10-23 13:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "pbctf 2021 - Nightclub",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2021/pb21-nightclub/",
+      "date"     : "2021-10-11 14:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "TSG CTF 2021 - lkgit",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2021/tsg-lkgit/",
+      "date"     : "2021-10-04 14:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "TSG CTF 2021 - Coffee",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2021/tsg-coffee/",
+      "date"     : "2021-10-04 14:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "TSG CTF 2021 - Cling",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2021/tsg-cling/",
+      "date"     : "2021-10-04 14:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "TSG CTF 2021 - cHeap",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2021/tsg-cheap/",
+      "date"     : "2021-10-04 14:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "SSTF CTF 2021 - LostArk 1/2",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2021/sstf-lostark/",
+      "date"     : "2021-08-17 14:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "SSTF CTF 2021 - EchoFrag",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2021/sstf-echofrag/",
+      "date"     : "2021-08-17 14:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "SSTF CTF 2021 - Cyberpunk 2021",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2021/sstf-cyberpunk/",
+      "date"     : "2021-08-17 14:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "Line CTF - Damn Vulnerable Box",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2021/linectf-damn/",
+      "date"     : "2021-03-21 13:00:00 +0100"
+    } ,
+  
+    {
+      "title"    : "zer0pts CTF 2021 - oneshot",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2021/zeropts-oneshot/",
+      "date"     : "2021-03-10 13:00:00 +0100"
+    } ,
+  
+    {
+      "title"    : "inCTF 2020 - Secret Service",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2020/inctf-secretservice/",
+      "date"     : "2020-08-01 14:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "CCCamp 2019 CTF - regfuck",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2019/ccccamp-regfuck/",
+      "date"     : "2019-08-24 14:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "CCCamp 2019 CTF - core-pwn",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2019/ccccamp-core-pwn/",
+      "date"     : "2019-08-24 14:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "Security Fest 2019 - Halleb3rry",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2019/secfest-halleb3rry/",
+      "date"     : "2019-05-24 14:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "Security Fest 2019 - brainfuck64",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2019/secfest-brainfuck64/",
+      "date"     : "2019-05-24 14:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "XCTF - *CTF 2019 - hack_me",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2019/xctf-hackme/",
+      "date"     : "2019-04-28 22:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "TG:Hack 2019 - Are You Flipping Kidding Me?",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2019/tghack-flippin/",
+      "date"     : "2019-04-20 22:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "Midnightsun CTF 2019 - hfs ipc",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2019/midnight-hfsipc/",
+      "date"     : "2019-04-06 22:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "Midnightsun CTF 2019 - gissa2",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2019/midnight-gissa2/",
+      "date"     : "2019-04-06 22:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "The T19 challenge",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2019/T19Challenge/",
+      "date"     : "2019-01-18 15:54:19 +0100"
+    } ,
+  
+    {
+      "title"    : "hxp CTF 2018 - pwn game",
+      "category" : "CTF",
+      "tags"     : "pwn",
+      "url"      : "/ctf/2018/hxp18-pwn_game/",
+      "date"     : "2018-12-08 15:00:00 +0100"
+    } ,
+  
+    {
+      "title"    : "ISITDTU CTF 2018 Finals - babytrace",
+      "category" : "CTF",
+      "tags"     : "pwn",
+      "url"      : "/ctf/2018/isitdtu-final-babytrace/",
+      "date"     : "2018-09-09 13:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "ISITDTU CTF 2018 Finals - babyseccomp",
+      "category" : "CTF",
+      "tags"     : "pwn",
+      "url"      : "/ctf/2018/isitdtu-final-babyseccomp/",
+      "date"     : "2018-09-09 13:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "ISITDTU CTF 2018 Finals - arm_ez",
+      "category" : "CTF",
+      "tags"     : "pwn",
+      "url"      : "/ctf/2018/isitdtu-final-babyarm/",
+      "date"     : "2018-09-09 13:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "ISITDTU CTF 2018 Quals - unexploitable",
+      "category" : "CTF",
+      "tags"     : "pwn",
+      "url"      : "/ctf/2018/isitdtu-unexploitable/",
+      "date"     : "2018-07-27 16:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "ISITDTU CTF 2018 Quals - babyformat",
+      "category" : "CTF",
+      "tags"     : "pwn",
+      "url"      : "/ctf/2018/isitdtu-babyformat/",
+      "date"     : "2018-07-27 16:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "ISITDTU CTF 2018 Quals - dead_note_lv2",
+      "category" : "CTF",
+      "tags"     : "pwn",
+      "url"      : "/ctf/2018/isitdtu-deadnote2/",
+      "date"     : "2018-07-27 15:45:00 +0200"
+    } ,
+  
+    {
+      "title"    : "ISITDTU CTF 2018 Quals - dead_note_lv1",
+      "category" : "CTF",
+      "tags"     : "pwn",
+      "url"      : "/ctf/2018/isitdtu-deadnote1/",
+      "date"     : "2018-07-27 15:30:00 +0200"
+    } ,
+  
+    {
+      "title"    : "Defcon Quals 2018 - stumbler",
+      "category" : "CTF",
+      "tags"     : "pwn",
+      "url"      : "/ctf/2018/defconquals18-stumbler/",
+      "date"     : "2018-05-14 15:30:00 +0200"
+    } ,
+  
+    {
+      "title"    : "Defcon Quals 2018 - Race Wars",
+      "category" : "CTF",
+      "tags"     : "pwn",
+      "url"      : "/ctf/2018/defconquals18-racewars/",
+      "date"     : "2018-05-14 15:30:00 +0200"
+    } ,
+  
+    {
+      "title"    : "Defcon Quals 2018 - ddtek: Preview",
+      "category" : "CTF",
+      "tags"     : "pwn",
+      "url"      : "/ctf/2018/defconquals18-preview/",
+      "date"     : "2018-05-14 15:30:00 +0200"
+    } ,
+  
+    {
+      "title"    : "Defcon Quals 2018 - It&#39;s-a-me!",
+      "category" : "CTF",
+      "tags"     : "pwn",
+      "url"      : "/ctf/2018/defconquals18-itsame/",
+      "date"     : "2018-05-14 15:30:00 +0200"
+    } ,
+  
+    {
+      "title"    : "ASIS CTF Quals 2018 - My Blog",
+      "category" : "CTF",
+      "tags"     : "pwn",
+      "url"      : "/ctf/2018/asisquals18-blog/",
+      "date"     : "2018-04-29 16:30:00 +0200"
+    } ,
+  
+    {
+      "title"    : "ASIS CTF Quals 2018 - FCascasde",
+      "category" : "CTF",
+      "tags"     : "pwn",
+      "url"      : "/ctf/2018/asisquals18-fcascasde/",
+      "date"     : "2018-04-29 15:30:00 +0200"
+    } ,
+  
+    {
+      "title"    : "ASIS CTF Quals 2018 - Cat",
+      "category" : "CTF",
+      "tags"     : "pwn",
+      "url"      : "/ctf/2018/asisquals18-cat/",
+      "date"     : "2018-04-29 15:30:00 +0200"
+    } ,
+  
+    {
+      "title"    : "midnightsun CTF 2018 - botpanel",
+      "category" : "CTF",
+      "tags"     : "pwn",
+      "url"      : "/ctf/2018/midnight-botpanel/",
+      "date"     : "2018-04-15 14:30:00 +0200"
+    } ,
+  
+    {
+      "title"    : "sunshine CTF 2018 - bookwriter",
+      "category" : "CTF",
+      "tags"     : "pwn",
+      "url"      : "/ctf/2018/sunshince-bookwriter/",
+      "date"     : "2018-04-07 22:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "0ctf 2018 quals - blackhole",
+      "category" : "CTF",
+      "tags"     : "pwn",
+      "url"      : "/ctf/2018/0ctf-qual-blackhole/",
+      "date"     : "2018-04-02 12:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "0ctf 2018 quals - babystack",
+      "category" : "CTF",
+      "tags"     : "pwn",
+      "url"      : "/ctf/2018/0ctf-qual-babystack/",
+      "date"     : "2018-04-02 11:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "angstromCTF 2018 - bank_roppery",
+      "category" : "CTF",
+      "tags"     : "pwn",
+      "url"      : "/ctf/2018/angstrom-bank_roppery/",
+      "date"     : "2018-03-18 17:00:00 +0100"
+    } ,
+  
+    {
+      "title"    : "AceBear 2018 - Comic Store",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2018/acebear-comic_store/",
+      "date"     : "2018-01-27 19:02:00 +0100"
+    } ,
+  
+    {
+      "title"    : "AceBear 2018 - arm-exploit",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2018/acebear-arm-exploit/",
+      "date"     : "2018-01-27 19:01:00 +0100"
+    } ,
+  
+    {
+      "title"    : "AceBear 2018 - easy_heap",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2018/acebear-easy_heap/",
+      "date"     : "2018-01-27 19:00:00 +0100"
+    } ,
+  
+    {
+      "title"    : "InCTF 2017 - warm_heap",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2017/inCTF-warm_heap/",
+      "date"     : "2017-12-17 23:30:00 +0100"
+    } ,
+  
+    {
+      "title"    : "InCTF 2017 - stupidrop",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2017/inCTF-stupidrop/",
+      "date"     : "2017-12-17 23:30:00 +0100"
+    } ,
+  
+    {
+      "title"    : "SECCON 2017 Online CTF - video_player",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2017/SECCON2017-video_player/",
+      "date"     : "2017-12-09 23:30:00 +0100"
+    } ,
+  
+    {
+      "title"    : "SECCON 2017 Online CTF - Secure KeyManager",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2017/SECCON2017-secure_keymanager/",
+      "date"     : "2017-12-09 22:30:00 +0100"
+    } ,
+  
+    {
+      "title"    : "CODEBLUE CTF 2017 - Simple Memo Pad",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2017/CODEBLUE-SimpleMemoPad/",
+      "date"     : "2017-11-09 23:30:00 +0100"
+    } ,
+  
+    {
+      "title"    : "Hack.lu CTF 2017 - Heaps of Print",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2017/HackLu-heapsofprint/",
+      "date"     : "2017-10-20 19:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "Tokyo Westerns CTF 3rd 2017 - sticket",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2017/TokyoWesterns-sticket/",
+      "date"     : "2017-09-03 21:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "HackIT CTF 2017 - pwn200",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2017/HackIT-pwn200/",
+      "date"     : "2017-08-25 22:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "SHA2017 CTF - echoservice",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2017/SHA-EchoService/",
+      "date"     : "2017-08-06 16:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "SECUINSIDE CTF Quals 2017 - childheap",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2017/SecuInsideQual-ChildHeap/",
+      "date"     : "2017-07-01 16:54:19 +0200"
+    } ,
+  
+    {
+      "title"    : "DEFCON CTF 2017 Qualifier - badint",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2017/DefconQual-BadInt/",
+      "date"     : "2017-05-01 16:00:00 +0200"
+    } ,
+  
+    {
+      "title"    : "BCTF 2017 - babyuse",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2017/BCTF-BabyUse/",
+      "date"     : "2017-04-19 16:54:19 +0200"
+    } ,
+  
+    {
+      "title"    : "ASIS CTF Quals 2017 - CRC",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2017/ASISQUALS-CRC/",
+      "date"     : "2017-04-10 16:54:19 +0200"
+    } ,
+  
+    {
+      "title"    : "CODEGATE 2017 Prequalification - Hunting",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2017/Codegate-2017-Hunting/",
+      "date"     : "2017-02-14 15:54:19 +0100"
+    } ,
+  
+    {
+      "title"    : "IWCTF 2016 - Sh-ock",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2016/IWCTF-2016-Shock/",
+      "date"     : "2016-02-22 15:54:19 +0100"
+    } ,
+  
+    {
+      "title"    : "IWCTF 2016 - Remote printer",
+      "category" : "CTF",
+      "tags"     : "",
+      "url"      : "/ctf/2016/IWCTF-2016-RemotePrinter/",
+      "date"     : "2016-02-22 15:54:19 +0100"
+    } 
+  
+]

